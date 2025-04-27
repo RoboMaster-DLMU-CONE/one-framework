@@ -2,7 +2,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-#include <app/drivers/status_leds.h>
+#include <app/drivers/utils/status_leds.h>
 
 LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
 

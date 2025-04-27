@@ -4,7 +4,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/led.h>
 #include <zephyr/devicetree.h>
-#include <app/drivers/status_leds.h>
+#include <app/drivers/utils/status_leds.h>
 
 #include "zephyr/logging/log.h"
 

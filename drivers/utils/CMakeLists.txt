@@ -1,0 +1,1 @@
+add_subdirectory_ifdef(CONFIG_STATUS_LEDS status-leds)
