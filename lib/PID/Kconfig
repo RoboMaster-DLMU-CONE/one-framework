@@ -1,4 +1,5 @@
 menuconfig PID
     bool "PID"
+    select DeltaT
     help
         Enable PID lib

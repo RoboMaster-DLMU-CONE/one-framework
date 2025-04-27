@@ -3,41 +3,33 @@
 #include <concepts>
 #include <algorithm>
 #include <numbers>
+#include <app/lib/DeltaT.hpp>
 
-// 概念定义
-template <typename T>
-concept Arithmetic = std::integral<T> || std::floating_point<T>;
-
-template <bool... Bs>
+template<bool... Bs>
 concept AnyEnabled = (Bs || ...);
 
-template <typename Algorithm>
+template<typename Algorithm>
 concept PositionalAlgorithm = std::same_as<Algorithm, struct PositionalTag>;
 
-template <typename Algorithm>
+template<typename Algorithm>
 concept IncrementalAlgorithm = std::same_as<Algorithm, struct IncrementalTag>;
 
 // 算法标签
-struct PositionalTag
-{
+struct PositionalTag {
 };
 
-struct IncrementalTag
-{
+struct IncrementalTag {
 };
 
 // 滤波器策略
-template <Arithmetic T>
-struct NoFilter
-{
+template<Arithmetic T>
+struct NoFilter {
     T operator()(T value) const { return value; }
 };
 
-template <Arithmetic T>
-struct FirstOrderFilter
-{
-    T operator()(T input, T prev)
-    {
+template<Arithmetic T>
+struct FirstOrderFilter {
+    T operator()(T input, T prev) {
         return prev + alpha * (input - prev);
     }
 
@@ -45,7 +37,7 @@ struct FirstOrderFilter
 };
 
 // 主PID类
-template <
+template<
     typename Algorithm,
     Arithmetic T,
     T Kp, T Ki, T Kd,
@@ -60,12 +52,11 @@ template <
     requires (
         PositionalAlgorithm<Algorithm> || IncrementalAlgorithm<Algorithm>
     )
-class PIDController
-{
+class PIDController {
     static_assert(AnyEnabled<EnableDerivativeAhead, EnableDerivativeFilter,
-                             EnableOutputFilter, EnableOutputLimit> ||
+                      EnableOutputFilter, EnableOutputLimit> ||
                   !AnyEnabled<EnableDerivativeAhead, EnableDerivativeFilter,
-                              EnableOutputFilter, EnableOutputLimit>,
+                      EnableOutputFilter, EnableOutputLimit>,
                   "At least one optional feature must be enabled or all disabled");
 
     using ValueType = decltype(Kp + Ki + Kd);
@@ -73,7 +64,7 @@ class PIDController
     // 状态变量
     ValueType integral{};
     ValueType prev_error{};
-    ValueType prev_setpoint{};
+    ValueType prev_ref{};
 
     // 滤波器状态
     DerivativeFilter<ValueType> derivativeFilter{};
@@ -83,70 +74,63 @@ class PIDController
     ValueType min_output{};
     ValueType max_output{};
 
-    // 配置参数
-    ValueType dt{};
     ValueType alpha = 0.1;
 
 public:
-    PIDController(ValueType dt, ValueType min_out, ValueType max_out)
-        : min_output(min_out), max_output(max_out), dt(dt)
-    {
+    PIDController(ValueType min_out, ValueType max_out)
+        : min_output(min_out), max_output(max_out) {
     }
 
-    template <Arithmetic Setpoint>
-    ValueType compute(Setpoint input)
-    {
-        const ValueType error = static_cast<ValueType>(input) - prev_setpoint;
-
+    ValueType compute(ValueType ref, ValueType measure) {
+        const ValueType error = ref - measure;
+        dt = getDeltaT(&time_point);
         // 计算核心PID参数
         ValueType P = Kp * error;
-        ValueType I = integral += Ki * error * dt;
+        ValueType I = Ki * error * dt;
 
         // 微分计算（支持微分先行）
-        ValueType derivative = [&]
-        {
-            if constexpr (EnableDerivativeAhead)
-            {
-                ValueType sp_deriv = (static_cast<ValueType>(input) - prev_setpoint) / dt;
-                prev_setpoint = static_cast<ValueType>(input);
-                return sp_deriv;
-            }
-            else
-            {
+        ValueType D = [&] {
+            if constexpr (EnableDerivativeAhead) {
+                ValueType meas_deriv = -(measure - prev_measure) / dt;
+                prev_measure = measure;
+                return meas_deriv;
+            } else {
                 ValueType deriv = (error - prev_error) / dt;
-                prev_error = error;
                 return deriv;
             }
         }();
 
         // 应用微分滤波
-        if constexpr (EnableDerivativeFilter)
-        {
-            derivative = derivativeFilter(derivative, prev_derivative);
-            prev_derivative = derivative;
+        if constexpr (EnableDerivativeFilter) {
+            D = derivativeFilter(D, prev_derivative);
         }
 
-        ValueType output = P + I + (Kd * derivative);
+        ValueType output = P + I + (Kd * D);
 
         // 应用输出滤波
-        if constexpr (EnableOutputFilter)
-        {
+        if constexpr (EnableOutputFilter) {
             output = outputFilter(output, prev_output);
-            prev_output = output;
         }
 
         // 应用输出限幅
-        if constexpr (EnableOutputLimit)
-        {
+        if constexpr (EnableOutputLimit) {
             output = std::clamp(output, min_output, max_output);
         }
+
+        prev_ref = (ref);
+        prev_derivative = D;
+        prev_output = output;
+        prev_error = error;
 
         return output;
     }
 
 private:
     // 滤波器状态变量
+    ValueType prev_measure{};
     ValueType prev_derivative{};
     ValueType prev_output{};
+    ValueType dt{};
+    ValueType time_point{};
 };
 #endif //PID_HPP
