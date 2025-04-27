@@ -1,0 +1,19 @@
+description: System Status Indicator LEDs
+
+compatible: "status-leds"
+
+include: base.yaml
+
+properties:
+  leds:
+    type: phandle
+    required: true
+    description: 引用到LED节点
+  heartbeat-led-index:
+    type: int
+    required: true
+    description: 心跳指示灯的led序号
+  error-led-index:
+    type: int
+    required: true
+    description: 错误指示灯的led序号

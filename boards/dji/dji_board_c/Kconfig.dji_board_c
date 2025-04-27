@@ -1,0 +1,7 @@
+config BOARD_DJI_BOARD_C
+    bool
+    select SOC_STM32F407XG
+
+config DT_HAS_ZEPHYR_SWDP_GPIO_ENABLED
+        bool
+        default y

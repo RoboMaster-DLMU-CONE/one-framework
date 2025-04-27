@@ -1,0 +1,31 @@
+menuconfig STATUS_LEDS
+    bool "System Status Indicator LEDs"
+    select LED
+    help
+        Enable driver for system status LEDs (heartbeat and error indicators)
+
+if STATUS_LEDS
+
+config STATUS_LEDS_INIT_PRIORITY
+	int "Status LEDS device drivers init priority"
+	default 90
+	help
+	    status_leds device drivers init priority.
+
+config STATUS_LEDS_LOG_LEVEL
+    int "Status LEDS device drivers log level"
+    default LOG_DEFAULT_LEVEL
+    help
+        status_leds device drivers log level.
+
+config HEARTBEAT_LED_INTERVAL
+    int "Heartbeat LED blink interval in ms"
+        default 1000
+        help
+        Heartbeat LED blink interval in milliseconds
+
+module = STATUS_LEDS
+module-str = status_leds
+
+
+endif # STATUS_LEDS

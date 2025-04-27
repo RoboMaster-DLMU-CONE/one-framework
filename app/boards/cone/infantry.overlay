@@ -1,0 +1,10 @@
+/ {
+	// use dji_board_c
+	status_leds: status-leds {
+		compatible = "status-leds";
+		leds = <&leds>;
+		heartbeat-led-index = <0>;
+		error-led-index = <1>;
+	};
+
+};

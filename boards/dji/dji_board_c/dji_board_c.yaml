@@ -1,0 +1,16 @@
+identifier: dji_board_c
+name: DJI RoboMaster Development Board C
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 192
+flash: 1024
+supported:
+  - can
+  - pwm
+  - counter
+  - gpio
+  - usart
+vendor: DJI
