@@ -1,5 +1,5 @@
 # Introduction
 
-This is the Doxygen documentation for [example-application].
+This is the Doxygen documentation for [One Framework].
 
-[example-application]: https://github.com/zephyrproject-rtos/example-application
+[One Framework]: https://github.com/RoboMaster-DLMU-CONE/one-framework
