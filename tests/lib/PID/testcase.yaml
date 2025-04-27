@@ -1,0 +1,6 @@
+common:
+  tags: extensibility
+  integration_platforms:
+    - dji_board_c
+tests:
+  lib.PID: { }

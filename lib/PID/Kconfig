@@ -1,0 +1,4 @@
+menuconfig PID
+    bool "PID"
+    help
+        Enable PID lib
