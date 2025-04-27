@@ -86,7 +86,8 @@ public:
         dt = getDeltaT(&time_point);
         // 计算核心PID参数
         ValueType P = Kp * error;
-        ValueType I = Ki * error * dt;
+        integral += error * dt;
+        ValueType I = Ki * integral;
 
         // 微分计算（支持微分先行）
         ValueType D = [&] {
@@ -99,13 +100,14 @@ public:
                 return deriv;
             }
         }();
+        D *= Kd;
 
         // 应用微分滤波
         if constexpr (EnableDerivativeFilter) {
             D = derivativeFilter(D, prev_derivative);
         }
 
-        ValueType output = P + I + (Kd * D);
+        ValueType output = P + I + D;
 
         // 应用输出滤波
         if constexpr (EnableOutputFilter) {

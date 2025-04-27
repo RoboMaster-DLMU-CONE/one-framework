@@ -11,6 +11,10 @@ template<Arithmetic T>
 T getDeltaT(T *last_time) {
     T current_time = static_cast<T>(k_uptime_get());
     T delta = current_time - *last_time;
+    if (delta <= static_cast<T>(0)) {
+        delta = static_cast<T>(1);
+    }
+
     *last_time = current_time;
 
     return delta;
