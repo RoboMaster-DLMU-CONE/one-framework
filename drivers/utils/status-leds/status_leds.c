@@ -189,12 +189,12 @@ static int status_leds_init(const struct device* dev)
         return -ENODEV;
     }
 
-    k_timer_init(&data->heartbeat_timer, heartbeat_timer_handler, NULL);
+    k_timer_init(&data->heartbeat_timer, (k_timer_expiry_t)heartbeat_timer_handler, NULL);
     k_timer_user_data_set(&data->heartbeat_timer, (void*)dev);
-    k_timer_init(&data->error_blink_timer, error_blink_timer_handler, NULL);
+    k_timer_init(&data->error_blink_timer, (k_timer_expiry_t)error_blink_timer_handler, NULL);
     k_timer_user_data_set(&data->error_blink_timer, (void*)dev);
 
-    k_timer_init(&data->error_single_blink_timer, error_single_blink_handler, NULL);
+    k_timer_init(&data->error_single_blink_timer, (k_timer_expiry_t)error_single_blink_handler, NULL);
     k_timer_user_data_set(&data->error_single_blink_timer, (void*)dev);
 
     if (config->heartbeat_blink_interval_ms > 0)
