@@ -21,4 +21,4 @@ build:
 runners:
   # Additional runners, Zephyr will import these when discovering
   # subclasses of the `ZephyrBinaryRunner` class.
-  - file: scripts/example_runner.py
+  - file: scripts/runner.py

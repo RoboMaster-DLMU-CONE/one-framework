@@ -18,11 +18,17 @@ config STATUS_LEDS_LOG_LEVEL
     help
         status_leds device drivers log level.
 
-config HEARTBEAT_LED_INTERVAL
+config HEARTBEAT_LED_BLINK_INTERVAL
     int "Heartbeat LED blink interval in ms"
-        default 1000
+        default 300
         help
         Heartbeat LED blink interval in milliseconds
+
+config ERROR_LED_INTERVAL
+    int "Error LED interval in ms"
+        default 1000
+        help
+        Error LED interval in milliseconds
 
 module = STATUS_LEDS
 module-str = status_leds
