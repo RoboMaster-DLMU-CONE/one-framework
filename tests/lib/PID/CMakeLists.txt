@@ -3,5 +3,5 @@ cmake_minimum_required(VERSION 3.20.0)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(app_lib_PID_test)
 
-target_compile_options(app PRIVATE -std=c++20)
+target_compile_options(app PRIVATE)
 target_sources(app PRIVATE src/main.cpp)
