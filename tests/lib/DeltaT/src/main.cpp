@@ -11,7 +11,6 @@ ZTEST(delta_t, test_basic_timing)
     
     // 第一次调用应该返回较小的值
     const double delta1 = timer.getDeltaMS();
-    TC_PRINT("初始delta: %f ms\n", delta1);
     zassert_true(delta1 >= 0.0, "Delta时间不应为负值");
     
     // 等待一段已知时间
@@ -19,7 +18,6 @@ ZTEST(delta_t, test_basic_timing)
     
     // 再次获取delta，应该接近100ms
     const double delta2 = timer.getDeltaMS();
-    TC_PRINT("休眠100ms后delta: %f ms\n", delta2);
     zassert_true(delta2 >= 100.0, "Delta时间应接大于100ms");
 }
 
@@ -37,7 +35,6 @@ ZTEST(delta_t, test_reset)
     
     // 重置后应该返回较小的值
     const double delta2 = timer.getDeltaMS();
-    TC_PRINT("重置后delta: %f ms\n", delta2);
     zassert_true(delta2 < 2.0, "重置后Delta时间应较小");
 }
 
@@ -49,7 +46,6 @@ ZTEST(delta_t, test_different_types)
         DeltaT<float> timer;
         k_sleep(K_MSEC(100));
         const float delta = timer.getDeltaMS();
-        TC_PRINT("Float类型delta: %f ms\n", static_cast<double>(delta));
         zassert_true(delta >= 100.0f, "Float类型Delta应接近100ms");
     }
     
@@ -58,7 +54,6 @@ ZTEST(delta_t, test_different_types)
         DeltaT<int> timer;
         k_sleep(K_MSEC(100));
         const int delta = timer.getDeltaMS();
-        TC_PRINT("Int类型delta: %d ms\n", delta);
         zassert_true(delta >= 100, "Int类型Delta应接近100ms");
     }
 }
@@ -74,8 +69,7 @@ ZTEST(delta_t, test_consecutive_calls)
         k_sleep(K_MSEC(25));
         total += timer.getDeltaMS();
     }
-    
-    TC_PRINT("累计时间: %f ms\n", total);
+
     zassert_true(total >= 100.0, "四次25ms延迟应累计至少100ms");
 }
 

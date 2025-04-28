@@ -25,7 +25,7 @@ ZTEST(pid_controller, test_positional_basic)
     for (int i = 0; i < 50; i++) {
         measurement += output * 0.1f;  // 简单系统响应
         output = pid.compute(10.0f, measurement);
-        TC_PRINT("测量值: %f, 输出: %f\n", static_cast<double>(measurement), static_cast<double>(output));
+        TC_PRINT("measure: %f, output: %f\n", static_cast<double>(measurement), static_cast<double>(output));
     }
 
     // 检查最终结果是否接近目标值
