@@ -3,31 +3,60 @@
 #include <concepts>
 #include <zephyr/kernel.h>
 
-
-template<typename T>
+template <typename T>
 concept Arithmetic = std::integral<T> || std::floating_point<T>;
 
-template<Arithmetic T>
-T getDeltaT(T *last_time) {
-    T current_time = static_cast<T>(k_uptime_get());
-    T delta = current_time - *last_time;
-    if (delta <= static_cast<T>(0)) {
-        delta = static_cast<T>(1);
+static constexpr uint64_t CYCLES_PER_SEC = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
+
+template <Arithmetic T = double>
+class DeltaT
+{
+#ifdef CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER
+    uint64_t last_time_cycles;
+#else
+    uint32_t last_time_cycles;
+#endif
+
+public:
+    DeltaT()
+#ifdef CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER
+        : last_time_cycles(k_cycle_get_64())
+#else
+        : last_time_cycles(k_cycle_get_32())
+#endif
+    {
     }
 
-    *last_time = current_time;
+    T getDeltaMS()
+    {
+#ifdef CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER
+        const uint64_t current_cycles = k_cycle_get_64();
+#else
+        const uint32_t current_cycles = k_cycle_get_32();
+#endif
+        const auto delta_cycles = current_cycles - last_time_cycles;
+        last_time_cycles = current_cycles;
 
-    return delta;
-}
+        double ms_value = static_cast<double>(delta_cycles * 1000.0 / CYCLES_PER_SEC);
 
-template<Arithmetic T>
-T getDeltaTCycles(T *last_time) {
-    uint64_t current_cycles = k_cycle_get_64();
-    T current_time = static_cast<T>(current_cycles);
-    T delta = current_time - *last_time;
-    *last_time = current_time;
+        if constexpr (std::is_integral_v<T>)
+        {
+            return ms_value < 1.0 ? (delta_cycles > 0 ? 1 : 0) : static_cast<T>(ms_value);
+        }
+        else
+        {
+            return static_cast<T>(ms_value);
+        }
+    }
 
-    return delta;
-}
+    void reset()
+    {
+#ifdef CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER
+        last_time_cycles = k_cycle_get_64();
+#else
+        last_time_cycles = k_cycle_get_32();
+#endif
+    }
+};
 
 #endif //DELTAT_HPP
