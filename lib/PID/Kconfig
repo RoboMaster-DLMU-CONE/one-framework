@@ -3,3 +3,19 @@ menuconfig PID
     select DeltaT
     help
         Enable PID lib
+
+if PID
+
+config PID_Derivative_LPF_RC_M1K
+    int "PID Derivative LPF RC value multiply by 1000"
+    default 300
+    help
+        PID Derivative LPF RC value multiply by 1000, for example, 300 will be turned into double 0.3
+
+config PID_Output_LPF_RC_M1K
+    int "PID Output LPF RC value multiply by 1000"
+    default 300
+    help
+        PID Output LPF RC value, 300 will be turned into double 0.3
+
+endif # PID

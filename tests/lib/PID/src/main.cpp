@@ -2,28 +2,23 @@
 #include <zephyr/tc_util.h>
 #include <app/lib/PID.hpp>
 #include <cmath>
-#include <limits>
-
-// 算法标签实例
-static constexpr PositionalTag posAlgo{};
-static constexpr IncrementalTag incAlgo{};
 
 extern "C" {
-
 // 测试基本位置式PID控制器
 
 ZTEST(pid_controller, test_positional_basic)
 {
     // 创建一个简单的位置式PID控制器
-    PIDController<PositionalTag, float, 1.0f, 0.1f, 0.05f> pid(-100.0f, 100.0f);
+    PIDController<PositionalTag, float> pid(1.0f, 0.1f, 0.05f);
 
     float measurement = 0.0f;
     float output = pid.compute(10.0f, measurement);
     zassert_true(output > 0, "位置式PID应该输出正值");
 
     // 进行更多次迭代，观察是否最终接近目标值
-    for (int i = 0; i < 50; i++) {
-        measurement += output * 0.1f;  // 简单系统响应
+    for (int i = 0; i < 50; i++)
+    {
+        measurement += output * 0.1f; // 简单系统响应
         output = pid.compute(10.0f, measurement);
         TC_PRINT("measure: %f, output: %f\n", static_cast<double>(measurement), static_cast<double>(output));
     }
@@ -42,10 +37,10 @@ ZTEST(pid_controller, test_positional_basic)
 ZTEST(pid_controller, test_derivative_on_measurement)
 {
     // 创建带微分先行的PID控制器
-    PIDController<PositionalTag, float, 1.0f, 0.0f, 1.0f,
-                 double, true, false, false, false> pid(-100.0f, 100.0f);
+    PIDController<PositionalTag, float,
+                  WithDerivativeOnMeasurement> pid(1.0f, 0.0f, 1.0f);
 
-    TC_PRINT("first output: %f\n",static_cast<double>(pid.compute(0.0f, 0.0f)));
+    TC_PRINT("first output: %f\n", static_cast<double>(pid.compute(0.0f, 0.0f)));
     k_sleep(K_MSEC(1));
 
     // 设定点突变
@@ -53,10 +48,9 @@ ZTEST(pid_controller, test_derivative_on_measurement)
     TC_PRINT("second output: %f\n", static_cast<double>(output));
 
 
-
     // 使用常规PID进行比较
-    PIDController<PositionalTag, float, 1.0f, 0.0f, 1.0f> regular_pid(-100.0f, 100.0f);
-    TC_PRINT("first output: %f\n",static_cast<double>(regular_pid.compute(0.0f, 0.0f)));
+    PIDController<PositionalTag, float> regular_pid(1.0f, 0.0f, 1.0f);
+    TC_PRINT("first output: %f\n", static_cast<double>(regular_pid.compute(0.0f, 0.0f)));
     k_sleep(K_MSEC(1));
     const float regular_output = regular_pid.compute(10.0f, 0.0f);
     TC_PRINT("second output: %f\n", static_cast<double>(regular_output));
@@ -64,14 +58,14 @@ ZTEST(pid_controller, test_derivative_on_measurement)
 
     // 微分先行应该产生更小的输出跳变
     zassert_true(std::abs(output) < std::abs(regular_output),
-                "微分先行应该减少输出突变");
+                 "微分先行应该减少输出突变");
 }
 
 // 测试整数类型PID
 ZTEST(pid_controller, test_integer_pid)
 {
     // 创建使用整数类型的PID控制器
-    PIDController<PositionalTag, int, 1, 0, 0> pid(-1000, 1000);
+    PIDController<PositionalTag, int> pid(1, 0, 0);
 
     int output = pid.compute(100, 0);
     zassert_equal(output, 100, "整数类型PID计算错误");
@@ -84,9 +78,8 @@ ZTEST(pid_controller, test_integer_pid)
 ZTEST(pid_controller, test_output_filter)
 {
     // 创建带输出滤波的PID控制器
-    PIDController<PositionalTag, float, 1.0f, 0.0f, 0.0f,
-                 double, false, false, true, false,
-                 NoFilter, FirstOrderFilter> pid(-100.0f, 100.0f);
+    PIDController<PositionalTag, float,
+                  WithOutputFilter> pid(1.0f, 0.0f, 0.0f);
 
     // 突变测试
     const float output1 = pid.compute(10.0f, 0.0f);
@@ -94,8 +87,8 @@ ZTEST(pid_controller, test_output_filter)
 
     // 滤波效果应该使第二次输出更接近设定值
     zassert_true(std::abs(output2 - 10.0f) < std::abs(output1 - 10.0f),
-                "滤波应该平滑输出");
+                 "滤波应该平滑输出");
 }
-    ZTEST_SUITE(pid_controller, NULL, NULL, NULL, NULL, NULL);
 
+ZTEST_SUITE(pid_controller, NULL, NULL, NULL, NULL, NULL);
 }
