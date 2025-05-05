@@ -93,11 +93,9 @@ public:
         const ValueType error = ref - measure;
         if constexpr (HasDeadband)
         {
-            if (std::abs(error) > Deadband)
+            if (std::abs(error) <= Deadband)
             {
-                prev_output = 0;
-                ITerm = 0;
-                return 0;
+                return prev_output;
             }
         }
         ValueType dt = deltaT.getDeltaMS();
