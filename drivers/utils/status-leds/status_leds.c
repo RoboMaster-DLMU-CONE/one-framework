@@ -67,6 +67,11 @@ static void error_single_blink_handler(const struct k_timer* timer)
     }
 }
 
+/**
+ * @brief 错误闪烁定时器处理函数
+ *
+ * @param timer k_timer 定时器指针
+ */
 static void error_blink_timer_handler(const struct k_timer* timer)
 {
     const struct device* dev = k_timer_user_data_get(timer);
