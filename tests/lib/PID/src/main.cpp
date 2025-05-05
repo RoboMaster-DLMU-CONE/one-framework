@@ -161,7 +161,7 @@ ZTEST(pid_controller, test_deadband)
     // 测试3：误差大于死区
     output = pid.compute(2.0f, 0.0f); // 误差为2.0，大于死区1.0
     zassert_true(output > 0.0f, "当误差大于死区时，应该有非零输出");
-    TC_PRINT("死区外误差输出: %f\n", static_cast<double>(output));
+    TC_PRINT("%f\n", static_cast<double>(output));
     // 测试4：负误差，小于死区
     prev_output = output;
     output = pid.compute(-0.5f, 0.0f); // 误差为-0.5，绝对值小于死区
@@ -169,12 +169,12 @@ ZTEST(pid_controller, test_deadband)
     // 测试5：负误差，大于死区
     output = pid.compute(-2.0f, 0.0f); // 误差为-2.0，绝对值大于死区
     zassert_true(output < 0.0f, "当负误差大于死区时，应该有非零负输出");
-    TC_PRINT("负死区外误差输出: %f\n", static_cast<double>(output));
+    TC_PRINT("%f\n", static_cast<double>(output));
     // 测试6：误差从死区内到死区外的变化
     pid.compute(0.5f, 0.0f); // 先设置一个死区内的值
     output = pid.compute(5.0f, 0.0f); // 然后突然变到死区外
     zassert_true(output > 0.0f, "从死区内到死区外时应该有正确响应");
-    TC_PRINT("从死区内到死区外的输出: %f\n", static_cast<double>(output));
+    TC_PRINT("%f\n", static_cast<double>(output));
 }
 
 ZTEST_SUITE(pid_controller, NULL, NULL, NULL, NULL, NULL);

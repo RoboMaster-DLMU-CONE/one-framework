@@ -182,6 +182,19 @@ public:
         return output;
     }
 
+    void reset()
+    {
+        ITerm = ValueType{};
+        prev_error = ValueType{};
+        prev_prev_error = ValueType{};
+        prev_ref = ValueType{};
+        prev_measure = ValueType{};
+        prev_derivative = ValueType{};
+        prev_output = ValueType{};
+
+        deltaT.reset();
+    }
+
 private:
     // 滤波器状态变量
     ValueType prev_measure{};
