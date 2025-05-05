@@ -1,5 +1,5 @@
 Sphinx
 exhale
 breathe
-sphinx-rtd-theme
+pydata_sphinx_theme
 sphinx-intl
