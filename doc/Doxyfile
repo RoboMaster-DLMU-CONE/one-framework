@@ -534,7 +534,7 @@ TIMESTAMP              = NO
 # normally produced when WARNINGS is set to YES.
 # The default value is: NO.
 
-EXTRACT_ALL            = NO
+EXTRACT_ALL            = YES
 
 # If the EXTRACT_PRIVATE tag is set to YES, all private members of a class will
 # be included in the documentation.
@@ -660,7 +660,7 @@ CASE_SENSE_NAMES       = SYSTEM
 # scope will be hidden.
 # The default value is: NO.
 
-HIDE_SCOPE_NAMES       = NO
+HIDE_SCOPE_NAMES       = YES
 
 # If the HIDE_COMPOUND_REFERENCE tag is set to NO (default) then Doxygen will
 # append additional text to a page's title, such as Class Reference. If set to
@@ -991,7 +991,7 @@ WARN_LOGFILE           =
 # spaces. See also FILE_PATTERNS and EXTENSION_MAPPING
 # Note: If this tag is empty the current directory is searched.
 
-INPUT                  = _doxygen/main.md _doxygen/groups.dox ../include ../lib ../drivers
+INPUT                  = ../include ../drivers ../lib
 RECURSIVE              = YES
 # This tag can be used to specify the character encoding of the source files
 # that Doxygen parses. Internally Doxygen uses the UTF-8 encoding. Doxygen uses
@@ -1033,6 +1033,8 @@ INPUT_FILE_ENCODING    =
 
 FILE_PATTERNS          = *.c \
                          *.h \
+                         *.cpp \
+                         *.hpp \
                          *.md
 
 # The RECURSIVE tag can be used to specify whether or not subdirectories should
@@ -1144,7 +1146,7 @@ FILTER_PATTERNS        =
 # producing the source files to browse (i.e. when SOURCE_BROWSER is set to YES).
 # The default value is: NO.
 
-FILTER_SOURCE_FILES    = NO
+FILTER_SOURCE_FILES    = YES
 
 # The FILTER_SOURCE_PATTERNS tag can be used to specify source filters per file
 # pattern. A pattern will override the setting for FILTER_PATTERN (if any) and
@@ -1159,7 +1161,7 @@ FILTER_SOURCE_PATTERNS =
 # (index.html). This can be useful if you have a project on for instance GitHub
 # and want to reuse the introduction page also for the Doxygen output.
 
-USE_MDFILE_AS_MAINPAGE = _doxygen/main.md
+USE_MDFILE_AS_MAINPAGE =
 
 # If the IMPLICIT_DIR_DOCS tag is set to YES, any README.md file found in sub-
 # directories of the project's root, is used as the documentation for that sub-

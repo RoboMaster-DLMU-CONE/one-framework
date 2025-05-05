@@ -16,4 +16,3 @@ __pycache__/
 
 # docs
 /doc/_build*
-/doc/api
