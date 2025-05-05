@@ -1,23 +1,17 @@
 #ifndef PID_HPP
 #define PID_HPP
-#include <concepts>
 #include <algorithm>
 #include <app/lib/DeltaT.hpp>
 #include <numeric>
 #include <optional>
 
-template <typename Algorithm>
-concept PositionalAlgorithm = std::same_as<Algorithm, struct PositionalTag>;
 
-template <typename Algorithm>
-concept IncrementalAlgorithm = std::same_as<Algorithm, struct IncrementalTag>;
-
-// 算法标签
-struct PositionalTag
+// 算法
+struct Positional
 {
 };
 
-struct IncrementalTag
+struct Incremental
 {
 };
 
@@ -46,26 +40,27 @@ struct WithOutputLimit // 输出限幅
 {
 };
 
-static constexpr double D_RC = static_cast<double>(CONFIG_PID_Derivative_LPF_RC_M1K) / 1000.0;
-static constexpr double O_RC = static_cast<double>(CONFIG_PID_Output_LPF_RC_M1K) / 1000.0;
-
-
 // 主PID类
 template <
-    typename Algorithm,
-    Arithmetic ValueType,
+    typename Algorithm = Positional,
+    Arithmetic ValueType = float,
     typename... Features
 >
-    requires (PositionalAlgorithm<Algorithm> || IncrementalAlgorithm<Algorithm>)
 class PIDController
 {
     // 特性检查
+    static constexpr bool PositionalPID = std::is_same_v<Algorithm, Positional>;
     static constexpr bool HasDeadband = (std::is_same_v<Features, WithDeadband> || ...);
     static constexpr bool HasIntegralLimit = (std::is_same_v<Features, WithIntegralLimit> || ...);
     static constexpr bool HasDerivativeOnMeasurement = (std::is_same_v<Features, WithDerivativeOnMeasurement> || ...);
     static constexpr bool HasDerivativeFilter = (std::is_same_v<Features, WithDerivativeFilter> || ...);
     static constexpr bool HasOutputFilter = (std::is_same_v<Features, WithOutputFilter> || ...);
     static constexpr bool HasOutputLimit = (std::is_same_v<Features, WithOutputLimit> || ...);
+
+    static constexpr ValueType D_RC = static_cast<ValueType>(CONFIG_PID_Derivative_LPF_RC_M1K) / static_cast<ValueType>(
+        1000.0);
+    static constexpr ValueType O_RC = static_cast<ValueType>(CONFIG_PID_Output_LPF_RC_M1K) / static_cast<ValueType>(
+        1000.0);
     const ValueType MaxOutput;
     const ValueType Deadband;
     const ValueType IntegralLimit;
@@ -76,6 +71,7 @@ class PIDController
     // 状态变量
     ValueType ITerm{};
     ValueType prev_error{};
+    ValueType prev_prev_error{};
     ValueType prev_ref{};
 
 public:
@@ -105,14 +101,19 @@ public:
             }
         }
         ValueType dt = deltaT.getDeltaMS();
+        ValueType P, I{}, D, output;
+        if constexpr (PositionalPID)
+        {
+            P = Kp * error;
+            ITerm = Ki * error * dt;
+        }
+        else
+        {
+            P = Kp * (error - prev_error);
+            ITerm = Ki * error * dt;
+        }
 
-        // 计算核心PID参数
-        ValueType P = Kp * error;
-        ITerm = Ki * error * dt;
-        ValueType I{};
-
-        // 微分计算（支持微分先行）
-        ValueType D = [&]
+        D = [&]
         {
             if constexpr (HasDerivativeOnMeasurement)
             {
@@ -120,9 +121,13 @@ public:
                 prev_measure = measure;
                 return meas_deriv;
             }
-            else
+            else if constexpr (PositionalPID)
             {
                 return (error - prev_error) / dt;
+            }
+            else
+            {
+                return (error - 2 * prev_error + prev_prev_error) / dt;
             }
         }();
         D *= Kd;
@@ -156,7 +161,7 @@ public:
         }
 
         I += ITerm;
-        ValueType output = P + I + D;
+        output = P + I + D;
 
 
         // 应用输出滤波
