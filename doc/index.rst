@@ -11,7 +11,7 @@ One-Framework 文档
     :maxdepth: 1
     :caption: 目录
 
-    texts/build-system/build.rst
+    texts/dev/dev.rst
     texts/api/lib/lib-api.rst
 
 索引和查找
