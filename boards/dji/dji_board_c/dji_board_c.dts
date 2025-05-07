@@ -141,6 +141,43 @@ zephyr_udc0: &usbotg_fs {
 	status = "okay";
 };
 
+&spi1 {
+	pinctrl-0 = <&spi1_sck_pb3 &spi1_miso_pb4 &spi1_mosi_pa7>;
+	pinctrl-names = "default";
+	status = "okay";
+	cs-gpios = <&gpioa 4 GPIO_ACTIVE_LOW>, <&gpiob 0 GPIO_ACTIVE_LOW>;
+
+	bmi088_accel: bmi088_accel@0 {
+		compatible = "bosch,bmi08x-accel";
+		reg = <0>;
+		spi-max-frequency = <10000000>;
+		int-gpios = <&gpioc 4 GPIO_ACTIVE_HIGH>;
+		accel-hz = "400";
+		accel-fs = <16>;
+
+		int1-map-io = <1>; /* 将数据就绪中断映射到INT1 */
+		int1-conf-io = <10>; /* 设置INT1为推挽输出和有效高电平 */
+		int2-map-io = <0>;
+		int2-conf-io = <0>;
+
+		data-sync = <&bmi088_gyro>;
+	};
+
+	bmi088_gyro: bmi088_gyro@1 {
+		compatible = "bosch,bmi08x-gyro";
+		reg = <1>;
+		spi-max-frequency = <10000000>;
+		int-gpios = <&gpioc 5 GPIO_ACTIVE_HIGH>;
+		gyro-hz = "400_47";
+		gyro-fs = <2000>;
+
+		int3-4-map-io = <1>; /* 将数据就绪中断映射到INT3 */
+		int3-4-conf-io = <1>; /* 设置INT3为有效高电平和推挽输出 */
+
+		data-sync;
+	};
+};
+
 &i2c2 {
 	clock-frequency = <I2C_BITRATE_FAST>;
 	pinctrl-0 = <&i2c2_scl_pf1 &i2c2_sda_pf0>;

@@ -5,3 +5,11 @@ config BOARD_DJI_BOARD_C
 config DT_HAS_ZEPHYR_SWDP_GPIO_ENABLED
         bool
         default y
+
+config DT_HAS_BOSCH_BMI08X_ACCEL_ENABLED
+        bool
+        default y
+
+config DT_HAS_BOSCH_BMI08X_GYRO_ENABLED
+        bool
+        default y
