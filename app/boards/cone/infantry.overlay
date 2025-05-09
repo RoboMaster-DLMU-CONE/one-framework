@@ -1,6 +1,6 @@
-// for prts configuration
-#include "prts/displays/ili9341_controller.dtsi"
-#include "prts/boards/dji_board_c.dtsi"
+// for PRTS configuration
+#include "PRTS/displays/ili9341_controller.dtsi"
+#include "PRTS/boards/dji_board_c.dtsi"
 
 
 / {
