@@ -1,6 +1,5 @@
-#include "displays/boards/dji_board_c_lcd.dtsi"
-#include "displays/screens/ili9341.dtsi"
-#include "displays/display-connections.dtsi"
+#include "PRTS/screens/ili9341.dtsi"
+#include "PRTS/boards/dji_board_c_prts.dtsi"
 
 / {
 	chosen {
@@ -16,3 +15,4 @@
 	};
 
 };
+

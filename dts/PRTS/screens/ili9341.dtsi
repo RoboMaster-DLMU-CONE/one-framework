@@ -1,0 +1,20 @@
+/* dts/displays/screens/ili9341.dtsi */
+#include <zephyr/dt-bindings/display/ili9xxx.h>
+
+/ {
+	displays {
+		compatible = "display-controller";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		ili9341: ili9341@0 {
+			compatible = "ilitek,ili9341";
+			mipi-max-frequency = <24000000>;
+			reg = <0>;
+			pixel-format = <ILI9XXX_PIXEL_FORMAT_RGB565>;
+			rotation = <270>;
+			width = <320>;
+			height = <240>;
+		};
+	};
+};
