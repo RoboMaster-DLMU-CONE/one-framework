@@ -177,11 +177,3 @@ zephyr_udc0: &usbotg_fs {
 		data-sync;
 	};
 };
-
-&i2c2 {
-	clock-frequency = <I2C_BITRATE_FAST>;
-	pinctrl-0 = <&i2c2_scl_pf1 &i2c2_sda_pf0>;
-	pinctrl-names = "default";
-	status = "okay";
-};
-

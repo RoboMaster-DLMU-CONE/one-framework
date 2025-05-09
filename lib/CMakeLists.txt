@@ -1,2 +1,2 @@
-add_subdirectory_ifdef(CONFIG_PID PID)
-add_subdirectory_ifdef(CONFIG_DeltaT DeltaT)
+add_subdirectory(utils)
+add_subdirectory(applications)

@@ -1,4 +1,12 @@
+#include "displays/boards/dji_board_c_lcd.dtsi"
+#include "displays/screens/ili9341.dtsi"
+#include "displays/display-connections.dtsi"
+
 / {
+	chosen {
+		zephyr,display = &ili9341;
+	};
+
 	// use dji_board_c
 	status_leds: status-leds {
 		compatible = "status-leds";

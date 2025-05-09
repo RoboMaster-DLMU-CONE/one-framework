@@ -1,0 +1,10 @@
+menuconfig PRTS
+    bool "PRTS"
+    select DISPLAY
+    select LVGL
+    help
+        Enable Plug-in RoboMaster Terminal Screen.
+
+if PRTS
+
+endif # PRTS

@@ -1,0 +1,5 @@
+menu "Applications"
+
+rsource "PRTS/Kconfig"
+
+endmenu

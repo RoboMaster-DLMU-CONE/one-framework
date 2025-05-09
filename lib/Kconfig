@@ -1,6 +1,6 @@
 menu "OneFramework Libraries"
 
-rsource "PID/Kconfig"
-rsource "DeltaT/Kconfig"
+rsource "applications/Kconfig"
+rsource "utils/Kconfig"
 
 endmenu
