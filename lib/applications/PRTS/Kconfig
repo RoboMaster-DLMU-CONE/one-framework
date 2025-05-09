@@ -1,7 +1,14 @@
 menuconfig PRTS
     bool "PRTS"
     select DISPLAY
+    select INPUT
+    select SHELL
     select LVGL
+    select LV_USE_LOG
+    select LV_USE_LABEL
+    select LV_USE_ARC
+    select LV_Z_SHELL
+    select LV_Z_FLUSH_THREAD
     help
         Enable Plug-in RoboMaster Terminal Screen.
 

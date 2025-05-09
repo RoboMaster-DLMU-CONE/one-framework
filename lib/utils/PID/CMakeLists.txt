@@ -1,2 +1,2 @@
 zephyr_library()
-zephyr_library_sources(PID.cpp)
+zephyr_library_sources_ifdef(CONFIG_PID PID.cpp)

@@ -15,5 +15,6 @@ manifest:
       revision: main
       import:
         name-allowlist:
-          - cmsis      # required by the ARM port
-          - hal_stm32  # required by the nucleo_f302r8 board (STM32 based)
+          - cmsis
+          - hal_stm32
+          - lvgl

@@ -1,3 +1,5 @@
+#include <zephyr/dt-bindings/lvgl/lvgl.h>
+
 &mipi_dbi {
 	spi-dev = <&spi2>;
 	dc-gpios = <&gpiof 0 GPIO_ACTIVE_HIGH>;
