@@ -1,0 +1,5 @@
+&mipi_dbi {
+	spi-dev = <&spi2>;
+	dc-gpios = <&gpiof 0 GPIO_ACTIVE_HIGH>;
+	reset-gpios = <&gpiof 1 GPIO_ACTIVE_LOW>;
+};

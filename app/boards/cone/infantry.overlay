@@ -1,10 +1,9 @@
-#include "PRTS/screens/ili9341.dtsi"
-#include "PRTS/boards/dji_board_c_prts.dtsi"
+// for prts configuration
+#include "prts/displays/ili9341_controller.dtsi"
+#include "prts/boards/dji_board_c.dtsi"
+
 
 / {
-	chosen {
-		zephyr,display = &ili9341;
-	};
 
 	// use dji_board_c
 	status_leds: status-leds {
