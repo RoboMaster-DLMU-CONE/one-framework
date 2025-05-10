@@ -66,8 +66,10 @@ Wiki](https://robomaster-dlmu-cone.github.io/one-framework/texts/dev/dev.html)
 
 ## Todo
 
-- [ ] 早期开发
+- [ ] PRTS界面设计
+- [ ] CPU负载计数器
+- [ ] application基类
 
 ## Credit
 
-TBD
+- 感谢 [basic_framework](https://github.com/HNUYueLuRM/basic_framework) 开源的大量 `RoboMaster` 相关代码。

@@ -2,6 +2,9 @@
 #include <zephyr/tc_util.h>
 #include <OF/lib/utils/DeltaT.hpp>
 #include <vector>
+
+using namespace OF;
+
 extern "C" {
 
 // 测试基本计时功能

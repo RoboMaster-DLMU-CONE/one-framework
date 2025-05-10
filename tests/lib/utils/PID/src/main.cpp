@@ -2,6 +2,7 @@
 #include <zephyr/tc_util.h>
 #include <OF/lib/utils/PID.hpp>
 #include <cmath>
+using namespace OF;
 
 extern "C" {
 // 测试基本位置式PID控制器
