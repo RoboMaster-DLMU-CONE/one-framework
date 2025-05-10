@@ -3,12 +3,21 @@
 #include <concepts>
 #include <zephyr/kernel.h>
 
+/**
+ * @namespace OF
+ * @brief One Framework namespace
+ */
 namespace OF {
 template <typename T>
 concept Arithmetic = std::integral<T> || std::floating_point<T>;
 
 static constexpr uint64_t CYCLES_PER_SEC = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
 
+/**
+ * @class DeltaT
+ * @brief Class for measuring time differences
+ * @tparam T The arithmetic type for time values
+ */
 template <Arithmetic T = double> class DeltaT {
 #ifdef CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER
   uint64_t last_time_cycles;
