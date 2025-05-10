@@ -5,4 +5,10 @@ menuconfig UNIT
 
 if UNIT
 
+config MAX_UNIT
+    int "Max Unit Number"
+    default 10
+    help
+        Max number of Units, used for array size in unit registry.
+
 endif # UNIT
