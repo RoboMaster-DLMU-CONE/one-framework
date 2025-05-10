@@ -1,8 +1,8 @@
 menuconfig Unit
-    bool "Unit"
+    bool "UNIT"
     help
         Enable One Framework's Unit in Application Layer.
 
-if Unit
+if UNIT
 
 endif # Unit

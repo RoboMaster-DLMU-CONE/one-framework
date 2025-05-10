@@ -1,6 +1,6 @@
 menuconfig PRTS
     bool "PRTS"
-    select Unit
+    select UNIT
     select DISPLAY
     select INPUT
     select LVGL
