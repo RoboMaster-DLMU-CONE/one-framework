@@ -1,10 +1,11 @@
 menuconfig PRTS
     bool "PRTS"
+    select Unit
     select DISPLAY
     select INPUT
     select LVGL
     help
-        Enable Plug-in RoboMaster Terminal Screen.
+        Enable P.R.T.S. (Plug-in RoboMaster Terminal Screen).
 
 if PRTS
 

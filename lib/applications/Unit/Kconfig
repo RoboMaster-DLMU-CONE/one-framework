@@ -1,0 +1,8 @@
+menuconfig Unit
+    bool "Unit"
+    help
+        Enable One Framework's Unit in Application Layer.
+
+if Unit
+
+endif # Unit

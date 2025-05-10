@@ -1,1 +1,2 @@
+add_subdirectory_ifdef(CONFIG_Unit Unit)
 add_subdirectory_ifdef(CONFIG_PRTS PRTS)
