@@ -6,5 +6,5 @@ one_framework_unit_register(TestUnit1)
 one_framework_unit_register(TestUnit2)
 one_framework_unit_register(ThreadTestUnit)
 
-one_framework_finalize_unit_registration()
+one_framework_init()
 target_sources(app PRIVATE src/main.cpp src/Units/TestUnit1.cpp src/Units/TestUnit2.cpp src/Units/ThreadTestUnit.cpp)
