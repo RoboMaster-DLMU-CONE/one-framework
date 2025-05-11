@@ -38,6 +38,7 @@ namespace OF
     public:
         // 函数指针类型定义
         using UnitRegistrationFunction = void (*)();
+        using UnitFactoryFunction = std::unique_ptr<Unit> (*)();
 
         // 注册单个单元类型
         template <typename UnitType>
@@ -62,7 +63,7 @@ namespace OF
 
     private:
         static std::vector<UnitInfo> g_unitInfos;
-        static std::vector<std::unique_ptr<Unit> (*)(void)> g_unitFactories;
+        static std::vector<UnitFactoryFunction> g_unitFactories;
         static std::vector<UnitRegistrationFunction> g_registrationFunctions;
         static std::unordered_map<std::string_view, size_t> g_nameToUnitMap;
 #if defined(CONFIG_UNIT_THREAD_ANALYZER)
