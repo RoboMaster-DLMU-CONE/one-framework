@@ -6,6 +6,13 @@ namespace OF
     std::vector<std::unique_ptr<Unit> (*)(void)> UnitRegistry::g_unitFactories;
     std::vector<UnitRegistry::UnitRegistrationFunction> UnitRegistry::g_registrationFunctions;
 
+    void UnitRegistry::addRegistrationFunction(const UnitRegistrationFunction func)
+    {
+        static std::vector<UnitRegistrationFunction> registrationFunctions;
+        registrationFunctions.push_back(func);
+        g_registrationFunctions = registrationFunctions;
+    }
+
     void UnitRegistry::initialize()
     {
         g_unitInfos.clear();

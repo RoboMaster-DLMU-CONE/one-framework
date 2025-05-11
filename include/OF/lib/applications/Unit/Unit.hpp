@@ -1,7 +1,10 @@
 #ifndef UNIT_HPP
 #define UNIT_HPP
+#include <atomic>
 #include <cstdint>
 #include <string_view>
+
+#include <zephyr/kernel.h>
 
 namespace OF
 {
@@ -29,7 +32,6 @@ namespace OF
         virtual void run() = 0;
         virtual void cleanup();
 
-        // 新增：获取类型ID的虚函数
         virtual uint32_t getTypeId() const = 0;
 
         static consteval std::string_view name() { return "Unnamed"; }
@@ -37,7 +39,12 @@ namespace OF
         static consteval size_t stackSize() { return 1024; }
         static consteval uint8_t priority() { return 0; }
 
+        k_thread thread;
+
         virtual ~Unit();
+
+    protected:
+        std::atomic<bool> shouldStop{false};
     };
 
     // 代替dynamic_cast的安全类型转换函数

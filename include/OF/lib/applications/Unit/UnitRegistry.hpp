@@ -42,13 +42,7 @@ namespace OF
         }
 
         // 添加注册函数到注册表
-        static void addRegistrationFunction(UnitRegistrationFunction func)
-        {
-            static std::vector<UnitRegistrationFunction> registrationFunctions;
-            registrationFunctions.push_back(func);
-            g_registrationFunctions = registrationFunctions;
-        }
-
+        static void addRegistrationFunction(const UnitRegistrationFunction func);
         // 初始化所有注册的单元
         static void initialize();
         // 标准访问方法
