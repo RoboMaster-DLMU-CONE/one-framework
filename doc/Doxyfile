@@ -885,7 +885,7 @@ QUIET                  = NO
 # Tip: Turn warnings on while writing the documentation.
 # The default value is: YES.
 
-WARNINGS               = YES
+WARNINGS               = NO
 
 # If the WARN_IF_UNDOCUMENTED tag is set to YES then Doxygen will generate
 # warnings for undocumented members. If EXTRACT_ALL is set to YES then this flag
@@ -991,7 +991,7 @@ WARN_LOGFILE           =
 # spaces. See also FILE_PATTERNS and EXTENSION_MAPPING
 # Note: If this tag is empty the current directory is searched.
 
-INPUT                  = ../include ../drivers ../lib
+INPUT                  = ../include ../drivers ../lib mainpage.md
 RECURSIVE              = YES
 # This tag can be used to specify the character encoding of the source files
 # that Doxygen parses. Internally Doxygen uses the UTF-8 encoding. Doxygen uses
@@ -1161,7 +1161,7 @@ FILTER_SOURCE_PATTERNS =
 # (index.html). This can be useful if you have a project on for instance GitHub
 # and want to reuse the introduction page also for the Doxygen output.
 
-USE_MDFILE_AS_MAINPAGE =
+USE_MDFILE_AS_MAINPAGE = mainpage.md
 
 # If the IMPLICIT_DIR_DOCS tag is set to YES, any README.md file found in sub-
 # directories of the project's root, is used as the documentation for that sub-
@@ -1392,7 +1392,7 @@ HTML_FOOTER            =
 # obsolete.
 # This tag requires that the tag GENERATE_HTML is set to YES.
 
-HTML_STYLESHEET        =
+HTML_STYLESHEET        = doxygen-awesome-css/doxygen-awesome.css
 
 # The HTML_EXTRA_STYLESHEET tag can be used to specify additional user-defined
 # cascading style sheets that are included after the standard style sheets
@@ -1433,7 +1433,7 @@ HTML_EXTRA_FILES       =
 # The default value is: AUTO_LIGHT.
 # This tag requires that the tag GENERATE_HTML is set to YES.
 
-HTML_COLORSTYLE        = AUTO_LIGHT
+HTML_COLORSTYLE        = LIGHT
 
 # The HTML_COLORSTYLE_HUE tag controls the color of the HTML output. Doxygen
 # will adjust the colors in the style sheet and background images according to
@@ -1761,7 +1761,7 @@ DISABLE_INDEX          = NO
 # The default value is: YES.
 # This tag requires that the tag GENERATE_HTML is set to YES.
 
-GENERATE_TREEVIEW      = NO
+GENERATE_TREEVIEW      = YES
 
 # When both GENERATE_TREEVIEW and DISABLE_INDEX are set to YES, then the
 # FULL_SIDEBAR option determines if the side bar is limited to only the treeview

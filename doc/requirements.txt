@@ -1,5 +1,0 @@
-Sphinx
-exhale
-breathe
-pydata_sphinx_theme
-sphinx-intl
