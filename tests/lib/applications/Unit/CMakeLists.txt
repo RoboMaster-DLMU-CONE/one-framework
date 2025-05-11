@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20.0)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
-project(OF_lib_ap_Unit_test)
+project(OF_lib_app_Unit_test)
 
 one_framework_unit_register(TestUnit1)
 one_framework_unit_register(TestUnit2)

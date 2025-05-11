@@ -68,6 +68,8 @@ Wiki](https://robomaster-dlmu-cone.github.io/one-framework/texts/dev/dev.html)
 
 - [ ] PRTS界面设计
 - [ ] CPU负载计数器
+- [ ] 电机drivers
+- [ ] Buzzer
 - [x] application基类
 
 ## Credit
