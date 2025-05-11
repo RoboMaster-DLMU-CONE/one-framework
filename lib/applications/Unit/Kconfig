@@ -11,6 +11,6 @@ config UNIT_THREAD_ANALYZER
     select THREAD_ANALYZER
 
     help
-          自动启用Zephyr的线程分析器功能，用于监控每个线程的CPU使用率。
+          自动启用Zephyr的线程分析器功能，用于监控每个线程的CPU、内存使用率。
 
 endif # UNIT

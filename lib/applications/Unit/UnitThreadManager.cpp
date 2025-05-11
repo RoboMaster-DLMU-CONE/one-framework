@@ -47,7 +47,7 @@ namespace OF
                                     K_THREAD_STACK_SIZEOF(thread_stacks[stackIdx]), threadEntryFunction, unit.get(),
                                     nullptr, nullptr, info->priority, 0, K_NO_WAIT);
 
-                    UnitRegistry::registerThreadMapping(unit->name(), i);
+                    UnitRegistry::registerThreadMapping(info->name, i);
 
                     UnitRegistry::updateUnitStatus(i, true);
                     break;

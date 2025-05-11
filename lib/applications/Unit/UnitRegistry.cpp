@@ -42,10 +42,7 @@ namespace OF
 #endif
     }
 
-    std::span<const UnitInfo> UnitRegistry::getUnits()
-    {
-        return g_unitInfos;
-    }
+    std::span<const UnitInfo> UnitRegistry::getUnits() { return g_unitInfos; }
 
     std::vector<std::unique_ptr<Unit>> UnitRegistry::createAllUnits()
     {
@@ -58,16 +55,13 @@ namespace OF
         return units;
     }
 
-    const UnitInfo* UnitRegistry::findUnit(const std::string_view name)
+    std::optional<UnitInfo*> UnitRegistry::findUnit(const std::string_view name)
     {
-        for (const auto& info : g_unitInfos)
+        if (const auto it = g_nameToUnitMap.find(name); it != g_nameToUnitMap.end())
         {
-            if (info.name == name)
-            {
-                return &info;
-            }
+            return &g_unitInfos[it->second];
         }
-        return nullptr;
+        return std::nullopt;
     }
 
     void UnitRegistry::updateUnitStatus(const size_t idx, const bool running)
@@ -112,7 +106,8 @@ namespace OF
             cpuUsage = info->utilization; // 直接使用Zephyr提供的利用率值
 #elif defined(CONFIG_SCHED_THREAD_USAGE)
             // 如果只启用了线程使用率追踪
-            if (info->usage.execution_cycles > 0) {
+            if (info->usage.execution_cycles > 0)
+            {
                 cpuUsage = (uint32_t)((info->usage.total_cycles * 100) / info->usage.execution_cycles);
             }
 #endif

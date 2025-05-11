@@ -2,9 +2,10 @@
 #define UNITREGISTRY_HPP
 
 #include <memory>
+#include <optional>
 #include <span>
-#include <vector>
 #include <unordered_map>
+#include <vector>
 #include "Unit.hpp"
 
 #if defined(CONFIG_UNIT_THREAD_ANALYZER)
@@ -54,7 +55,7 @@ namespace OF
         static std::span<const UnitInfo> getUnits();
         static std::vector<std::unique_ptr<Unit>> createAllUnits();
         static void registerThreadMapping(std::string_view name, size_t unitIndex);
-        static const UnitInfo* findUnit(std::string_view name);
+        static std::optional<UnitInfo*> findUnit(std::string_view name);
         static void updateUnitStatus(size_t idx, bool running);
         static void updateUnitStats(size_t idx, uint32_t cpu, uint32_t mem);
         static void updateAllUnitStats();

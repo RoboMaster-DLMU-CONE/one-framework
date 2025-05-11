@@ -76,18 +76,18 @@ ZTEST(unit_registry_tests, test_registration)
 // 测试通过名称查找单元
 ZTEST(unit_registry_tests, test_find_unit)
 {
-    const auto* unit1 = UnitRegistry::findUnit("TestUnit1");
-    const auto* unit2 = UnitRegistry::findUnit("TestUnit2");
-    const auto* notFound = UnitRegistry::findUnit("NonexistentUnit");
+    const auto unit1 = UnitRegistry::findUnit("TestUnit1");
+    const auto unit2 = UnitRegistry::findUnit("TestUnit2");
+    const auto notFound = UnitRegistry::findUnit("NonexistentUnit");
 
-    zassert_not_null(unit1, "Failed to find Unit1 by name");
-    zassert_not_null(unit2, "Failed to find Unit2 by name");
-    zassert_equal(notFound, nullptr, "Should return nullptr for missing units");
+    zassert_not_equal(unit1, std::nullopt, "Failed to find Unit1 by name");
+    zassert_not_equal(unit2, std::nullopt, "Failed to find Unit2 by name");
+    zassert_equal(notFound, std::nullopt, "Should return nullptr for missing units");
 
     if (unit1)
-        zassert_true(unit1->name == "TestUnit1", "Unit1 name incorrect");
+        zassert_true(unit1.value()->name == "TestUnit1", "Unit1 name incorrect");
     if (unit2)
-        zassert_true(unit2->name == "TestUnit2", "Unit2 name incorrect");
+        zassert_true(unit2.value()->name == "TestUnit2", "Unit2 name incorrect");
 }
 
 // 测试创建单元实例
@@ -198,7 +198,6 @@ ZTEST(thread_manager_tests, test_empty_units_list)
 
 static void* common_test_setup(void)
 {
-    // StartUnits()内部已有初始化保护，可以安全重复调用
     StartUnits();
     return nullptr;
 }
