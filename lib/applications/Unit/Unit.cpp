@@ -9,12 +9,20 @@ namespace OF
 
     Unit::~Unit() = default;
 
+    static std::vector<std::unique_ptr<Unit>> g_units;
+
     void StartUnits()
     {
+        static bool initialized = false;
+        if (initialized)
+        {
+            return;
+        }
+
         UnitRegistry::initialize();
-        const auto units = UnitRegistry::createAllUnits();
-        UnitThreadManager::initializeThreads(units);
-        static std::vector<std::unique_ptr<Unit>> g_units = units;
+        g_units = std::move(UnitRegistry::createAllUnits());
+        UnitThreadManager::initializeThreads(g_units);
+        initialized = true;
     }
 
 

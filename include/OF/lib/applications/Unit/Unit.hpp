@@ -60,7 +60,7 @@ namespace OF
         return (unit && unit->getTypeId() == T::TYPE_ID) ? static_cast<const T*>(unit) : nullptr;
     }
 
-    static void StartUnits();
+    void StartUnits();
 
 } // namespace OF
 
