@@ -13,6 +13,13 @@ namespace OF
 
     void UnitRegistry::initialize()
     {
+        if (g_unitInfos.size() > CONFIG_MAX_UNIT)
+        {
+            printk("FATAL ERROR: Number of registered units (%u) exceeds CONFIG_MAX_UNIT (%d).\n", g_unitInfos.size(),
+                   CONFIG_MAX_UNIT);
+            k_oops();
+        }
+
         g_unitInfos.clear();
         g_unitFactories.clear();
 
