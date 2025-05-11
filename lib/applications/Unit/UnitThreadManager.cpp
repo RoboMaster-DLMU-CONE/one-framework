@@ -1,5 +1,6 @@
 #include <OF/lib/applications/Unit/UnitRegistry.hpp>
 #include <OF/lib/applications/Unit/UnitThreadManager.hpp>
+
 namespace OF
 {
 #ifndef OF_TOTAL_REGISTERED_UNITS
@@ -46,7 +47,8 @@ namespace OF
                                     K_THREAD_STACK_SIZEOF(thread_stacks[stackIdx]), threadEntryFunction, unit.get(),
                                     nullptr, nullptr, info->priority, 0, K_NO_WAIT);
 
-                    // 更新状态
+                    UnitRegistry::registerThreadMapping(unit->name(), i);
+
                     UnitRegistry::updateUnitStatus(i, true);
                     break;
                 }

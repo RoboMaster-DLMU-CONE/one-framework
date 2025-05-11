@@ -49,7 +49,8 @@ namespace OF
     };
 
     template <typename T>
-    concept UnitDeriveConcept = std::derived_from<T, Unit> && requires {
+    concept UnitDeriveConcept = std::derived_from<T, Unit> && requires
+    {
         { T::name() } -> std::convertible_to<std::string_view>;
         { T::description() } -> std::convertible_to<std::string_view>;
         { T::stackSize() } -> std::convertible_to<size_t>;

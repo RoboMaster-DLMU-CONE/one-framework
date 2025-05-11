@@ -4,7 +4,12 @@
 #include <memory>
 #include <span>
 #include <vector>
+#include <unordered_map>
 #include "Unit.hpp"
+
+#if defined(CONFIG_UNIT_THREAD_ANALYZER)
+#include <zephyr/debug/thread_analyzer.h>
+#endif
 
 #define OF_CONCAT_INTERNAL(x, y) x##y
 #define OF_CONCAT(x, y) OF_CONCAT_INTERNAL(x, y)
@@ -48,17 +53,24 @@ namespace OF
         // 标准访问方法
         static std::span<const UnitInfo> getUnits();
         static std::vector<std::unique_ptr<Unit>> createAllUnits();
+        static void registerThreadMapping(std::string_view name, size_t unitIndex);
         static const UnitInfo* findUnit(std::string_view name);
         static void updateUnitStatus(size_t idx, bool running);
         static void updateUnitStats(size_t idx, uint32_t cpu, uint32_t mem);
+        static void updateAllUnitStats();
 
     private:
         static std::vector<UnitInfo> g_unitInfos;
         static std::vector<std::unique_ptr<Unit> (*)(void)> g_unitFactories;
         static std::vector<UnitRegistrationFunction> g_registrationFunctions;
+        static std::unordered_map<std::string_view, size_t> g_nameToUnitMap;
+#if defined(CONFIG_UNIT_THREAD_ANALYZER)
+        // 线程统计回调
+        static void threadStatCallback(thread_analyzer_info* info);
+#endif
     };
 
-// 类型ID宏
+    // 类型ID宏
 #define DEFINE_UNIT_TYPE(TypeId)                                                                                       \
     static constexpr uint32_t TYPE_ID = TypeId;                                                                        \
     uint32_t getTypeId() const override { return TYPE_ID; }
@@ -77,7 +89,7 @@ namespace OF
     static constexpr uint32_t TYPE_ID = typeNameHash(#TypeName);                                                       \
     uint32_t getTypeId() const override { return TYPE_ID; }
 
-// 简化版单元注册宏
+    // 简化版单元注册宏
 #define REGISTER_UNIT(UnitClass)                                                                                       \
     namespace                                                                                                          \
     {                                                                                                                  \
