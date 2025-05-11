@@ -12,7 +12,7 @@
 namespace OF
 {
     // 单元特性
-    template <typename T>
+    template <UnitDeriveConcept T>
     struct UnitTraits
     {
         static constexpr UnitInfo info{.name = T::name(),

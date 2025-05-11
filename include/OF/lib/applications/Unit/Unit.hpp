@@ -16,7 +16,7 @@ namespace OF
         uint32_t stackSize;
         uint8_t priority;
         bool isRunning;
-        uint32_t typeId; // 新增：类型ID
+        uint32_t typeId;
 
         struct RuntimeStats
         {
@@ -24,6 +24,7 @@ namespace OF
             uint32_t memoryUsage;
         } stats;
     };
+
 
     class Unit
     {
@@ -45,6 +46,16 @@ namespace OF
 
     protected:
         std::atomic<bool> shouldStop{false};
+    };
+
+    template <typename T>
+    concept UnitDeriveConcept = std::derived_from<T, Unit> && requires {
+        { T::name() } -> std::convertible_to<std::string_view>;
+        { T::description() } -> std::convertible_to<std::string_view>;
+        { T::stackSize() } -> std::convertible_to<size_t>;
+        { T::priority() } -> std::convertible_to<uint8_t>;
+        { T::TYPE_ID } -> std::convertible_to<uint32_t>;
+        requires std::is_default_constructible_v<T>;
     };
 
     // 代替dynamic_cast的安全类型转换函数

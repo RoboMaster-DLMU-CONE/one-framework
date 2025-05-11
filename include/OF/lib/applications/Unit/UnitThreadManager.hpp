@@ -14,8 +14,6 @@ namespace OF
         static void initializeThreads(const std::vector<std::unique_ptr<Unit>>& units);
 
     private:
-        static void createThreadForUnit(Unit* unit, const UnitInfo& info);
-
         static void threadEntryFunction(void* unit, void*, void*);
     };
 } // namespace OF
