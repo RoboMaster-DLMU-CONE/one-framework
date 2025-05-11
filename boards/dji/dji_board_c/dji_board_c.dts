@@ -8,6 +8,11 @@
 	model = "DJI RoboMaster Development Board C";
 	compatible = "st";
 
+	dwt: dwt@0 {
+		compatible = "arm,dwt";
+		status = "okay";
+	};
+
 	chosen {
 		zephyr,console = &usart1;
 		zephyr,shell-uart = &usart1;
@@ -15,6 +20,7 @@
 		zephyr,flash = &flash0;
 		zephyr,ccm = &ccm0;
 		zephyr,canbus = &can1;
+		zephyr,cpu-load-counter = &dwt;
 	};
 
 	leds: leds {
