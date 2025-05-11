@@ -1,8 +1,10 @@
 #include <OF/lib/applications/Unit/Unit.hpp>
-namespace OF {
 
-void Unit::cleanup() {}
+namespace OF
+{
 
-Unit::~Unit() = default;
+    void Unit::cleanup() {}
+
+    Unit::~Unit() = default;
 
 } // namespace OF

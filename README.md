@@ -68,7 +68,7 @@ Wiki](https://robomaster-dlmu-cone.github.io/one-framework/texts/dev/dev.html)
 
 - [ ] PRTS界面设计
 - [ ] CPU负载计数器
-- [ ] application基类
+- [x] application基类
 
 ## Credit
 
