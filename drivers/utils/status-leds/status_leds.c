@@ -1,10 +1,10 @@
 #define DT_DRV_COMPAT status_leds
 
-#include <zephyr/kernel.h>
-#include <zephyr/device.h>
-#include <zephyr/drivers/led.h>
-#include <zephyr/devicetree.h>
 #include <OF/drivers/utils/status_leds.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/led.h>
+#include <zephyr/kernel.h>
 
 #include "zephyr/logging/log.h"
 
@@ -96,8 +96,7 @@ static void error_blink_timer_handler(const struct k_timer* timer)
             blink_period_ms = MAX(blink_period_ms, 50);
 
             // 启动单次闪烁定时器
-            k_timer_start(&data->error_single_blink_timer,
-                          K_NO_WAIT, K_MSEC(blink_period_ms));
+            k_timer_start(&data->error_single_blink_timer, K_NO_WAIT, K_MSEC(blink_period_ms));
         }
     }
 }
@@ -139,8 +138,7 @@ static int status_leds_set_error_blink(const struct device* dev, const uint8_t t
 
     led_off(config->leds, config->error_led_index);
 
-    k_timer_start(&data->error_blink_timer, K_NO_WAIT,
-                  K_MSEC(config->error_interval_ms));
+    k_timer_start(&data->error_blink_timer, K_NO_WAIT, K_MSEC(config->error_interval_ms));
 
     return 0;
 }
@@ -209,22 +207,16 @@ static int status_leds_init(const struct device* dev)
     return 0;
 }
 
-#define STATUS_LEDS_DEFINE(inst)                                \
-    static struct status_leds_data data##inst;                  \
-    static struct status_leds_config config##inst = {           \
-        .leds = DEVICE_DT_GET(DT_INST_PHANDLE(inst, leds)),     \
-        .heartbeat_led_index = DT_INST_PROP_OR(inst, heartbeat_led_index, 0U),                                \
-        .error_led_index = DT_INST_PROP_OR(inst, error_led_index, 0U),                                \
-        .heartbeat_blink_interval_ms = CONFIG_HEARTBEAT_LED_BLINK_INTERVAL,     \
-        .error_interval_ms = CONFIG_ERROR_LED_INTERVAL,         \
-    };                                                          \
-    DEVICE_DT_INST_DEFINE(inst,                                 \
-                          status_leds_init,                     \
-                          NULL,                                 \
-                          &data##inst,                          \
-                          &config##inst,                        \
-                          POST_KERNEL,                          \
-                          CONFIG_STATUS_LEDS_INIT_PRIORITY,     \
-                          &status_leds_funcs);
+#define STATUS_LEDS_DEFINE(inst)                                                                                       \
+    static struct status_leds_data data##inst;                                                                         \
+    static struct status_leds_config config##inst = {                                                                  \
+        .leds = DEVICE_DT_GET(DT_INST_PHANDLE(inst, leds)),                                                            \
+        .heartbeat_led_index = DT_INST_PROP_OR(inst, heartbeat_led_index, 0U),                                         \
+        .error_led_index = DT_INST_PROP_OR(inst, error_led_index, 0U),                                                 \
+        .heartbeat_blink_interval_ms = CONFIG_HEARTBEAT_LED_BLINK_INTERVAL,                                            \
+        .error_interval_ms = CONFIG_ERROR_LED_INTERVAL,                                                                \
+    };                                                                                                                 \
+    DEVICE_DT_INST_DEFINE(inst, status_leds_init, NULL, &data##inst, &config##inst, POST_KERNEL,                       \
+                          CONFIG_STATUS_LEDS_INIT_PRIORITY, &status_leds_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(STATUS_LEDS_DEFINE)

@@ -1,7 +1,7 @@
-#include <zephyr/ztest.h>
-#include <zephyr/tc_util.h>
 #include <OF/lib/utils/PID.hpp>
 #include <cmath>
+#include <zephyr/tc_util.h>
+#include <zephyr/ztest.h>
 using namespace OF;
 
 extern "C" {
@@ -38,8 +38,7 @@ ZTEST(pid_controller, test_positional_basic)
 ZTEST(pid_controller, test_derivative_on_measurement)
 {
     // 创建带微分先行的PID控制器
-    PIDController<Positional, float,
-                  WithDerivativeOnMeasurement> pid(1.0f, 0.0f, 1.0f);
+    PIDController<Positional, float, WithDerivativeOnMeasurement> pid(1.0f, 0.0f, 1.0f);
 
     TC_PRINT("first output: %f\n", static_cast<double>(pid.compute(0.0f, 0.0f)));
     k_sleep(K_MSEC(1));
@@ -58,8 +57,7 @@ ZTEST(pid_controller, test_derivative_on_measurement)
 
 
     // 微分先行应该产生更小的输出跳变
-    zassert_true(std::abs(output) < std::abs(regular_output),
-                 "微分先行应该减少输出突变");
+    zassert_true(std::abs(output) < std::abs(regular_output), "微分先行应该减少输出突变");
 }
 
 // 测试整数类型PID
@@ -79,16 +77,14 @@ ZTEST(pid_controller, test_integer_pid)
 ZTEST(pid_controller, test_output_filter)
 {
     // 创建带输出滤波的PID控制器
-    PIDController<Positional, float,
-                  WithOutputFilter> pid(1.0f, 0.0f, 0.0f);
+    PIDController<Positional, float, WithOutputFilter> pid(1.0f, 0.0f, 0.0f);
 
     // 突变测试
     const float output1 = pid.compute(10.0f, 0.0f);
     const float output2 = pid.compute(10.0f, 0.0f);
 
     // 滤波效果应该使第二次输出更接近设定值
-    zassert_true(std::abs(output2 - 10.0f) < std::abs(output1 - 10.0f),
-                 "滤波应该平滑输出");
+    zassert_true(std::abs(output2 - 10.0f) < std::abs(output1 - 10.0f), "滤波应该平滑输出");
 }
 
 // 测试基本增量式PID控制器
