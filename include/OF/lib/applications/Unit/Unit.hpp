@@ -60,6 +60,8 @@ namespace OF
         return (unit && unit->getTypeId() == T::TYPE_ID) ? static_cast<const T*>(unit) : nullptr;
     }
 
+    static void StartUnits();
+
 } // namespace OF
 
 #endif // UNIT_HPP

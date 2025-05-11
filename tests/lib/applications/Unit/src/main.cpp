@@ -227,7 +227,7 @@ ZTEST(thread_manager_tests, test_empty_units_list)
 }
 
 // 线程管理器测试套件
-static void* thread_manager_setup(void)
+static void* thread_manager_setup()
 {
     UnitRegistry::initialize();
     return nullptr;
@@ -240,7 +240,7 @@ ZTEST_SUITE(unit_tests, nullptr, NULL, NULL, NULL, NULL);
 void* initializeUnitRegistry()
 {
     UnitRegistry::initialize();
-    // 可以添加调试输出
+
     const auto units = UnitRegistry::getUnits();
     TC_PRINT("Found %zu registered units\n", units.size());
 
