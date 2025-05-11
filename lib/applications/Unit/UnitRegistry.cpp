@@ -8,9 +8,7 @@ namespace OF
 
     void UnitRegistry::addRegistrationFunction(const UnitRegistrationFunction func)
     {
-        static std::vector<UnitRegistrationFunction> registrationFunctions;
-        registrationFunctions.push_back(func);
-        g_registrationFunctions = registrationFunctions;
+        g_registrationFunctions.push_back(func);
     }
 
     void UnitRegistry::initialize()
