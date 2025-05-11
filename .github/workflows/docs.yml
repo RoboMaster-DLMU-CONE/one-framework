@@ -22,7 +22,6 @@ jobs:
           wget --no-verbose "https://github.com/doxygen/doxygen/releases/download/Release_1_13_2/doxygen-1.13.2.linux.bin.tar.gz"
           tar xf doxygen-1.13.2.linux.bin.tar.gz
           echo "${PWD}/doxygen-1.13.2/bin" >> $GITHUB_PATH
-          pip install -r doc/requirements.txt
 
       - name: Build
         run: |

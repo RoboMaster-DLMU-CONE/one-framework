@@ -62,9 +62,7 @@ Wiki](https://robomaster-dlmu-cone.github.io/one-framework/texts/dev/dev.html)
 
 ## Wiki
 
-- 使用[语雀文档](https://conestudio.yuque.com/rpzak7/ppc4aw),[邀请链接](https://conestudio.yuque.com/g/rpzak7/ppc4aw/collaborator/join?token=aGQsmQPPbSugVjmb&source=book_collaborator)
-
-- 使用 `Doxygen` 自动生成API文档到 `Github Page`。在 `doc`目录下可以找到 `Doxyfile` 。
+- 使用 `Doxygen` 自动生成API文档到 `Github Page`。在 `doc`目录下可以找到所有文档 。
 
 ## Todo
 
