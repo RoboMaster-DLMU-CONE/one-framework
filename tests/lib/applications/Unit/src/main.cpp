@@ -46,7 +46,7 @@ ZTEST(unit_tests, test_unit_metadata)
 ZTEST(unit_registry_tests, test_registration)
 {
     // 获取运行时注册的单元
-    auto units = UnitRegistry::getUnits();
+    const auto units = UnitRegistry::getUnits();
 
     // 验证注册的单元数量
     zassert_equal(units.size(), 2, "Registry should have 2 units");

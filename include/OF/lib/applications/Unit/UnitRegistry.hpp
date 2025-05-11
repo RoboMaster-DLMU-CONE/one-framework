@@ -50,18 +50,7 @@ namespace OF
         }
 
         // 初始化所有注册的单元
-        static void initialize()
-        {
-            g_unitInfos.clear();
-            g_unitFactories.clear();
-
-            // 执行所有注册函数
-            for (const auto func : g_registrationFunctions)
-            {
-                func();
-            }
-        }
-
+        static void initialize();
         // 标准访问方法
         static std::span<const UnitInfo> getUnits();
         static std::vector<std::unique_ptr<Unit>> createAllUnits();

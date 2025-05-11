@@ -6,6 +6,17 @@ namespace OF
     std::vector<std::unique_ptr<Unit> (*)(void)> UnitRegistry::g_unitFactories;
     std::vector<UnitRegistry::UnitRegistrationFunction> UnitRegistry::g_registrationFunctions;
 
+    void UnitRegistry::initialize()
+    {
+        g_unitInfos.clear();
+        g_unitFactories.clear();
+
+        // 执行所有注册函数
+        for (const auto func : g_registrationFunctions)
+        {
+            func();
+        }
+    }
     std::span<const UnitInfo> UnitRegistry::getUnits() { return g_unitInfos; }
 
     std::vector<std::unique_ptr<Unit>> UnitRegistry::createAllUnits()
@@ -19,7 +30,7 @@ namespace OF
         return units;
     }
 
-    const UnitInfo* UnitRegistry::findUnit(std::string_view name)
+    const UnitInfo* UnitRegistry::findUnit(const std::string_view name)
     {
         for (const auto& info : g_unitInfos)
         {
@@ -31,7 +42,7 @@ namespace OF
         return nullptr;
     }
 
-    void UnitRegistry::updateUnitStatus(size_t idx, bool running)
+    void UnitRegistry::updateUnitStatus(const size_t idx, const bool running)
     {
         if (idx < g_unitInfos.size())
         {
@@ -39,7 +50,7 @@ namespace OF
         }
     }
 
-    void UnitRegistry::updateUnitStats(size_t idx, uint32_t cpu, uint32_t mem)
+    void UnitRegistry::updateUnitStats(const size_t idx, const uint32_t cpu, const uint32_t mem)
     {
         if (idx < g_unitInfos.size())
         {
