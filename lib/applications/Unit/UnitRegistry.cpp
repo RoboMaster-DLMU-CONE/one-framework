@@ -3,7 +3,7 @@
 namespace OF
 {
     std::vector<UnitInfo> UnitRegistry::g_unitInfos;
-    std::vector<std::unique_ptr<Unit> (*)(void)> UnitRegistry::g_unitFactories;
+    std::vector<std::unique_ptr<Unit> (*)()> UnitRegistry::g_unitFactories;
     std::vector<UnitRegistry::UnitRegistrationFunction> UnitRegistry::g_registrationFunctions;
 
     void UnitRegistry::addRegistrationFunction(const UnitRegistrationFunction func)
@@ -13,12 +13,10 @@ namespace OF
 
     void UnitRegistry::initialize()
     {
-        if (g_unitInfos.size() > CONFIG_MAX_UNIT)
-        {
-            printk("FATAL ERROR: Number of registered units (%u) exceeds CONFIG_MAX_UNIT (%d).\n", g_unitInfos.size(),
-                   CONFIG_MAX_UNIT);
-            k_oops();
-        }
+#ifndef OF_TOTAL_REGISTERED_UNITS
+#error "OF_TOTAL_REGISTERED_UNITS is not defined by CMake. Check CMake configuration."
+#endif
+
 
         g_unitInfos.clear();
         g_unitFactories.clear();

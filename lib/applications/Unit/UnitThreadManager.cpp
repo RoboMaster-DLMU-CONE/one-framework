@@ -2,17 +2,16 @@
 #include <OF/lib/applications/Unit/UnitThreadManager.hpp>
 namespace OF
 {
-    K_THREAD_STACK_ARRAY_DEFINE(thread_stacks, CONFIG_MAX_UNIT, CONFIG_MAIN_STACK_SIZE);
-    static std::array<bool, CONFIG_MAX_UNIT> stack_used = {false};
+#ifndef OF_TOTAL_REGISTERED_UNITS
+#error "OF_TOTAL_REGISTERED_UNITS is not defined by CMake. Check CMake configuration."
+#endif
+
+    K_THREAD_STACK_ARRAY_DEFINE(thread_stacks, OF_TOTAL_REGISTERED_UNITS, CONFIG_MAIN_STACK_SIZE);
+    static std::array<bool, OF_TOTAL_REGISTERED_UNITS> stack_used = {false};
 
     void UnitThreadManager::initializeThreads(const std::vector<std::unique_ptr<Unit>>& units)
     {
-        size_t unitCount = units.size();
-        if (unitCount > CONFIG_MAX_UNIT)
-        {
-            // 超出最大支持线程数量
-            unitCount = CONFIG_MAX_UNIT;
-        }
+        const size_t unitCount = units.size();
         const auto unitInfos = UnitRegistry::getUnits();
         for (size_t i = 0; i < unitCount; i++)
         {
@@ -35,7 +34,7 @@ namespace OF
             // 初始化单元
             unit->init();
             // 找到可用栈
-            for (size_t stackIdx = 0; stackIdx < CONFIG_MAX_UNIT; stackIdx++)
+            for (size_t stackIdx = 0; stackIdx < OF_TOTAL_REGISTERED_UNITS; stackIdx++)
             {
                 if (!stack_used[stackIdx])
                 {
