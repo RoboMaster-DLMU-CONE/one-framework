@@ -48,31 +48,22 @@ function(one_framework_finalize_heap_size)
     # 添加基础堆大小
     math(EXPR FINAL_HEAP_SIZE "${OF_TOTAL_HEAP_SIZE} + 1024")
 
-    message(STATUS "设置最终堆大小: ${FINAL_HEAP_SIZE} 字节")
+    message(STATUS "计算得到需要的堆大小: ${FINAL_HEAP_SIZE} 字节")
 
-    # 检查是否已经定义了 CONFIG_HEAP_MEM_POOL_SIZE
-    execute_process(
-            COMMAND ${CMAKE_C_COMPILER} -dM -E -x c /dev/null
-            COMMAND grep -q CONFIG_HEAP_MEM_POOL_SIZE
-            RESULT_VARIABLE NOT_DEFINED
-            OUTPUT_QUIET
-            ERROR_QUIET
-    )
+    # 使用 CONF_FILE 或 CONFIG 选项设置堆大小
+    # 而不是尝试通过 compiler definitions 重定义
+    if (DEFINED CONFIG_HEAP_MEM_POOL_SIZE)
+        math(EXPR NEW_SIZE "${CONFIG_HEAP_MEM_POOL_SIZE} + ${FINAL_HEAP_SIZE}")
+        message(STATUS "增加Kconfig现有堆大小: ${CONFIG_HEAP_MEM_POOL_SIZE} + ${FINAL_HEAP_SIZE} = ${NEW_SIZE} 字节")
+        set(CONFIG_HEAP_MEM_POOL_SIZE ${NEW_SIZE} CACHE STRING "Heap memory pool size" FORCE)
 
-    if (NOT_DEFINED EQUAL 0)
-        # 如果已定义，获取当前值并加上 FINAL_HEAP_SIZE
-        execute_process(
-                COMMAND ${CMAKE_C_COMPILER} -dM -E -x c /dev/null
-                COMMAND grep CONFIG_HEAP_MEM_POOL_SIZE
-                OUTPUT_VARIABLE CURRENT_DEF
-                OUTPUT_STRIP_TRAILING_WHITESPACE
-        )
-        string(REGEX REPLACE "^#define CONFIG_HEAP_MEM_POOL_SIZE ([0-9]+).*$" "\\1" CURRENT_SIZE "${CURRENT_DEF}")
-        math(EXPR NEW_SIZE "${CURRENT_SIZE} + ${FINAL_HEAP_SIZE}")
-        message(STATUS "增加现有堆大小: ${CURRENT_SIZE} + ${FINAL_HEAP_SIZE} = ${NEW_SIZE} 字节")
-        zephyr_compile_definitions(CONFIG_HEAP_MEM_POOL_SIZE=${NEW_SIZE})
+        # 为Zephyr的构建系统设置这个值
+        set(CONFIG_HEAP_MEM_POOL_SIZE ${NEW_SIZE} PARENT_SCOPE)
     else ()
-        # 如果未定义，直接设置
-        zephyr_compile_definitions(CONFIG_HEAP_MEM_POOL_SIZE=${FINAL_HEAP_SIZE})
+        message(STATUS "设置堆大小: ${FINAL_HEAP_SIZE} 字节")
+        set(CONFIG_HEAP_MEM_POOL_SIZE ${FINAL_HEAP_SIZE} CACHE STRING "Heap memory pool size" FORCE)
+
+        # 为Zephyr的构建系统设置这个值
+        set(CONFIG_HEAP_MEM_POOL_SIZE ${FINAL_HEAP_SIZE} PARENT_SCOPE)
     endif ()
 endfunction()
