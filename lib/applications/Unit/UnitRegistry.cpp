@@ -1,7 +1,10 @@
 // Copyright (c) 2025. MoonFeather
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include "OF/lib/applications/Unit/UnitRegistry.hpp"
+#include <OF/lib/applications/Unit/UnitRegistry.hpp>
+#include <zephyr/logging/log.h>
+
+LOG_MODULE_REGISTER(unit_registry, CONFIG_UNIT_LOG_LEVEL);
 
 namespace OF
 {
@@ -54,6 +57,12 @@ namespace OF
         for (const auto func : g_registrationFunctions)
         {
             func();
+        }
+        if (g_unitInfos.size() != OF_TOTAL_REGISTERED_UNITS)
+        {
+            LOG_ERR("Unit实例数量(%zu)与CMake中注册的数量(%d)不匹配。", g_unitInfos.size(), OF_TOTAL_REGISTERED_UNITS);
+            k_panic();
+            return;
         }
 #ifdef CONFIG_UNIT_THREAD_ANALYZER
         k_work_init_delayable(&stats_work, stats_work_handler);

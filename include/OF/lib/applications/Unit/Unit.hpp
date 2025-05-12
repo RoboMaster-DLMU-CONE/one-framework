@@ -30,7 +30,8 @@ namespace OF
         {
             uint32_t cpuUsage; //!< CPU 使用率
             uint32_t memoryUsage; //!< 内存使用量
-        } stats; //!< 运行时统计信息
+        };
+        RuntimeStats stats; //!< 运行时统计信息
     };
 
 

@@ -22,7 +22,6 @@ namespace OF
     /**
      * @brief 全局单元实例向量。
      * @details 存储所有通过 UnitRegistry 创建的单元实例的 unique_ptr。
-     * @ingroup app-Unit
      */
     static std::vector<std::unique_ptr<Unit>> g_units;
 
