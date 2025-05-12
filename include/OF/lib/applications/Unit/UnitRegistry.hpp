@@ -94,7 +94,7 @@ namespace OF
          *
          * @param func 指向注册函数的指针
          */
-        static void addRegistrationFunction(const UnitRegistrationFunction func);
+        static void addRegistrationFunction(UnitRegistrationFunction func);
 
         /**
          * @brief 初始化所有注册的单元
