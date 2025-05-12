@@ -68,21 +68,25 @@ namespace OF
         k_work_init_delayable(&stats_work, stats_work_handler);
         k_work_schedule(&stats_work, K_SECONDS(5));
 #endif
+
+        // 清理注册函数列表
+        g_registrationFunctions.clear();
+        g_registrationFunctions.shrink_to_fit();
     }
 
     /**
      * @brief 获取所有注册的单元信息
      *
-     * @return std::span<const UnitInfo> 包含所有注册的Unit信息的只读视图
+     * @return std::span<UnitInfo> 包含所有注册的Unit信息的视图
      */
-    std::span<const UnitInfo> UnitRegistry::getUnits() { return g_unitInfos; }
+    std::span<UnitInfo> UnitRegistry::getUnits() { return g_unitInfos; }
 
     /**
      * @brief 创建所有注册单元的实例
      *
      * @return std::vector<std::unique_ptr<Unit>> 包含所有创建的Unit实例的向量
      */
-    std::vector<std::unique_ptr<Unit>> UnitRegistry::createAllUnits()
+    std::vector<std::unique_ptr<Unit>> UnitRegistry::__createAllUnits()
     {
         std::vector<std::unique_ptr<Unit>> units;
         units.reserve(g_unitFactories.size());
@@ -90,6 +94,9 @@ namespace OF
         {
             units.push_back(factory());
         }
+        // 清理工厂函数容器
+        g_unitFactories.clear();
+        g_unitFactories.shrink_to_fit();
         return units;
     }
 
@@ -107,37 +114,6 @@ namespace OF
         }
         return std::nullopt;
     }
-
-    /**
-     * @brief 更新单元运行状态
-     *
-     * @param idx 单元在注册表中的索引
-     * @param running 单元是否正在运行
-     */
-    void UnitRegistry::updateUnitStatus(const size_t idx, const bool running)
-    {
-        if (idx < g_unitInfos.size())
-        {
-            g_unitInfos[idx].isRunning = running;
-        }
-    }
-
-    /**
-     * @brief 更新单元资源使用统计
-     *
-     * @param idx 单元在注册表中的索引
-     * @param cpu CPU使用率
-     * @param mem 内存使用量
-     */
-    void UnitRegistry::updateUnitStats(const size_t idx, const uint32_t cpu, const uint32_t mem)
-    {
-        if (idx < g_unitInfos.size())
-        {
-            g_unitInfos[idx].stats.cpuUsage = cpu;
-            g_unitInfos[idx].stats.memoryUsage = mem;
-        }
-    }
-
     /**
      * @brief 更新所有单元的资源使用统计
      *
@@ -173,10 +149,13 @@ namespace OF
     {
         if (info == nullptr)
             return;
-        if (const auto it = g_nameToUnitMap.find(info->name); it != g_nameToUnitMap.end())
-        {
-            updateUnitStats(it->second, info->utilization, info->stack_used);
-        }
+        const auto unit = findUnit(info->name);
+        if (!unit)
+            return;
+        unit.value()->stats = {
+            .cpuUsage = info->utilization,
+            .memoryUsage = info->stack_used,
+        };
     }
 #endif
 

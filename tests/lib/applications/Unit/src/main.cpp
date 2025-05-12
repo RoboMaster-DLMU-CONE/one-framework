@@ -1,14 +1,17 @@
 
+// Copyright (c) 2025. MoonFeather
+// SPDX-License-Identifier: BSD-3-Clause
+
 #include <OF/lib/applications/Unit/Unit.hpp>
 #include <OF/lib/applications/Unit/UnitRegistry.hpp>
+#include <OF/lib/applications/Unit/UnitThreadManager.hpp>
+
 #include <string_view>
 #include <zephyr/tc_util.h>
 #include <zephyr/ztest.h>
 
-#include "OF/lib/applications/Unit/UnitThreadManager.hpp"
 #include "Units/TestUnit1.hpp"
 #include "Units/TestUnit2.hpp"
-#include "Units/ThreadTestUnit.hpp"
 
 using namespace OF;
 
@@ -88,51 +91,6 @@ ZTEST(unit_registry_tests, test_find_unit)
         zassert_true(unit1.value()->name == "TestUnit1", "Unit1 name incorrect");
     if (unit2)
         zassert_true(unit2.value()->name == "TestUnit2", "Unit2 name incorrect");
-}
-
-// 测试创建单元实例
-ZTEST(unit_registry_tests, test_create_units)
-{
-    const auto units = UnitRegistry::createAllUnits();
-    zassert_equal(units.size(), 3, "Should create 3 unit instances");
-
-    // 初始化并运行所有单元
-    for (const auto& unit : units)
-    {
-        unit->init();
-        unit->run();
-    }
-
-    // 使用类型ID查找实例
-    bool foundTestUnit1 = false;
-    for (const auto& unit : units)
-    {
-        // 使用类型ID检查
-        if (unit->getTypeId() == TestUnit1::TYPE_ID)
-        {
-            foundTestUnit1 = true;
-            // 安全转换，无需RTTI
-            const auto* testUnit1 = static_cast<TestUnit1*>(unit.get()); // NOLINT(*-pro-type-static-cast-downcast)
-            zassert_true(testUnit1->initialized, "TestUnit1 init() method should have been called");
-            zassert_true(testUnit1->runCalled, "TestUnit1 run() method should have been called");
-        }
-    }
-
-    zassert_true(foundTestUnit1, "TestUnit1 instance not created");
-}
-
-// 测试更新单元状态
-ZTEST(unit_registry_tests, test_update_status)
-{
-    // 测试无效索引
-    UnitRegistry::updateUnitStatus(99, true); // 不应该崩溃
-}
-
-// 测试更新单元统计信息
-ZTEST(unit_registry_tests, test_update_stats)
-{
-    // 测试无效索引
-    UnitRegistry::updateUnitStats(99, 100, 4096); // 不应该崩溃
 }
 
 // 线程管理器测试

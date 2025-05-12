@@ -34,8 +34,8 @@ namespace OF
         {
             const auto& unit = units[i];
             // 查找匹配的UnitInfo
-            const UnitInfo* info = nullptr;
-            for (const auto& unitInfo : unitInfos)
+            UnitInfo* info = nullptr;
+            for (auto& unitInfo : unitInfos)
             {
                 if (unitInfo.typeId == unit->getTypeId())
                 {
@@ -64,8 +64,7 @@ namespace OF
                                     nullptr, nullptr, info->priority, 0, K_NO_WAIT);
 
                     UnitRegistry::registerThreadMapping(info->name, i);
-
-                    UnitRegistry::updateUnitStatus(i, true);
+                    info->isRunning = true;
                     break;
                 }
             }

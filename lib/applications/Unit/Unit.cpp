@@ -40,7 +40,7 @@ namespace OF
         }
 
         UnitRegistry::initialize();
-        g_units = std::move(UnitRegistry::createAllUnits());
+        g_units = std::move(UnitRegistry::__createAllUnits());
         UnitThreadManager::initializeThreads(g_units);
         initialized = true;
     }

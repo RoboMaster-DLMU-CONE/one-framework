@@ -48,29 +48,27 @@ west build -b dji_board_c app -- -DDTC_OVERLAY_FILE=boards/cone/infantry.overlay
 ```shell
 # 烧录
 west flash
+## 使用 --openocd 指定用 OpenOCD + DAP-Link 烧录
 # 调试
 west debug
 ```
 
-> `One Framework`为开发板配置了`OpenOCD`和`JLink`两种烧录选项。其中，`OpenOCD`用于兼容`Dap-Link`和其它下载器，`JLink`用于兼容
-`JLink`下载器。使用`--runner`参数指定`openocd`或`jlink`即可更改。
-
 ### 开发指南
 
 要了解如何使用合适的方法构建、使用、开发此框架，请参阅[
-Wiki](https://robomaster-dlmu-cone.github.io/one-framework/texts/dev/dev.html)
+Wiki](https://robomaster-dlmu-cone.github.io/one-framework/develop.html)
 
-## Wiki
+## 文档
 
-- 使用 `Doxygen` 自动生成API文档到 `Github Page`。在 `doc`目录下可以找到所有文档 。
+使用 `Doxygen` 自动生成文档到 `Github Page`。在 `doc`目录下可以找到所有文档 。
 
 ## Todo
 
 - [ ] PRTS界面设计
-- [ ] CPU负载计数器
 - [ ] 电机drivers
 - [ ] Buzzer
 - [x] application基类
+- [x] CPU负载计数器
 
 ## Credit
 

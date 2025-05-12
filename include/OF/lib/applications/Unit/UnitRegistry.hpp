@@ -107,16 +107,17 @@ namespace OF
         /**
          * @brief 获取所有注册的单元信息
          *
-         * @return std::span<const UnitInfo> 包含所有注册的Unit信息的只读视图
+         * @return std::span<UnitInfo> 包含所有注册的Unit信息的视图
          */
-        static std::span<const UnitInfo> getUnits();
+        static std::span<UnitInfo> getUnits();
 
         /**
          * @brief 创建所有注册单元的实例
+         * @warning 不要在除StartUnits()外调用该函数
          *
          * @return std::vector<std::unique_ptr<Unit>> 包含所有创建的Unit实例的向量
          */
-        static std::vector<std::unique_ptr<Unit>> createAllUnits();
+        static std::vector<std::unique_ptr<Unit>> __createAllUnits();
 
         /**
          * @brief 注册线程与单元索引的映射关系
@@ -133,23 +134,6 @@ namespace OF
          * @return std::optional<UnitInfo*> 找到时返回指向UnitInfo的指针，否则返回空optional
          */
         static std::optional<UnitInfo*> findUnit(std::string_view name);
-
-        /**
-         * @brief 更新单元运行状态
-         *
-         * @param idx 单元在注册表中的索引
-         * @param running 单元是否正在运行
-         */
-        static void updateUnitStatus(size_t idx, bool running);
-
-        /**
-         * @brief 更新单元资源使用统计
-         *
-         * @param idx 单元在注册表中的索引
-         * @param cpu CPU使用率
-         * @param mem 内存使用量
-         */
-        static void updateUnitStats(size_t idx, uint32_t cpu, uint32_t mem);
 
         /**
          * @brief 更新所有单元的资源使用统计

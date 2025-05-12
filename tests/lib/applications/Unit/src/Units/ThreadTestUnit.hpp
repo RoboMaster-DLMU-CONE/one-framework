@@ -1,3 +1,9 @@
+// Copyright (c) 2025. MoonFeather
+// SPDX-License-Identifier: BSD-3-Clause
+
+#ifndef THREADTESTUNIT_HPP
+#define THREADTESTUNIT_HPP
+
 #include <OF/lib/applications/Unit/Unit.hpp>
 #include <OF/lib/applications/Unit/UnitRegistry.hpp>
 #include <zephyr/kernel.h>
@@ -32,3 +38,5 @@ public:
     bool initCalled;
     k_sem syncSem;
 };
+
+#endif
