@@ -47,9 +47,6 @@ namespace OF
      */
     void UnitRegistry::initialize()
     {
-#ifndef OF_TOTAL_REGISTERED_UNITS
-#error "OF_TOTAL_REGISTERED_UNITS is not defined by CMake. Check CMake configuration."
-#endif
         g_unitInfos.clear();
         g_unitFactories.clear();
 
@@ -58,12 +55,7 @@ namespace OF
         {
             func();
         }
-        if (g_unitInfos.size() != OF_TOTAL_REGISTERED_UNITS)
-        {
-            LOG_ERR("Unit实例数量(%zu)与CMake中注册的数量(%d)不匹配。", g_unitInfos.size(), OF_TOTAL_REGISTERED_UNITS);
-            k_panic();
-            return;
-        }
+
 #ifdef CONFIG_UNIT_THREAD_ANALYZER
         k_work_init_delayable(&stats_work, stats_work_handler);
         k_work_schedule(&stats_work, K_SECONDS(5));

@@ -4,23 +4,12 @@
 #include <OF/lib/applications/Unit/UnitRegistry.hpp>
 #include <OF/lib/applications/Unit/UnitThreadManager.hpp>
 
+#include <zephyr/logging/log.h>
+
+LOG_MODULE_REGISTER(unit_thread_manager, CONFIG_UNIT_LOG_LEVEL);
+
 namespace OF
 {
-#ifndef OF_TOTAL_REGISTERED_UNITS
-#error "OF_TOTAL_REGISTERED_UNITS is not defined by CMake. Check CMake configuration."
-#endif
-
-    /**
-     * @brief 为注册的单元定义线程栈数组
-     * @details 使用Zephyr的K_THREAD_STACK_ARRAY_DEFINE宏定义线程栈空间
-     */
-    K_THREAD_STACK_ARRAY_DEFINE(thread_stacks, OF_TOTAL_REGISTERED_UNITS, CONFIG_MAIN_STACK_SIZE);
-
-    /**
-     * @brief 跟踪栈使用情况的数组
-     * @details 每个元素表示对应索引的栈是否被分配使用
-     */
-    static std::array<bool, OF_TOTAL_REGISTERED_UNITS> stack_used = {false};
 
     /**
      * @brief 为所有单元初始化线程
@@ -50,24 +39,18 @@ namespace OF
             }
             // 初始化单元
             unit->init();
-            // 找到可用栈
-            for (size_t stackIdx = 0; stackIdx < OF_TOTAL_REGISTERED_UNITS; stackIdx++)
+
+            unit->stack = k_thread_stack_alloc(info->stackSize, 0);
+            if (unit->stack == nullptr)
             {
-                if (!stack_used[stackIdx])
-                {
-                    // 标记为已使用
-                    stack_used[stackIdx] = true;
-
-                    // 创建线程
-                    k_thread_create(&unit->thread, thread_stacks[stackIdx],
-                                    K_THREAD_STACK_SIZEOF(thread_stacks[stackIdx]), threadEntryFunction, unit.get(),
-                                    nullptr, nullptr, info->priority, 0, K_NO_WAIT);
-
-                    UnitRegistry::registerThreadMapping(info->name, i);
-                    info->isRunning = true;
-                    break;
-                }
+                LOG_ERR("无法为Unit %s分配栈内存", info->name.data());
+                continue;
             }
+            k_thread_create(&unit->thread, unit->stack, info->stackSize, threadEntryFunction, unit.get(), nullptr,
+                            nullptr, info->priority, 0, K_NO_WAIT);
+
+            UnitRegistry::registerThreadMapping(info->name, i);
+            info->isRunning = true;
         }
     }
 

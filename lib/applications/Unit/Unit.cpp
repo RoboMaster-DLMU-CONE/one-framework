@@ -17,7 +17,19 @@ namespace OF
     /**
      * @brief Unit 类的析构函数默认实现。
      */
-    Unit::~Unit() = default;
+    Unit::~Unit()
+    {
+        if (stack != nullptr)
+        {
+            // 终止线程（如果尚未终止）
+            k_thread_abort(&thread);
+            // 释放栈内存
+            k_thread_stack_free(stack);
+            stack = nullptr;
+            // 调用清理方法
+            Unit::cleanup();
+        }
+    };
 
     /**
      * @brief 全局单元实例向量。

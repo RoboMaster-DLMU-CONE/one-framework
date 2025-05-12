@@ -98,6 +98,7 @@ namespace OF
         static consteval uint8_t priority() { return 0; }
 
         k_thread thread; //!< Zephyr 内核线程对象
+        k_thread_stack_t* stack = {nullptr};
 
         /**
          * @brief 单元的虚析构函数。

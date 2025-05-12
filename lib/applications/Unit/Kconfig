@@ -1,5 +1,7 @@
 menuconfig UNIT
     bool "Unit"
+    select DYNAMIC_THREAD
+    select DYNAMIC_THREAD_ALLOC
     help
         Enable One Framework's Unit in Application Layer.
 

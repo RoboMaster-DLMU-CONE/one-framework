@@ -1,3 +1,2 @@
 zephyr_library()
 zephyr_library_sources_ifdef(CONFIG_PRTS PRTS.cpp)
-one_framework_unit_register(PRTS)
