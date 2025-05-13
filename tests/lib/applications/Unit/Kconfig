@@ -1,0 +1,8 @@
+menu "Zephyr"
+source "Kconfig.zephyr"
+endmenu
+
+module = test
+module-str = test
+source "subsys/logging/Kconfig.template.log_config"
+rsource "src/Units/Kconfig"

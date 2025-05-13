@@ -9,4 +9,10 @@ menuconfig PRTS
 
 if PRTS
 
+config HEAP_MEM_POOL_ADD_SIZE_PRTS
+    int "PRTS heap size"
+    default 5000
+    help
+        PRTS所需的堆大小
+
 endif # PRTS
