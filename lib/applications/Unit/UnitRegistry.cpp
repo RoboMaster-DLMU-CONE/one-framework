@@ -79,6 +79,7 @@ namespace OF
 #endif
         return g_units;
     }
+
     bool UnitRegistry::terminateUnit(const std::string_view name)
     {
         if (const auto it = g_units.find(name); it != g_units.end())
@@ -103,6 +104,7 @@ namespace OF
         }
         return std::nullopt;
     }
+
     /**
      * @brief 更新所有单元的资源使用统计
      *

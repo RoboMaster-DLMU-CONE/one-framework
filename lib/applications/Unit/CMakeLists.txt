@@ -1,3 +1,2 @@
 zephyr_library()
 zephyr_library_sources_ifdef(CONFIG_UNIT Unit.cpp UnitRegistry.cpp UnitThreadManager.cpp)
-zephyr_compile_definitions(CONFIG_DYNAMIC_THREAD_PREFER_ALLOC)

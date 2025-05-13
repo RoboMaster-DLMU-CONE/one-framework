@@ -26,8 +26,13 @@ namespace OF
                 LOG_ERR("无法为Unit %s分配栈内存", unit->getName().data());
                 continue;
             }
+
             k_thread_create(&unit->_thread, unit->_stack, unit->getStackSize(), threadEntryFunction, unit.get(),
                             nullptr, nullptr, unit->getPriority(), 0, K_NO_WAIT);
+            if (k_thread_name_set(&unit->_thread, unit->getName().data()) != 0)
+            {
+                LOG_WRN("Failed to set thread name for unit %s", unit->getName().data());
+            }
 
             unit->stats.isRunning = true;
         }
@@ -39,6 +44,7 @@ namespace OF
      */
     void UnitThreadManager::threadEntryFunction(void* unit, void*, void*)
     {
+
         const auto pUnit = static_cast<Unit*>(unit);
         pUnit->run();
     }

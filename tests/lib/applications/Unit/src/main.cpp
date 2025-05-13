@@ -17,7 +17,7 @@ using namespace OF;
 // 测试Unit生命周期方法
 ZTEST(unit_tests, test_unit_lifecycle)
 {
-    TestUnit1 unit;
+    TestUnit1 unit{};
 
     zassert_false(unit.initialized, "Unit should not be initialized initially");
     unit.init();
@@ -35,8 +35,8 @@ ZTEST(unit_tests, test_unit_lifecycle)
 // 测试Unit元数据访问方法
 ZTEST(unit_tests, test_unit_metadata)
 {
-    TestUnit1 unit1;
-    TestUnit2 unit2;
+    const TestUnit1 unit1;
+    const TestUnit2 unit2;
 
     zassert_true(unit1.getName() == "TestUnit1", "Unit name mismatch");
     zassert_true(unit1.getDescription() == "First test unit", "Unit description mismatch");

@@ -13,8 +13,18 @@ class TestUnit2 final : public Unit
 {
 public:
     DEFINE_UNIT_DESCRIPTOR(TestUnit2, "TestUnit2", "Unit2 for testing", 4096, 10)
-    void init() override {}
-    void run() override {}
+
+    void init() override
+    {
+    }
+
+    [[noreturn]] void run() override
+    {
+        while (true)
+        {
+            k_sleep(K_SECONDS(1));
+        }
+    }
 };
 
 

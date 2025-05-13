@@ -1,5 +1,7 @@
 #include "ThreadTestUnit.hpp"
-void ThreadTestUnit::run()
+#include <OF/lib/utils/PID.hpp>
+
+[[noreturn]] void ThreadTestUnit::run()
 {
     threadRunning = true;
     // 通知测试线程已启动
@@ -7,13 +9,12 @@ void ThreadTestUnit::run()
 
     // 模拟工作循环
     int counter = 0;
-    while (!shouldStop && counter < 5)
+    while (true)
     {
-        k_sleep(K_MSEC(100));
         counter++;
+        pid.compute(100, counter);
+        k_sleep(K_MSEC(50));
     }
-
-    threadExited = true;
 }
 
 REGISTER_UNIT(ThreadTestUnit)
