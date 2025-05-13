@@ -1,6 +1,6 @@
 common:
   tags: extensibility
   integration_platforms:
-    - qemu_cortex_m3
+    - qemu_cortex_a53
 tests:
   lib.Unit: { }
