@@ -1,4 +1,3 @@
-
 // Copyright (c) 2025. MoonFeather
 // SPDX-License-Identifier: BSD-3-Clause
 
@@ -36,44 +35,31 @@ ZTEST(unit_tests, test_unit_lifecycle)
 // 测试Unit元数据访问方法
 ZTEST(unit_tests, test_unit_metadata)
 {
-    zassert_true(TestUnit1::name() == "TestUnit1", "Unit name mismatch");
-    zassert_true(TestUnit1::description() == "First test unit", "Unit description mismatch");
-    zassert_equal(TestUnit1::stackSize(), 2048, "Unit stack size mismatch");
-    zassert_equal(TestUnit1::priority(), 5, "Unit priority mismatch");
+    TestUnit1 unit1;
+    TestUnit2 unit2;
 
-    zassert_true(TestUnit2::name() == "TestUnit2", "Unit name mismatch");
-    zassert_true(TestUnit2::description() == "Second test unit", "Unit description mismatch");
-    zassert_equal(TestUnit2::stackSize(), 4096, "Unit stack size mismatch");
-    zassert_equal(TestUnit2::priority(), 10, "Unit priority mismatch");
+    zassert_true(unit1.getName() == "TestUnit1", "Unit name mismatch");
+    zassert_true(unit1.getDescription() == "Unit1 for testing", "Unit description mismatch");
+    zassert_equal(unit1.getStackSize(), 2048, "Unit stack size mismatch");
+    zassert_equal(unit1.getPriority(), 5, "Unit priority mismatch");
+
+    zassert_true(unit2.getName() == "TestUnit2", "Unit name mismatch");
+    zassert_true(unit2.getDescription() == "Unit2 for testing", "Unit description mismatch");
+    zassert_equal(unit2.getStackSize(), 4096, "Unit stack size mismatch");
+    zassert_equal(unit2.getPriority(), 10, "Unit priority mismatch");
 }
 
 // 测试单元注册
 ZTEST(unit_registry_tests, test_registration)
 {
-    // 获取运行时注册的单元
-    const auto units = UnitRegistry::getUnits();
+    // 验证注册的单元可以找到
+    const auto unit1 = UnitRegistry::findUnit("TestUnit1");
+    const auto unit2 = UnitRegistry::findUnit("TestUnit2");
+    const auto unit3 = UnitRegistry::findUnit("ThreadTestUnit");
 
-    // 验证注册的单元数量
-    zassert_equal(units.size(), 3, "Registry should have 3 units");
-
-    // 单元注册的顺序可能取决于静态初始化顺序，因此我们需要检查两个单元都在列表中
-    bool foundUnit1 = false;
-    bool foundUnit2 = false;
-    bool foundUnit3 = false;
-
-    for (const auto& unit : units)
-    {
-        if (unit.name == "TestUnit1")
-            foundUnit1 = true;
-        if (unit.name == "TestUnit2")
-            foundUnit2 = true;
-        if (unit.name == "ThreadTestUnit")
-            foundUnit3 = true;
-    }
-
-    zassert_true(foundUnit1, "TestUnit1 not registered");
-    zassert_true(foundUnit2, "TestUnit2 not registered");
-    zassert_true(foundUnit3, "TestUnit3 not registered");
+    zassert_not_null(unit1.has_value(), "TestUnit1 not registered");
+    zassert_not_null(unit2.has_value(), "TestUnit2 not registered");
+    zassert_not_null(unit3.has_value(), "ThreadTestUnit not registered");
 }
 
 // 测试通过名称查找单元
@@ -83,76 +69,66 @@ ZTEST(unit_registry_tests, test_find_unit)
     const auto unit2 = UnitRegistry::findUnit("TestUnit2");
     const auto notFound = UnitRegistry::findUnit("NonexistentUnit");
 
-    zassert_not_equal(unit1, std::nullopt, "Failed to find Unit1 by name");
-    zassert_not_equal(unit2, std::nullopt, "Failed to find Unit2 by name");
-    zassert_equal(notFound, std::nullopt, "Should return nullptr for missing units");
+    zassert_true(unit1.has_value(), "Failed to find TestUnit1 by name");
+    zassert_true(unit2.has_value(), "Failed to find TestUnit2 by name");
+    zassert_false(notFound.has_value(), "Should return empty optional for missing units");
 
     if (unit1)
-        zassert_true(unit1.value()->name == "TestUnit1", "Unit1 name incorrect");
+        zassert_true(unit1.value()->getName() == "TestUnit1", "Unit1 name incorrect");
     if (unit2)
-        zassert_true(unit2.value()->name == "TestUnit2", "Unit2 name incorrect");
+        zassert_true(unit2.value()->getName() == "TestUnit2", "Unit2 name incorrect");
 }
 
 // 线程管理器测试
 ZTEST(thread_manager_tests, test_initialize_threads)
 {
-    const auto units = UnitRegistry::getUnits();
     // 查找ThreadTestUnit
-    bool foundThreadUnit = false;
-    for (const auto& unitInfo : units)
-    {
-        if (unitInfo.name == "ThreadTestUnit")
-        {
-            foundThreadUnit = true;
-            zassert_true(unitInfo.isRunning, "ThreadTestUnit thread should be running");
-            break;
-        }
-    }
+    const auto threadUnit = UnitRegistry::findUnit("ThreadTestUnit");
+    zassert_true(threadUnit.has_value(), "ThreadTestUnit should be registered");
 
-    zassert_true(foundThreadUnit, "ThreadTestUnit should be registered");
+    if (threadUnit)
+    {
+        zassert_true(threadUnit.value()->stats.isRunning, "ThreadTestUnit thread should be running");
+    }
 }
 
 ZTEST(thread_manager_tests, test_periodic_stats_update)
 {
-    // 获取当前已注册并运行的单元
-    const auto initialUnits = UnitRegistry::getUnits();
-    // 查找 ThreadTestUnit 的索引
-    size_t unitIdx = SIZE_MAX;
-    for (size_t i = 0; i < initialUnits.size(); i++)
+    // 获取ThreadTestUnit
+    const auto threadUnit = UnitRegistry::findUnit("ThreadTestUnit");
+    zassert_true(threadUnit.has_value(), "Failed to find ThreadTestUnit");
+
+    if (threadUnit)
     {
-        if (initialUnits[i].name == "ThreadTestUnit")
-        {
-            unitIdx = i;
-            break;
-        }
+        // 记录初始状态
+        const uint32_t initialCpu = threadUnit.value()->stats.cpuUsage;
+        const uint32_t initialMem = threadUnit.value()->stats.memoryUsage;
+        TC_PRINT("Initial stats: CPU=%u%%, Mem=%u bytes\n", initialCpu, initialMem);
+
+        // 等待足够长的时间让定时器触发更新（多于5秒）
+        k_sleep(K_SECONDS(7));
+
+        // 获取更新后的状态
+        const uint32_t updatedCpu = threadUnit.value()->stats.cpuUsage;
+        const uint32_t updatedMem = threadUnit.value()->stats.memoryUsage;
+        TC_PRINT("Updated stats: CPU=%u%%, Mem=%u bytes\n", updatedCpu, updatedMem);
+
+        // 报告状态变化
+        TC_PRINT("Stats changed: CPU delta=%d, Mem delta=%d\n",
+                 static_cast<int>(updatedCpu) - static_cast<int>(initialCpu),
+                 static_cast<int>(updatedMem) - static_cast<int>(initialMem));
     }
-    zassert_not_equal(unitIdx, SIZE_MAX, "Failed to find ThreadTestUnit index");
-    // 记录初始状态
-    const uint32_t initialCpu = initialUnits[unitIdx].stats.cpuUsage;
-    const uint32_t initialMem = initialUnits[unitIdx].stats.memoryUsage;
-    TC_PRINT("Initial stats: CPU=%u%%, Mem=%u bytes\n", initialCpu, initialMem);
-    // 等待足够长的时间让定时器触发更新（多于5秒）
-    k_sleep(K_SECONDS(7));
-    // 获取更新后的状态
-    const auto afterUpdate = UnitRegistry::getUnits();
-    const uint32_t updatedCpu = afterUpdate[unitIdx].stats.cpuUsage;
-    const uint32_t updatedMem = afterUpdate[unitIdx].stats.memoryUsage;
-    TC_PRINT("Updated stats: CPU=%u%%, Mem=%u bytes\n", updatedCpu, updatedMem);
-    // 验证状态已更新（在实际环境中，值可能有所不同）
-    TC_PRINT("Stats changed: CPU delta=%d, Mem delta=%d\n", static_cast<int>(updatedCpu) - static_cast<int>(initialCpu),
-             static_cast<int>(updatedMem) - static_cast<int>(initialMem));
 }
 
 ZTEST(thread_manager_tests, test_empty_units_list)
 {
-    constexpr std::vector<std::unique_ptr<Unit>> emptyUnits;
+    std::unordered_map<std::string_view, std::unique_ptr<Unit>> emptyUnits;
     // 调用初始化空列表不应崩溃
     UnitThreadManager::initializeThreads(emptyUnits);
 
     // 成功到达这里表示没有崩溃
     zassert_true(true, "UnitThreadManager handled empty units list");
 }
-
 
 static void* common_test_setup(void)
 {
@@ -161,7 +137,5 @@ static void* common_test_setup(void)
 }
 
 ZTEST_SUITE(thread_manager_tests, nullptr, common_test_setup, nullptr, nullptr, nullptr);
-
-ZTEST_SUITE(unit_tests, nullptr, common_test_setup, NULL, NULL, NULL);
-
-ZTEST_SUITE(unit_registry_tests, nullptr, common_test_setup, NULL, NULL, NULL);
+ZTEST_SUITE(unit_tests, nullptr, common_test_setup, nullptr, nullptr, nullptr);
+ZTEST_SUITE(unit_registry_tests, nullptr, common_test_setup, nullptr, nullptr, nullptr);

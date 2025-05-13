@@ -11,30 +11,21 @@
 
 namespace OF
 {
-    /**
-     * @brief 单元信息结构体
-     */
-    struct UnitInfo
+    struct UnitTypeDescriptor
     {
-        std::string_view name; //!< 单元名称
-        std::string_view description; //!< 单元描述
-        uint32_t stackSize; //!< 栈内存分配大小
-        uint8_t priority; //!< 线程优先级
-        bool isRunning; //!< 是否正在运行
-        uint32_t typeId; //!< 属性ID
-
-        /**
-         * @brief 运行时统计信息结构体
-         */
-        struct RuntimeStats
-        {
-            uint32_t cpuUsage; //!< CPU 使用率
-            uint32_t memoryUsage; //!< 内存使用量
-        };
-        RuntimeStats stats; //!< 运行时统计信息
+        static constexpr std::string_view name{};
+        static constexpr std::string_view description{};
+        static constexpr size_t stackSize{};
+        static constexpr uint8_t priority{};
+        static constexpr uint32_t typeId{};
     };
 
-
+    struct UnitRuntimeInfo
+    {
+        uint32_t cpuUsage; //!< CPU 使用率
+        uint32_t memoryUsage; //!< 内存使用量
+        bool isRunning{false};
+    };
     /**
      * @brief 单元基类，定义了单元的基本行为和属性。
      *
@@ -65,63 +56,22 @@ namespace OF
          */
         virtual void cleanup();
 
-        /**
-         * @brief 获取单元的类型ID。
-         * @details 用于在运行时识别单元的具体类型，常用于安全的类型转换。
-         *          派生类必须实现此方法，通常返回一个静态的、唯一的ID。
-         * @return uint32_t 单元的类型ID。
-         */
-        virtual uint32_t getTypeId() const = 0;
+        constexpr std::string_view getName() const { return typeDescriptor().name; }
+        constexpr std::string_view getDescription() const { return typeDescriptor().description; }
+        constexpr size_t getStackSize() const { return typeDescriptor().stackSize; }
+        constexpr uint8_t getPriority() const { return typeDescriptor().priority; }
+        constexpr uint32_t getTypeId() const { return typeDescriptor().typeId; }
 
-        /**
-         * @brief 获取单元的默认名称。
-         * @return std::string_view 单元的默认名称。
-         */
-        static consteval std::string_view name() { return "Unnamed"; }
+        virtual const UnitTypeDescriptor& typeDescriptor() const = 0;
 
-        /**
-         * @brief 获取单元的默认描述。
-         * @return std::string_view 单元的默认描述。
-         */
-        static consteval std::string_view description() { return ""; }
-
-        /**
-         * @brief 获取单元的默认栈大小。
-         * @return size_t 单元的默认栈大小（字节）。
-         */
-        static consteval size_t stackSize() { return 1024; }
-
-        /**
-         * @brief 获取单元的默认线程优先级。
-         * @return uint8_t 单元的默认线程优先级。
-         */
-        static consteval uint8_t priority() { return 0; }
-
-        k_thread thread; //!< Zephyr 内核线程对象
-        k_thread_stack_t* stack = {nullptr};
+        k_thread _thread{}; //!< Zephyr 内核线程对象
+        k_thread_stack_t* _stack{nullptr};
+        UnitRuntimeInfo stats{};
 
         /**
          * @brief 单元的虚析构函数。
          */
         virtual ~Unit();
-
-    protected:
-        std::atomic<bool> shouldStop{false}; //!< 原子布尔值，用于指示单元是否应该停止运行。
-    };
-
-    /**
-     * @brief Unit 派生类概念 (Concept)。
-     * @details 用于约束模板参数 T 必须是 Unit 的派生类，并且满足特定的静态成员函数和类型定义要求。
-     * @tparam T 需要检查的类型。
-     */
-    template <typename T>
-    concept UnitDeriveConcept = std::derived_from<T, Unit> && requires {
-        { T::name() } -> std::convertible_to<std::string_view>; //!< 必须有静态 name() 方法返回字符串视图
-        { T::description() } -> std::convertible_to<std::string_view>; //!< 必须有静态 description() 方法返回字符串视图
-        { T::stackSize() } -> std::convertible_to<size_t>; //!< 必须有静态 stackSize() 方法返回 size_t
-        { T::priority() } -> std::convertible_to<uint8_t>; //!< 必须有静态 priority() 方法返回 uint8_t
-        { T::TYPE_ID } -> std::convertible_to<uint32_t>; //!< 必须有静态 TYPE_ID 成员可转换为 uint32_t
-        requires std::is_default_constructible_v<T>; //!< 必须是默认可构造的
     };
 
     /**
@@ -148,6 +98,11 @@ namespace OF
         return (unit && unit->getTypeId() == T::TYPE_ID) ? static_cast<const T*>(unit) : nullptr;
     }
 
+    // 简化Unit派生类定义的宏
+#define DEFINE_UNIT_DESCRIPTOR(TypeName, NameStr, DescStr, StackSize, Priority)                                        \
+    static constexpr UnitTypeDescriptor descriptor{NameStr, DescStr, StackSize, Priority, typeNameHash(#TypeName)};    \
+    const UnitTypeDescriptor& typeDescriptor() const override { return descriptor; }
+
     /**
      * @brief 启动所有已注册的单元。
      * @details 此函数会初始化单元注册表，创建所有单元实例，并为它们初始化和启动线程。
@@ -156,7 +111,5 @@ namespace OF
     void StartUnits();
 
 } // namespace OF
-
-/** @} */ // End of app-Unit group
 
 #endif // UNIT_HPP

@@ -8,10 +8,9 @@ LOG_MODULE_REGISTER(unit_registry, CONFIG_UNIT_LOG_LEVEL);
 
 namespace OF
 {
-    std::vector<UnitInfo> UnitRegistry::g_unitInfos;
     std::vector<UnitRegistry::UnitFactoryFunction> UnitRegistry::g_unitFactories;
     std::vector<UnitRegistry::UnitRegistrationFunction> UnitRegistry::g_registrationFunctions;
-    std::unordered_map<std::string_view, size_t> UnitRegistry::g_nameToUnitMap;
+    std::unordered_map<std::string_view, std::unique_ptr<Unit>> UnitRegistry::g_units;
 
     /**
      * @brief 添加注册函数到注册表
@@ -45,9 +44,9 @@ namespace OF
      *
      * @details 清理注册表，并调用所有已注册的注册函数，以便注册所有Unit类型
      */
-    void UnitRegistry::initialize()
+    std::unordered_map<std::string_view, std::unique_ptr<Unit>>& UnitRegistry::initialize()
     {
-        g_unitInfos.clear();
+        g_units.clear();
         g_unitFactories.clear();
 
         // 执行所有注册函数
@@ -56,53 +55,52 @@ namespace OF
             func();
         }
 
+        for (const auto& factory : g_unitFactories)
+        {
+            auto unit = factory();
+            constexpr auto name = unit->getName();
+            if (g_units.contains(name))
+            {
+                LOG_ERR("Unit名称冲突: %s", name.data());
+                k_panic();
+            }
+            g_units[name] = std::move(unit);
+        }
+
+        // 清理注册函数和工厂
+        g_registrationFunctions.clear();
+        g_registrationFunctions.shrink_to_fit();
+        g_unitFactories.clear();
+        g_unitFactories.shrink_to_fit();
+
 #ifdef CONFIG_UNIT_THREAD_ANALYZER
         k_work_init_delayable(&stats_work, stats_work_handler);
         k_work_schedule(&stats_work, K_SECONDS(5));
 #endif
-
-        // 清理注册函数列表
-        g_registrationFunctions.clear();
-        g_registrationFunctions.shrink_to_fit();
+        return g_units;
     }
-
-    /**
-     * @brief 获取所有注册的单元信息
-     *
-     * @return std::span<UnitInfo> 包含所有注册的Unit信息的视图
-     */
-    std::span<UnitInfo> UnitRegistry::getUnits() { return g_unitInfos; }
-
-    /**
-     * @brief 创建所有注册单元的实例
-     *
-     * @return std::vector<std::unique_ptr<Unit>> 包含所有创建的Unit实例的向量
-     */
-    std::vector<std::unique_ptr<Unit>> UnitRegistry::__createAllUnits()
+    bool UnitRegistry::terminateUnit(const std::string_view name)
     {
-        std::vector<std::unique_ptr<Unit>> units;
-        units.reserve(g_unitFactories.size());
-        for (const auto& factory : g_unitFactories)
+        if (const auto it = g_units.find(name); it != g_units.end())
         {
-            units.push_back(factory());
+            delete it->second;
+            g_units.erase(it);
+            return true;
         }
-        // 清理工厂函数容器
-        g_unitFactories.clear();
-        g_unitFactories.shrink_to_fit();
-        return units;
+        return false;
     }
 
     /**
      * @brief 通过名称查找单元信息
      *
      * @param name 要查找的单元名称
-     * @return std::optional<UnitInfo*> 找到时返回指向UnitInfo的指针，否则返回空optional
+     * @return std::optional<Unit*> 找到时返回指向Unit的指针，否则返回空optional
      */
-    std::optional<UnitInfo*> UnitRegistry::findUnit(const std::string_view name)
+    std::optional<Unit*> UnitRegistry::findUnit(const std::string_view name)
     {
-        if (const auto it = g_nameToUnitMap.find(name); it != g_nameToUnitMap.end())
+        if (const auto it = g_units.find(name); it != g_units.end())
         {
-            return &g_unitInfos[it->second];
+            return it->second.get();
         }
         return std::nullopt;
     }
@@ -118,17 +116,6 @@ namespace OF
 #endif
     }
 
-    /**
-     * @brief 注册线程与单元索引的映射关系
-     *
-     * @param name 线程名称
-     * @param unitIndex 单元在注册表中的索引
-     */
-    void UnitRegistry::registerThreadMapping(const std::string_view name, const size_t unitIndex)
-    {
-        g_nameToUnitMap[name] = unitIndex;
-    }
-
 #ifdef CONFIG_UNIT_THREAD_ANALYZER
     /**
      * @brief 线程统计回调函数
@@ -137,6 +124,7 @@ namespace OF
      *
      * @param info 线程分析器提供的统计信息
      */
+    // ReSharper disable once CppParameterMayBeConstPtrOrRef
     void UnitRegistry::threadStatCallback(thread_analyzer_info* info)
     {
         if (info == nullptr)
@@ -144,10 +132,8 @@ namespace OF
         const auto unit = findUnit(info->name);
         if (!unit)
             return;
-        unit.value()->stats = {
-            .cpuUsage = info->utilization,
-            .memoryUsage = info->stack_used,
-        };
+        unit.value()->stats.cpuUsage = info->utilization;
+        unit.value()->stats.memoryUsage = info->stack_used;
     }
 #endif
 

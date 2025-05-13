@@ -1,3 +1,6 @@
+// Copyright (c) 2025. MoonFeather
+// SPDX-License-Identifier: BSD-3-Clause
+
 #ifndef TESTUNIT1_HPP
 #define TESTUNIT1_HPP
 
@@ -9,16 +12,9 @@ using namespace OF;
 class TestUnit1 final : public Unit
 {
 public:
-    AUTO_UNIT_TYPE(TestUnit1)
-
-    void init() override { initialized = true; }
-    void run() override { runCalled = true; }
-    void cleanup() override { cleanupCalled = true; }
-
-    static consteval std::string_view name() { return "TestUnit1"; }
-    static consteval std::string_view description() { return "First test unit"; }
-    static consteval size_t stackSize() { return 2048; }
-    static consteval uint8_t priority() { return 5; }
+    DEFINE_UNIT_DESCRIPTOR(TestUnit1, "TestUnit1", "First test unit", 2048, 5)
+    void init() override {}
+    void run() override {}
 
     bool initialized = false;
     bool runCalled = false;

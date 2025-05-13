@@ -7,7 +7,6 @@
 
 namespace OF
 {
-
     /**
      * @brief Unit 类的 cleanup 方法默认实现。
      * @details 默认情况下不执行任何操作。派生类可以重写此方法以实现自定义的清理逻辑。
@@ -19,23 +18,17 @@ namespace OF
      */
     Unit::~Unit()
     {
-        if (stack != nullptr)
+        if (_stack != nullptr)
         {
             // 终止线程（如果尚未终止）
-            k_thread_abort(&thread);
+            k_thread_abort(&_thread);
             // 释放栈内存
-            k_thread_stack_free(stack);
-            stack = nullptr;
+            k_thread_stack_free(_stack);
+            _stack = nullptr;
             // 调用清理方法
             Unit::cleanup();
         }
     };
-
-    /**
-     * @brief 全局单元实例向量。
-     * @details 存储所有通过 UnitRegistry 创建的单元实例的 unique_ptr。
-     */
-    static std::vector<std::unique_ptr<Unit>> g_units;
 
     /**
      * @brief 启动所有已注册的单元。
@@ -50,10 +43,7 @@ namespace OF
         {
             return;
         }
-
-        UnitRegistry::initialize();
-        g_units = std::move(UnitRegistry::__createAllUnits());
-        UnitThreadManager::initializeThreads(g_units);
+        UnitThreadManager::initializeThreads(UnitRegistry::initialize());
         initialized = true;
     }
 

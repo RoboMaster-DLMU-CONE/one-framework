@@ -9,17 +9,13 @@
 #include <zephyr/kernel.h>
 using namespace OF;
 
+// ThreadTestUnit.hpp 示例重构
 class ThreadTestUnit final : public Unit
 {
 public:
     ThreadTestUnit() : threadRunning(false), threadExited(false), initCalled(false), syncSem() {}
 
-    AUTO_UNIT_TYPE(ThreadTestUnit)
-
-    static consteval std::string_view name() { return "ThreadTestUnit"; }
-    static consteval std::string_view description() { return "Unit for thread testing"; }
-    static consteval size_t stackSize() { return 2048; }
-    static consteval uint8_t priority() { return 7; }
+    DEFINE_UNIT_DESCRIPTOR(ThreadTestUnit, "ThreadTestUnit", "Unit for thread testing", 2048, 7)
 
     void init() override
     {
@@ -29,7 +25,6 @@ public:
 
     void run() override;
 
-
     void requestStop() { shouldStop = true; }
 
     // 测试检查变量
@@ -37,6 +32,9 @@ public:
     bool threadExited;
     bool initCalled;
     k_sem syncSem;
+
+private:
+    std::atomic<bool> shouldStop = false;
 };
 
 #endif

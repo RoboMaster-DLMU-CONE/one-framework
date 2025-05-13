@@ -6,7 +6,6 @@
 
 #include <memory>
 #include <optional>
-#include <span>
 #include <unordered_map>
 #include <vector>
 #include "Unit.hpp"
@@ -20,35 +19,6 @@
 
 namespace OF
 {
-    /**
-     * @brief 单元特性结构体模板
-     *
-     * @details 此模板为每种Unit类型提供类型特征信息，包括创建实例的方法
-     *          以及类型的元数据信息。用于UnitRegistry自动注册和管理不同类型的Unit。
-     *
-     * @tparam T 必须满足UnitDeriveConcept约束的Unit派生类型
-     */
-    template <UnitDeriveConcept T>
-    struct UnitTraits
-    {
-        /**
-         * @brief 单元信息静态常量，包含Unit类型的所有元数据
-         */
-        static constexpr UnitInfo info{.name = T::name(),
-                                       .description = T::description(),
-                                       .stackSize = T::stackSize(),
-                                       .priority = T::priority(),
-                                       .isRunning = false,
-                                       .typeId = T::TYPE_ID,
-                                       .stats = {}};
-
-        /**
-         * @brief 创建指定类型Unit实例的工厂方法
-         * @return 返回指向新创建的Unit实例的unique_ptr
-         */
-        static std::unique_ptr<Unit> create() { return std::make_unique<T>(); }
-    };
-
     /**
      * @brief 单元注册类
      *
@@ -82,8 +52,7 @@ namespace OF
         template <typename UnitType>
         static void registerUnit()
         {
-            g_unitInfos.push_back(UnitTraits<UnitType>::info);
-            g_unitFactories.push_back(UnitTraits<UnitType>::create);
+            g_unitFactories.push_back([]() -> std::unique_ptr<Unit> { return std::make_unique<UnitType>(); });
         }
 
         /**
@@ -102,30 +71,7 @@ namespace OF
          * @details 清理注册表，并调用所有已注册的注册函数，以便注册所有Unit类型。
          *          此方法在系统启动时调用一次。
          */
-        static void initialize();
-
-        /**
-         * @brief 获取所有注册的单元信息
-         *
-         * @return std::span<UnitInfo> 包含所有注册的Unit信息的视图
-         */
-        static std::span<UnitInfo> getUnits();
-
-        /**
-         * @brief 创建所有注册单元的实例
-         * @warning 不要在除StartUnits()外调用该函数
-         *
-         * @return std::vector<std::unique_ptr<Unit>> 包含所有创建的Unit实例的向量
-         */
-        static std::vector<std::unique_ptr<Unit>> __createAllUnits();
-
-        /**
-         * @brief 注册线程与单元索引的映射关系
-         *
-         * @param name 线程名称
-         * @param unitIndex 单元在注册表中的索引
-         */
-        static void registerThreadMapping(std::string_view name, size_t unitIndex);
+        static std::unordered_map<std::string_view, std::unique_ptr<Unit>>& initialize();
 
         /**
          * @brief 通过名称查找单元信息
@@ -133,7 +79,9 @@ namespace OF
          * @param name 要查找的单元名称
          * @return std::optional<UnitInfo*> 找到时返回指向UnitInfo的指针，否则返回空optional
          */
-        static std::optional<UnitInfo*> findUnit(std::string_view name);
+        static bool terminateUnit(std::string_view name);
+
+        static std::optional<Unit*> findUnit(std::string_view name);
 
         /**
          * @brief 更新所有单元的资源使用统计
@@ -141,10 +89,9 @@ namespace OF
         static void updateAllUnitStats();
 
     private:
-        static std::vector<UnitInfo> g_unitInfos; //!< 所有注册的单元信息
         static std::vector<UnitFactoryFunction> g_unitFactories; //!< 所有注册的单元工厂函数
         static std::vector<UnitRegistrationFunction> g_registrationFunctions; //!< 所有注册的注册函数
-        static std::unordered_map<std::string_view, size_t> g_nameToUnitMap; //!< 单元名称到索引的映射
+        static std::unordered_map<std::string_view, std::unique_ptr<Unit>> g_units;
 
 #if defined(CONFIG_UNIT_THREAD_ANALYZER)
         /**

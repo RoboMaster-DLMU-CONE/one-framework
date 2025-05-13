@@ -5,7 +5,6 @@
 #define UNITTHREADMANAGER_HPP
 
 #include <memory>
-#include <vector>
 
 #include "Unit.hpp"
 
@@ -30,7 +29,7 @@ namespace OF
          *
          * @param units 包含所有Unit实例的向量
          */
-        static void initializeThreads(const std::vector<std::unique_ptr<Unit>>& units);
+        static void initializeThreads(const std::unordered_map<std::string_view, std::unique_ptr<Unit>>& units);
 
     private:
         /**
