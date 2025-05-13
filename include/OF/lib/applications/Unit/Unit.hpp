@@ -13,17 +13,17 @@ namespace OF
 {
     struct UnitTypeDescriptor
     {
-        static constexpr std::string_view name{};
-        static constexpr std::string_view description{};
-        static constexpr size_t stackSize{};
-        static constexpr uint8_t priority{};
-        static constexpr uint32_t typeId{};
+        std::string_view name{};
+        std::string_view description{};
+        size_t stackSize{};
+        uint8_t priority{};
+        uint32_t typeId{};
     };
 
     struct UnitRuntimeInfo
     {
-        uint32_t cpuUsage; //!< CPU 使用率
-        uint32_t memoryUsage; //!< 内存使用量
+        uint32_t cpuUsage{}; //!< CPU 使用率
+        uint32_t memoryUsage{}; //!< 内存使用量
         bool isRunning{false};
     };
     /**

@@ -39,7 +39,7 @@ ZTEST(unit_tests, test_unit_metadata)
     TestUnit2 unit2;
 
     zassert_true(unit1.getName() == "TestUnit1", "Unit name mismatch");
-    zassert_true(unit1.getDescription() == "Unit1 for testing", "Unit description mismatch");
+    zassert_true(unit1.getDescription() == "First test unit", "Unit description mismatch");
     zassert_equal(unit1.getStackSize(), 2048, "Unit stack size mismatch");
     zassert_equal(unit1.getPriority(), 5, "Unit priority mismatch");
 
@@ -57,9 +57,9 @@ ZTEST(unit_registry_tests, test_registration)
     const auto unit2 = UnitRegistry::findUnit("TestUnit2");
     const auto unit3 = UnitRegistry::findUnit("ThreadTestUnit");
 
-    zassert_not_null(unit1.has_value(), "TestUnit1 not registered");
-    zassert_not_null(unit2.has_value(), "TestUnit2 not registered");
-    zassert_not_null(unit3.has_value(), "ThreadTestUnit not registered");
+    zassert(unit1.has_value(), "TestUnit1 not registered");
+    zassert(unit2.has_value(), "TestUnit2 not registered");
+    zassert(unit3.has_value(), "ThreadTestUnit not registered");
 }
 
 // 测试通过名称查找单元

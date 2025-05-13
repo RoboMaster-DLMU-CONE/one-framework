@@ -58,7 +58,7 @@ namespace OF
         for (const auto& factory : g_unitFactories)
         {
             auto unit = factory();
-            constexpr auto name = unit->getName();
+            const auto name = unit->getName();
             if (g_units.contains(name))
             {
                 LOG_ERR("Unit名称冲突: %s", name.data());
@@ -83,7 +83,6 @@ namespace OF
     {
         if (const auto it = g_units.find(name); it != g_units.end())
         {
-            delete it->second;
             g_units.erase(it);
             return true;
         }

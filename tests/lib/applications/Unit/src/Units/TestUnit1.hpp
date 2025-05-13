@@ -13,8 +13,9 @@ class TestUnit1 final : public Unit
 {
 public:
     DEFINE_UNIT_DESCRIPTOR(TestUnit1, "TestUnit1", "First test unit", 2048, 5)
-    void init() override {}
-    void run() override {}
+    void init() override { initialized = true; }
+    void run() override { runCalled = true; }
+    void cleanup() override { cleanupCalled = true; }
 
     bool initialized = false;
     bool runCalled = false;
