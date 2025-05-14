@@ -12,23 +12,16 @@ using namespace OF;
 class TestUnit1 final : public Unit
 {
 public:
-    DEFINE_UNIT_DESCRIPTOR(TestUnit1, "TestUnit1", "First test unit", 2048, 5)
-
-    void init() override
-    {
-        initialized = true;
-    }
-
-    void run() override
-    {
-        runCalled = true;
-    }
-
-    void cleanup() override { cleanupCalled = true; }
+    DEFINE_UNIT_DESCRIPTOR(TestUnit1, "TestUnit1", "First test unit", 1024, 5)
+    void run() override { runCalled = true; }
 
     bool initialized = false;
     bool runCalled = false;
     bool cleanupCalled = false;
+
+protected:
+    void initCustom() override { initialized = true; }
+    void cleanupCustom() override { cleanupCalled = true; }
 };
 
 #endif // TESTUNIT1_HPP

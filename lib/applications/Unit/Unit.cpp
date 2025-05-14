@@ -3,32 +3,66 @@
 
 #include <OF/lib/applications/Unit/Unit.hpp>
 #include <OF/lib/applications/Unit/UnitRegistry.hpp>
-#include <OF/lib/applications/Unit/UnitThreadManager.hpp>
+
+#include "zephyr/logging/log.h"
+
+LOG_MODULE_REGISTER(unit, CONFIG_UNIT_LOG_LEVEL);
+
 
 namespace OF
 {
+    void unitEntryFunction(void* unit, void*, void*)
+    {
+        const auto pUnit = static_cast<Unit*>(unit);
+        LOG_DBG("线程 %s 开始运行", pUnit->getName().data());
+        pUnit->state = UnitState::RUNNING;
+        k_yield();
+        while (pUnit->shouldRun())
+        {
+            pUnit->run();
+        }
+        pUnit->cleanup();
+        pUnit->state = UnitState::STOPPED;
+    }
     /**
      * @brief Unit 类的 cleanup 方法默认实现。
-     * @details 默认情况下不执行任何操作。派生类可以重写此方法以实现自定义的清理逻辑。
+     * @details
      */
-    void Unit::cleanup() {}
-
+    void Unit::cleanupBase()
+    {
+        if (stack != nullptr)
+        {
+            // 终止线程（如果尚未终止）
+            k_thread_abort(&thread);
+            // 释放栈内存
+            k_thread_stack_free(stack);
+            stack = nullptr;
+        }
+    }
     /**
      * @brief Unit 类的析构函数默认实现。
      */
-    Unit::~Unit()
+    Unit::~Unit() = default;
+
+    void Unit::initBase()
     {
-        if (_stack != nullptr)
+
+        LOG_DBG("Initializing %s unit", getName().data());
+        state = UnitState::INITIALIZING;
+        if (stack = k_thread_stack_alloc(getStackSize(), 0); stack == nullptr)
         {
-            // 终止线程（如果尚未终止）
-            k_thread_abort(&_thread);
-            // 释放栈内存
-            k_thread_stack_free(_stack);
-            _stack = nullptr;
-            // 调用清理方法
-            Unit::cleanup();
+            LOG_ERR("无法为Unit %s分配栈内存", getName().data());
+            state = UnitState::ERROR;
+            return;
         }
-    };
+        k_thread_create(&thread, stack, getStackSize(), unitEntryFunction, this, nullptr, nullptr, getPriority(), 0,
+                        K_NO_WAIT);
+        k_thread_name_set(&thread, getName().data());
+        shouldStop.store(false, std::memory_order_release);
+        LOG_DBG("%s Unit: ss: %d, state: %d", getName().data(), shouldStop.load(), state);
+
+        k_yield();
+    }
 
     /**
      * @brief 启动所有已注册的单元。
@@ -43,7 +77,11 @@ namespace OF
         {
             return;
         }
-        UnitThreadManager::initializeThreads(UnitRegistry::initialize());
+        for (auto& [name, unit] : UnitRegistry::initialize())
+        {
+            LOG_DBG("Starting %s", name.data());
+            unit->init();
+        }
         initialized = true;
     }
 

@@ -80,16 +80,6 @@ namespace OF
         return g_units;
     }
 
-    bool UnitRegistry::terminateUnit(const std::string_view name)
-    {
-        if (const auto it = g_units.find(name); it != g_units.end())
-        {
-            g_units.erase(it);
-            return true;
-        }
-        return false;
-    }
-
     /**
      * @brief 通过名称查找单元信息
      *
@@ -103,6 +93,28 @@ namespace OF
             return it->second.get();
         }
         return std::nullopt;
+    }
+    void UnitRegistry::tryStartUnit(const std::string_view name)
+    {
+        if (const auto unitOpt = findUnit(name))
+        {
+            unitOpt.value()->init();
+        }
+    }
+
+    void UnitRegistry::tryStopUnit(const std::string_view name)
+    {
+        if (const auto unitOpt = findUnit(name))
+        {
+            unitOpt.value()->tryStop();
+        }
+    }
+    void UnitRegistry::tryRestartUnit(const std::string_view name)
+    {
+        tryStopUnit(name);
+        k_sleep(K_MSEC(50));
+        tryStartUnit(name);
+        // TODO: 使用优雅的方法优化重复查询
     }
 
     /**

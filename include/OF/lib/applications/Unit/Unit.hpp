@@ -24,8 +24,18 @@ namespace OF
     {
         uint32_t cpuUsage{}; //!< CPU 使用率
         uint32_t memoryUsage{}; //!< 内存使用量
-        bool isRunning{false};
     };
+
+    enum class UnitState
+    {
+        UNINITIALIZED,
+        INITIALIZING,
+        RUNNING,
+        STOPPING,
+        STOPPED,
+        ERROR,
+    };
+
     /**
      * @brief 单元基类，定义了单元的基本行为和属性。
      *
@@ -35,12 +45,14 @@ namespace OF
     class Unit
     {
     public:
-        /**
-         * @brief 初始化单元。
-         * @details 此方法在单元线程启动前被调用，用于执行必要的初始化操作。
-         *          派生类必须实现此方法。
-         */
-        virtual void init() = 0;
+        void init()
+        {
+            if (state == UnitState::UNINITIALIZED || state == UnitState::STOPPED || state == UnitState::ERROR)
+            {
+                initCustom();
+                initBase();
+            }
+        }
 
         /**
          * @brief 单元的主运行函数。
@@ -54,7 +66,14 @@ namespace OF
          * @details 此方法在单元线程停止后被调用，用于释放资源和执行清理操作。
          *          派生类可以重写此方法。
          */
-        virtual void cleanup();
+        void cleanup()
+        {
+            if (state == UnitState::STOPPED || state == UnitState::ERROR)
+            {
+                cleanupCustom();
+                cleanupBase();
+            }
+        }
 
         constexpr std::string_view getName() const { return typeDescriptor().name; }
         constexpr std::string_view getDescription() const { return typeDescriptor().description; }
@@ -64,14 +83,32 @@ namespace OF
 
         virtual const UnitTypeDescriptor& typeDescriptor() const = 0;
 
-        k_thread _thread{}; //!< Zephyr 内核线程对象
-        k_thread_stack_t* _stack{nullptr};
+
+        void tryStop()
+        {
+            shouldStop.store(true, std::memory_order_release);
+            state = UnitState::STOPPING;
+        }
+        bool shouldRun() const { return !shouldStop.load(std::memory_order_acquire); }
+
+        UnitState state{UnitState::UNINITIALIZED};
         UnitRuntimeInfo stats{};
 
         /**
          * @brief 单元的虚析构函数。
          */
         virtual ~Unit();
+
+    protected:
+        virtual void initCustom() {}
+        virtual void cleanupCustom() {}
+
+    private:
+        void initBase();
+        void cleanupBase();
+        k_thread thread{}; //!< Zephyr 内核线程对象
+        k_thread_stack_t* stack{nullptr};
+        std::atomic<bool> shouldStop{false};
     };
 
     /**

@@ -77,16 +77,20 @@ namespace OF
          * @brief 通过名称查找单元信息
          *
          * @param name 要查找的单元名称
-         * @return std::optional<UnitInfo*> 找到时返回指向UnitInfo的指针，否则返回空optional
+         * @return std::optional<Unit*> 找到时返回指向Unit的指针，否则返回空optional
          */
-        static bool terminateUnit(std::string_view name);
-
         static std::optional<Unit*> findUnit(std::string_view name);
+
+        static void tryStartUnit(std::string_view name);
+
+        static void tryStopUnit(std::string_view name);
+
+        static void tryRestartUnit(std::string_view name);
 
         /**
          * @brief 更新所有单元的资源使用统计
          */
-        static void updateAllUnitStats();
+        inline static void updateAllUnitStats();
 
     private:
         static std::vector<UnitFactoryFunction> g_unitFactories; //!< 所有注册的单元工厂函数

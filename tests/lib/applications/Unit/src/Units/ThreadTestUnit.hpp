@@ -6,42 +6,19 @@
 
 #include <OF/lib/applications/Unit/Unit.hpp>
 #include <OF/lib/applications/Unit/UnitRegistry.hpp>
-#include <zephyr/kernel.h>
 
 #include "OF/lib/utils/PID.hpp"
 using namespace OF;
 
-// ThreadTestUnit.hpp 示例重构
 class ThreadTestUnit final : public Unit
 {
 public:
-    ThreadTestUnit() :
-        threadRunning(false), threadExited(false), initCalled(false), syncSem()
-    {
-    }
+    DEFINE_UNIT_DESCRIPTOR(ThreadTestUnit, "ThreadTestUnit", "Unit for thread testing", 2048, 3)
 
-    DEFINE_UNIT_DESCRIPTOR(ThreadTestUnit, "ThreadTestUnit", "Unit for thread testing", 2048, 7)
-
-    void init() override
-    {
-        initCalled = true;
-        k_sem_init(&syncSem, 0, 1);
-    }
-
-    [[noreturn]] void run() override;
-
-    void requestStop() { shouldStop = true; }
-
-    // 测试检查变量
-    bool threadRunning;
-    bool threadExited;
-    bool initCalled;
-    k_sem syncSem;
+    void run() override;
 
     PIDController<Positional, int> pid{1, 1, 1};
-
-private:
-    std::atomic<bool> shouldStop = false;
+    int counter = 0;
 };
 
 #endif
