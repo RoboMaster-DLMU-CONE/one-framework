@@ -30,6 +30,15 @@ jobs:
           app-path: one-framework
           toolchains: arm-zephyr-eabi
 
+      - name: Build firmware
+        working-directory: one-framework
+        shell: bash
+        run: |
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            EXTRA_TWISTER_FLAGS="--short-build-path -O/tmp/twister-out"
+          fi
+          west twister -T app -v --inline-logs --integration $EXTRA_TWISTER_FLAGS
+
       - name: Twister Tests
         working-directory: one-framework
         shell: bash
