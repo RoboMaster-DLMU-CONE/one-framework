@@ -148,7 +148,7 @@ ZTEST(thread_tests, test_periodic_stats_update)
         // 记录初始状态
         const uint32_t initialCpu = threadUnit.value()->stats.cpuUsage;
         const uint32_t initialMem = threadUnit.value()->stats.memoryUsage;
-        TC_PRINT("初始统计: CPU=%u%%, 内存=%u字节\n", initialCpu, initialMem);
+        TC_PRINT("CPU=%u%%, Memory=%u bytes\n", initialCpu, initialMem);
 
         // 等待足够长的时间让定时器触发更新
         k_sleep(K_SECONDS(7));
@@ -156,11 +156,7 @@ ZTEST(thread_tests, test_periodic_stats_update)
         // 获取更新后的状态
         const uint32_t updatedCpu = threadUnit.value()->stats.cpuUsage;
         const uint32_t updatedMem = threadUnit.value()->stats.memoryUsage;
-        TC_PRINT("更新后统计: CPU=%u%%, 内存=%u字节\n", updatedCpu, updatedMem);
-
-        // 报告状态变化
-        TC_PRINT("统计变化: CPU变化=%d, 内存变化=%d\n", static_cast<int>(updatedCpu) - static_cast<int>(initialCpu),
-                 static_cast<int>(updatedMem) - static_cast<int>(initialMem));
+        TC_PRINT("updated CPU=%u%%, memory=%u bytes\n", updatedCpu, updatedMem);
     }
 }
 
