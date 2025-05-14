@@ -2,6 +2,7 @@
 \tableofcontents
 
 ## 开发指南概述
+
 这是 `One Framework` 的开发指南。
 
 `One Framework` 采用`Zephyr`作为其实时任务系统与硬件抽象层(HAL)框架。您可以参阅 \ref framework "框架设计" 了解更多详细内容。
@@ -11,6 +12,4 @@
 
 \remark 在本篇开发指南中，若涉及到与框架无直接联系的前置知识，我们会使用此提示块将你引导至外部网站。
 
-\subpage 5min-dev "五分钟内移植框架"
-
-
+\subpage 5min-dev
