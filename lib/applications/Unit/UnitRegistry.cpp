@@ -111,10 +111,23 @@ namespace OF
     }
     void UnitRegistry::tryRestartUnit(const std::string_view name)
     {
-        tryStopUnit(name);
-        k_sleep(K_MSEC(50));
-        tryStartUnit(name);
-        // TODO: 使用优雅的方法优化重复查询
+        if (const auto unitOpt = findUnit(name))
+        {
+            auto* unit = unitOpt.value();
+            unit->tryStop();
+            size_t counter = 0;
+            while (unit->state != UnitState::STOPPED)
+            {
+                counter++;
+                k_sleep(K_MSEC(10));
+                if (counter * 10 >= CONFIG_UNIT_RESTART_WAITING_TIME)
+                {
+                    LOG_WRN("重启Unit：%s 失败。", unit->getName().data());
+                    return;
+                }
+            }
+            unit->init();
+        }
     }
 
     /**

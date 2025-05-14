@@ -69,6 +69,7 @@ Wiki](https://robomaster-dlmu-cone.github.io/one-framework/develop.html)
 - [ ] Buzzer
 - [x] application基类
 - [x] CPU负载计数器
+- [ ] 使用std::expected（需等待Zephyr更新编译器）
 
 ## Credit
 
