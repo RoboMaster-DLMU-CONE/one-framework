@@ -47,7 +47,7 @@ namespace OF
     void Unit::initBase()
     {
 
-        LOG_DBG("Initializing %s unit", getName().data());
+        LOG_DBG("初始化 %s Unit", getName().data());
         state = UnitState::INITIALIZING;
         if (stack = k_thread_stack_alloc(getStackSize(), 0); stack == nullptr)
         {
@@ -59,7 +59,6 @@ namespace OF
                         K_NO_WAIT);
         k_thread_name_set(&thread, getName().data());
         shouldStop.store(false, std::memory_order_release);
-        LOG_DBG("%s Unit: ss: %d, state: %d", getName().data(), shouldStop.load(), state);
 
         k_yield();
     }
