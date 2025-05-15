@@ -5,6 +5,11 @@ compatible: "pwm-heater"
 include: [ base.yaml ]
 
 properties:
+  pwms:
+      required: true
+      type: phandle-array
+      description: |
+        Reference to a PWM instance.
   temp-sensor:
     type: phandle
     required: true

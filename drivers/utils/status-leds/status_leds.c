@@ -8,9 +8,6 @@
 
 #include "zephyr/logging/log.h"
 
-#if !DT_HAS_COMPAT_STATUS_OKAY(status_leds)
-#error "No utils,status-leds nodes found - check compatible string!"
-#endif
 LOG_MODULE_REGISTER(status_leds, CONFIG_STATUS_LEDS_LOG_LEVEL);
 
 

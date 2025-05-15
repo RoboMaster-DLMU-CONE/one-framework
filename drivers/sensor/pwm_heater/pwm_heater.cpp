@@ -109,7 +109,7 @@ static int pwm_heater_init(const device *dev)
 	/* 直接使用Kconfig设置所有参数 */
 	data->target_temp = CONFIG_PWM_HEATER_TARGET_TEMP;
 	data->current_temp = 0;
-	data->pwm_period_us = CONFIG_PWM_HEATER_PWM_PERIOD_US;
+	data->pwm_period_us = 100;
 	data->duty_cycle_us = 0;
 	data->max_duty_us = (data->pwm_period_us * CONFIG_PWM_HEATER_MAX_DUTY_CYCLE_PCT) / 100;
 	data->enabled = false;  // 默认初始状态为禁用
