@@ -27,6 +27,11 @@ config UNIT_THREAD_ANALYZER
     help
         自动启用Zephyr的线程分析器功能，用于监控每个线程的CPU、内存使用率。
 
+if UNIT_THREAD_ANALYZER
+    config THREAD_ANALYZER_ISR_STACK_USAGE
+    default n
+endif
+
 config UNIT_RESTART_WAITING_TIME
     int "Unit重启最大等待时间"
     default 2000

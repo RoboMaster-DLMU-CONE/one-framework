@@ -13,3 +13,6 @@ config DT_HAS_BOSCH_BMI08X_ACCEL_ENABLED
 config DT_HAS_BOSCH_BMI08X_GYRO_ENABLED
         bool
         default y
+config SERIAL_SUPPORT_INTERRUPT
+        bool
+        default y
