@@ -94,6 +94,13 @@
 	status = "okay";
 };
 
+&usart3 {
+	pinctrl-0 = <&usart3_tx_pc10 &usart3_rx_pc11>;
+	pinctrl-names = "default";
+	current-speed = <100000>;
+	status = "okay";
+};
+
 &rtc {
 	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
 			 <&rcc STM32_SRC_LSI RTC_SEL(2)>;

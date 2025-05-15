@@ -1,0 +1,10 @@
+#include <common/dbus-preset.dtsi>
+
+&usart3{
+	status = "okay";
+	dbus {
+		compatible = "dji,dbus";
+		preset = <&dbus_preset_basic>;
+	};
+};
+

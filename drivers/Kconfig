@@ -1,3 +1,4 @@
 menu "OneFramework Drivers"
 rsource "utils/Kconfig"
+rsource "input/Kconfig"
 endmenu
