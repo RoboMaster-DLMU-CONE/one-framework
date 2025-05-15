@@ -184,3 +184,17 @@ zephyr_udc0: &usbotg_fs {
 		data-sync;
 	};
 };
+
+&pwm10 {
+	status = "okay";
+};
+
+/ {
+	pwm_heater: pwm-heater {
+		compatible = "pwm-heater";
+		pwms = <&timers10 1 20000 PWM_POLARITY_NORMAL>;
+		temp-sensor = <&die_temp>;
+		temp-channel = <6>; /* SENSOR_CHAN_DIE_TEMP */
+		status = "okay";
+	};
+};

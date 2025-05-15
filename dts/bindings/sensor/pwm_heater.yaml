@@ -1,0 +1,16 @@
+description: PWM加热器设备绑定
+
+compatible: "pwm-heater"
+
+include: [ base.yaml ]
+
+properties:
+  temp-sensor:
+    type: phandle
+    required: true
+    description: 温度传感器设备
+
+  temp-channel:
+    type: int
+    required: true
+    description: 温度传感器通道

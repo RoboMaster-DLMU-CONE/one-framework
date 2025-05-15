@@ -1,0 +1,72 @@
+menuconfig PWM_HEATER
+    bool "PWM加热器驱动"
+    select PWM
+    select PID
+    depends on SENSOR
+    help
+        启用基于PID控制的PWM加热器驱动，用于控制传感器温度
+
+if PWM_HEATER
+
+config PWM_HEATER_NAME
+    string "PWM加热器设备名称"
+    default "PWM_HEATER"
+    help
+        PWM加热器设备的名称
+
+config PWM_HEATER_INIT_PRIORITY
+    int "PWM加热器初始化优先级"
+    default 90
+    help
+        PWM加热器设备驱动初始化优先级
+
+config PWM_HEATER_LOG_LEVEL
+    int "PWM加热器日志级别"
+    default LOG_DEFAULT_LEVEL
+    help
+        PWM加热器设备驱动日志级别
+
+config PWM_HEATER_TARGET_TEMP
+    int "目标温度(摄氏度x100)"
+    default 4000
+    help
+        目标温度值，单位为摄氏度x100(例如：4000表示40.00°C)
+
+config PWM_HEATER_TEMP_TOLERANCE
+    int "温度容差范围(摄氏度x100)"
+    default 50
+    help
+        温度容差范围，单位为摄氏度x100(例如：50表示±0.50°C)
+
+config PWM_HEATER_UPDATE_INTERVAL_MS
+    int "PID控制器更新间隔(毫秒)"
+    default 100
+    help
+        PID控制器更新间隔，单位为毫秒
+
+config PWM_HEATER_PID_KP
+    int "PID比例系数(x1000)"
+    default 1000
+    help
+        PID控制器比例系数，放大1000倍
+
+config PWM_HEATER_PID_KI
+    int "PID积分系数(x1000)"
+    default 100
+    help
+        PID控制器积分系数，放大1000倍
+
+config PWM_HEATER_PID_KD
+    int "PID微分系数(x1000)"
+    default 10
+    help
+        PID控制器微分系数，放大1000倍
+
+config PWM_HEATER_MAX_DUTY_CYCLE_PCT
+    int "最大占空比(%)"
+    range 0 100
+    default 70
+    help
+        PWM最大占空比限制，防止过热
+
+endif # PWM_HEATER

@@ -1,0 +1,3 @@
+if SENSOR
+rsource "pwm_heater/Kconfig"
+endif # SENSOR

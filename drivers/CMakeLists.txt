@@ -1,2 +1,3 @@
 add_subdirectory(utils)
 add_subdirectory_ifdef(CONFIG_INPUT input)
+add_subdirectory_ifdef(CONFIG_SENSOR sensor)

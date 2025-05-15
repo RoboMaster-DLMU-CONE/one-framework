@@ -1,6 +1,12 @@
 menu "OneFramework Drivers"
 rsource "utils/Kconfig"
+
 if INPUT
 rsource "input/Kconfig"
 endif # INPUT
+
+if SENSOR
+rsource "sensor/Kconfig"
+endif # SENSOR
+
 endmenu
