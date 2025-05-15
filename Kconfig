@@ -1,9 +1,25 @@
-# Copyright (c) 2021 Nordic Semiconductor ASA
-# SPDX-License-Identifier: Apache-2.0
-#
-# This Kconfig file is picked by the Zephyr build system because it is defined
-# as the module Kconfig entry point (see zephyr/module.yml). You can browse
-# module options by going to Zephyr -> Modules in Kconfig.
+
+config ONE_FRAMEWORK
+    bool "One Framework框架"
+    select SERIAL
+    select CONSOLE
+    select LOG
+    select UART_CONSOLE
+    select CPP
+    select REQUIRES_FULL_LIBCPP
+    select INPUT
+    help
+        启用One Framework框架。
+        包含了One Framework框架的默认、常用Kconfig选项。
+
+if ONE_FRAMEWORK
+
+choice STD_CPP
+    prompt "C++ Standard"
+    depends on CPP
+    default STD_CPP20
+endchoice
 
 rsource "drivers/Kconfig"
 rsource "lib/Kconfig"
+endif # ONE_FRAMEWORK

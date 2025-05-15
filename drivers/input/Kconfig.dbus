@@ -1,7 +1,6 @@
-
 config INPUT_DBUS
 	bool "DBUS 驱动"
-	default y
+	default n
 	depends on INPUT
 	depends on UART_INTERRUPT_DRIVEN
 	select UART_USE_RUNTIME_CONFIGURE

@@ -1,4 +1,6 @@
 menu "OneFramework Drivers"
 rsource "utils/Kconfig"
+if INPUT
 rsource "input/Kconfig"
+endif # INPUT
 endmenu

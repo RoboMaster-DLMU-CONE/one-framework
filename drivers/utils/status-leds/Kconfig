@@ -6,6 +6,9 @@ menuconfig STATUS_LEDS
 
 if STATUS_LEDS
 
+config LED_INIT_PRIORITY
+    default 50
+
 config STATUS_LEDS_INIT_PRIORITY
 	int "Status LEDS device drivers init priority"
 	default 90
