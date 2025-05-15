@@ -7,8 +7,8 @@
 LOG_MODULE_REGISTER(unit_registry, CONFIG_UNIT_LOG_LEVEL);
 
 extern "C" {
-extern OF::UnitRegistry::UnitFactoryFunction __start_unit_registry[];
-extern OF::UnitRegistry::UnitFactoryFunction __stop_unit_registry[];
+const extern OF::UnitRegistry::UnitFactoryFunction __start_unit_registry[];
+const extern OF::UnitRegistry::UnitFactoryFunction __stop_unit_registry[];
 }
 
 namespace OF

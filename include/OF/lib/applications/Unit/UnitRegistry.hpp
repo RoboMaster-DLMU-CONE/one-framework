@@ -147,7 +147,6 @@ namespace OF
      * @param UnitClass 要注册的Unit派生类名称
      */
 
-#undef REGISTER_UNIT
 #define REGISTER_UNIT(UnitClass) \
     extern "C" { \
         OF::UnitRegistry::UnitFactoryFunction \
