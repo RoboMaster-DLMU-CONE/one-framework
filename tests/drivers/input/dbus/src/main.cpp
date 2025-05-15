@@ -6,6 +6,8 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
+#include <OF/drivers/utils/status_leds.h>
+
 // 注册日志模块
 LOG_MODULE_REGISTER(dbus_test, CONFIG_LOG_DEFAULT_LEVEL);
 
@@ -36,8 +38,20 @@ static void input_callback(input_event* evt, void* user_data)
 
 int main()
 {
+    LOG_INF("启动设备");
+
+    const struct device* status_led_dev = DEVICE_DT_GET(DT_NODELABEL(status_leds));
+    if (!device_is_ready(status_led_dev))
+    {
+        LOG_ERR("状态LED设备未就绪\n");
+        return -1;
+    }
+    const auto led_api = static_cast<const status_leds_api*>(status_led_dev->api);
+
+    led_api->set_heartbeat(status_led_dev);
+
     // 获取DBUS设备
-    const struct device* dbus_dev = DEVICE_DT_GET_ANY(dji_dbus);
+    const device* dbus_dev = DEVICE_DT_GET_ANY(dji_dbus);
 
     if (!device_is_ready(dbus_dev))
     {

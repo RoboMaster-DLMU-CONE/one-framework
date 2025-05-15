@@ -25,6 +25,7 @@ int main()
         LOG_ERR("BMI088 devices not ready");
         return -1;
     }
+    LOG_INF("程序开始运行……");
 
     while (true)
     {
