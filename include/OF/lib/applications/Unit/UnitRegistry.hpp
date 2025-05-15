@@ -90,7 +90,7 @@ namespace OF
         /**
          * @brief 更新所有单元的资源使用统计
          */
-        inline static void updateAllUnitStats();
+        static void updateAllUnitStats();
 
     private:
         static std::vector<UnitFactoryFunction> g_unitFactories; //!< 所有注册的单元工厂函数

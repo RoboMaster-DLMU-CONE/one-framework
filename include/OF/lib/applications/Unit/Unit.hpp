@@ -44,10 +44,13 @@ namespace OF
      */
     class Unit
     {
+        using enum UnitState;
+
     public:
         void init()
         {
-            if (state == UnitState::UNINITIALIZED || state == UnitState::STOPPED || state == UnitState::ERROR)
+
+            if (state == UNINITIALIZED || state == STOPPED || state == ERROR)
             {
                 initCustom();
                 initBase();
@@ -68,7 +71,8 @@ namespace OF
          */
         void cleanup()
         {
-            if (state == UnitState::STOPPED || state == UnitState::ERROR)
+            using enum UnitState;
+            if (state == STOPPED || state == ERROR)
             {
                 cleanupCustom();
                 cleanupBase();
@@ -87,11 +91,11 @@ namespace OF
         void tryStop()
         {
             shouldStop.store(true, std::memory_order_release);
-            state = UnitState::STOPPING;
+            state = STOPPING;
         }
         bool shouldRun() const { return !shouldStop.load(std::memory_order_acquire); }
 
-        UnitState state{UnitState::UNINITIALIZED};
+        UnitState state{UNINITIALIZED};
         UnitRuntimeInfo stats{};
 
         /**

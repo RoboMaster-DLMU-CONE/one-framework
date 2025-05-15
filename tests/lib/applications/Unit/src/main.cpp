@@ -14,6 +14,7 @@
 #include "zephyr/logging/log.h"
 
 using namespace OF;
+using enum UnitState;
 
 LOG_MODULE_REGISTER(unit_test, CONFIG_UNIT_LOG_LEVEL);
 
@@ -23,21 +24,21 @@ ZTEST(unit_tests, test_unit_lifecycle)
     TestUnit1 unit{};
     // 初始状态检查
     zassert_false(unit.initialized, "Unit应该初始未初始化");
-    zassert_equal(unit.state, UnitState::UNINITIALIZED, "Unit初始状态错误");
+    zassert_equal(unit.state, UNINITIALIZED, "Unit初始状态错误");
     // 初始化测试
     unit.init();
     zassert_true(unit.initialized, "Unit自定义初始化失败");
-    zassert_equal(unit.state, UnitState::INITIALIZING, "Unit状态应为INITIALIZING");
+    zassert_equal(unit.state, INITIALIZING, "Unit状态应为INITIALIZING");
     // 运行测试
     zassert_false(unit.runCalled, "Unit运行方法不应被自动调用");
     unit.run();
     zassert_true(unit.runCalled, "Unit运行方法调用失败");
     // 清理测试
-    unit.state = UnitState::STOPPED;
+    unit.state = STOPPED;
     zassert_false(unit.cleanupCalled, "Unit清理方法不应被自动调用");
     unit.cleanup();
     zassert_true(unit.cleanupCalled, "Unit清理方法调用失败");
-    unit.state = UnitState::RUNNING;
+    unit.state = RUNNING;
 }
 
 // 测试线程停止控制
@@ -50,7 +51,7 @@ ZTEST(unit_tests, test_thread_control)
     // 请求停止
     unit.tryStop();
     zassert_false(unit.shouldRun(), "Unit停止标志未正确设置");
-    zassert_equal(unit.state, UnitState::STOPPING, "Unit状态应为STOPPING");
+    zassert_equal(unit.state, STOPPING, "Unit状态应为STOPPING");
 }
 
 // 测试Unit元数据访问方法
@@ -110,7 +111,7 @@ ZTEST(unit_registry_tests, test_unit_control)
     if (unit)
     {
         zassert_false(unit.value()->shouldRun(), "Unit停止标志未正确设置");
-        zassert_equal(unit.value()->state, UnitState::STOPPING, "Unit状态应为STOPPING");
+        zassert_equal(unit.value()->state, STOPPING, "Unit状态应为STOPPING");
     }
 
     // 测试重启Unit (应该先停止再启动)
@@ -119,7 +120,7 @@ ZTEST(unit_registry_tests, test_unit_control)
     if (unit1)
     {
         // 重启会调用init()，状态应为INITIALIZING
-        zassert_equal(unit1.value()->state, UnitState::INITIALIZING, "重启后Unit状态错误");
+        zassert_equal(unit1.value()->state, INITIALIZING, "重启后Unit状态错误");
     }
 }
 
@@ -132,7 +133,7 @@ ZTEST(thread_tests, test_initialize_threads)
     k_sleep(K_SECONDS(1));
     if (threadUnit)
     {
-        zassert_true(threadUnit.value()->state == UnitState::RUNNING, "ThreadTestUnit线程应该处于运行状态");
+        zassert_true(threadUnit.value()->state == RUNNING, "ThreadTestUnit线程应该处于运行状态");
     }
 }
 
