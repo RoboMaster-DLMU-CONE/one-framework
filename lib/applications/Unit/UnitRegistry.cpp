@@ -6,19 +6,16 @@
 
 LOG_MODULE_REGISTER(unit_registry, CONFIG_UNIT_LOG_LEVEL);
 
+extern "C" {
+const extern OF::UnitRegistry::UnitFactoryFunction __start_unit_registry[];
+const extern OF::UnitRegistry::UnitFactoryFunction __stop_unit_registry[];
+}
+
 namespace OF
 {
     std::vector<UnitRegistry::UnitFactoryFunction> UnitRegistry::g_unitFactories;
     std::vector<UnitRegistry::UnitRegistrationFunction> UnitRegistry::g_registrationFunctions;
     std::unordered_map<std::string_view, std::unique_ptr<Unit>> UnitRegistry::g_units;
-
-    /**
-     * @brief 添加注册函数到注册表
-     */
-    void UnitRegistry::addRegistrationFunction(const UnitRegistrationFunction func)
-    {
-        g_registrationFunctions.push_back(func);
-    }
 
 #ifdef CONFIG_UNIT_THREAD_ANALYZER
     /**
@@ -49,10 +46,9 @@ namespace OF
         g_units.clear();
         g_unitFactories.clear();
 
-        // 执行所有注册函数
-        for (const auto func : g_registrationFunctions)
+        for (auto* it = __start_unit_registry; it != __stop_unit_registry; ++it)
         {
-            func();
+            g_unitFactories.push_back(*it);
         }
 
         for (const auto& factory : g_unitFactories)
@@ -94,6 +90,7 @@ namespace OF
         }
         return std::nullopt;
     }
+
     void UnitRegistry::tryStartUnit(const std::string_view name)
     {
         if (const auto unitOpt = findUnit(name))
@@ -109,6 +106,7 @@ namespace OF
             unitOpt.value()->tryStop();
         }
     }
+
     void UnitRegistry::tryRestartUnit(const std::string_view name)
     {
         if (const auto unitOpt = findUnit(name))

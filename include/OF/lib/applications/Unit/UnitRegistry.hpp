@@ -56,16 +56,6 @@ namespace OF
         }
 
         /**
-         * @brief 添加注册函数到注册表
-         *
-         * @details 添加一个在初始化时将被调用的函数，用于注册Unit类型。
-         *          此方法通常由REGISTER_UNIT宏自动调用。
-         *
-         * @param func 指向注册函数的指针
-         */
-        static void addRegistrationFunction(UnitRegistrationFunction func);
-
-        /**
          * @brief 初始化所有注册的单元
          *
          * @details 清理注册表，并调用所有已注册的注册函数，以便注册所有Unit类型。
@@ -156,21 +146,14 @@ namespace OF
      *
      * @param UnitClass 要注册的Unit派生类名称
      */
-#define REGISTER_UNIT(UnitClass)                                                                                       \
-    namespace                                                                                                          \
-    {                                                                                                                  \
-        void OF_CONCAT(registerUnit_, __LINE__)() { OF::UnitRegistry::registerUnit<UnitClass>(); }                     \
-                                                                                                                       \
-        struct OF_CONCAT(UnitRegistrar_, __LINE__)                                                                     \
-        {                                                                                                              \
-            OF_CONCAT(UnitRegistrar_, __LINE__)()                                                                      \
-            {                                                                                                          \
-                OF::UnitRegistry::addRegistrationFunction(OF_CONCAT(registerUnit_, __LINE__));                         \
-            }                                                                                                          \
-        };                                                                                                             \
-                                                                                                                       \
-        static OF_CONCAT(UnitRegistrar_, __LINE__) OF_CONCAT(unitRegistrarInstance_, __LINE__);                        \
+
+#define REGISTER_UNIT(UnitClass) \
+    extern "C" { \
+        OF::UnitRegistry::UnitFactoryFunction \
+        _unit_factory_##UnitClass __attribute__((section(".unit_registry"),used)) = \
+        []() -> std::unique_ptr<OF::Unit> { return std::make_unique<UnitClass>(); }; \
     }
+
 } // namespace OF
 
 #endif // UNITREGISTRY_HPP
