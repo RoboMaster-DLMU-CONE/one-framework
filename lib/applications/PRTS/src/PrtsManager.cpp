@@ -2,16 +2,15 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <zephyr/shell/shell.h>
+
 #include <OF/lib/applications/PRTS/PrtsManager.hpp>
+#include <OF/lib/applications/Unit/UnitRegistry.hpp>
 
 #include <string>
 #include <unordered_set>
 
-#include "OF/lib/applications/Unit/UnitRegistry.hpp"
-
 using namespace OF::Prts;
 using enum OptionType;
-
 
 // prts ls unit|cmd
 static int cmd_ls(const shell* sh, size_t argc, char** argv)
@@ -104,36 +103,70 @@ static int cmd_call(const shell* sh, size_t argc, char** argv)
 
 static int cmd_elements(const shell* sh, size_t argc, char** argv)
 {
-    if (argc != 2)
+    if (argc < 2)
     {
-        shell_error(sh, "Usage: prts elements <unit>");
+        shell_error(sh, "Usage: prts elements <unit> [--json]");
         return -EINVAL;
     }
     const std::string_view name = argv[1];
-    auto uopt = OF::UnitRegistry::findUnit(name);
+    const auto uopt = OF::UnitRegistry::findUnit(name);
     if (!uopt)
     {
         shell_error(sh, "Unit '%s' not found", name.data());
+        return -EINVAL;
     }
     const OF::Unit* u = *uopt;
 
-    for (auto& ed : PrtsManager::getElements())
+    bool wantJson = false;
+    for (size_t i = 2; i < argc; ++i)
     {
-        if (ed.unitName == name)
+        if (std::string_view(argv[i]) == "--json")
         {
-            std::string_view val = ed.getter(u);
+            wantJson = true;
+        }
+    }
+    if (wantJson)
+    {
+        shell_print(sh, "{ \"elements\": [");
+        bool first = true;
+        for (auto& [unitName, elemName, type, minVal, maxVal, getter] : PrtsManager::getElements())
+        {
+            if (unitName != name)
+                continue;
+            if (!first)
+                shell_print(sh, ",");
+            first = false;
+            auto v = getter(u);
+            shell_print(sh,
+                        "  {\"name\":\"%s\",\"type\":\"%s\",\"min\":%g,\"max\":%g,\"value\":\"%s\"}",
+                        elemName.data(),
+                        type.data(),
+                        minVal,
+                        maxVal,
+                        v.c_str()
+                );
+        }
+        shell_print(sh, "]}");
+        return 0;
+    }
+
+    for (auto& [unitName, elemName, type, minVal, maxVal, getter] : PrtsManager::getElements())
+    {
+        if (unitName == name)
+        {
+            std::string_view val = getter(u);
             shell_print(sh, "%s [%s] = %s (min=%g max=%g)",
-                        ed.elemName.data(),
-                        ed.type.data(),
+                        elemName.data(),
+                        type.data(),
                         val.data(),
-                        ed.minVal,
-                        ed.maxVal);
+                        minVal,
+                        maxVal);
         }
     }
     return 0;
 }
 
-static int cmd_help(const struct shell* sh, size_t argc, char** argv)
+static int cmd_help(const shell* sh, size_t argc, char** argv)
 {
     if (argc != 3)
     {
