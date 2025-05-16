@@ -1,18 +1,25 @@
 menuconfig PRTS
     bool "PRTS"
     select UNIT
-    select DISPLAY
-    select INPUT
-    select LVGL
+    select SHELL
+    select SERIAL
+    select SHELL_BACKEND_SERIAL
+
     help
-        Enable P.R.T.S. (Plug-in RoboMaster Terminal Screen).
+        启用 P.R.T.S. (Primitive RoboMaster Terminal Service).
 
 if PRTS
 
 config HEAP_MEM_POOL_ADD_SIZE_PRTS
-    int "PRTS heap size"
+    int "PRTS预分配堆内存"
     default 5000
     help
         PRTS所需的堆大小
+
+config SHELL_ECHO_STATUS
+    bool "终端ECHO效果"
+    default n
+    help
+        影响桌面端程序解析字符串，默认关闭
 
 endif # PRTS
