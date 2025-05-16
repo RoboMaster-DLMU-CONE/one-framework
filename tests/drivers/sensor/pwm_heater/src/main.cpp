@@ -1,10 +1,13 @@
 // Copyright (c) 2025. MoonFeather
 // SPDX-License-Identifier: BSD-3-Clause
+
 #include <zephyr/device.h>
+#include <zephyr/logging/log.h>
+
+#include <cmath>
 
 #include "OF/drivers/sensor/pwm_heater.h"
 #include "OF/drivers/utils/status_leds.h"
-#include "zephyr/logging/log.h"
 
 LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
 
@@ -46,8 +49,25 @@ int main()
 
     LOG_INF("程序开始运行，加热器已启动");
 
+    int32_t current_temp;
+
     while (true)
     {
-        k_sleep(K_MSEC(100));
+        ret = pwm_heater_get_current_temp(heater, &current_temp);
+
+        if (ret == 0) {
+            if (current_temp < 0) {
+                /* 负温度特殊处理 */
+                LOG_INF("当前温度: -%d.%02d°C",
+                        abs(current_temp) / 100, abs(current_temp % 100));
+            } else {
+                LOG_INF("当前温度: %d.%02d°C",
+                        current_temp / 100, current_temp % 100);
+            }
+        } else {
+            LOG_ERR("读取温度失败: %d", ret);
+        }
+
+        k_sleep(K_MSEC(500));
     }
 }
