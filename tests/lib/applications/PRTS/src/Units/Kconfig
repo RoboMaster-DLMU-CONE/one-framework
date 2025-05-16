@@ -1,0 +1,3 @@
+config HEAP_MEM_POOL_ADD_SIZE_PRTS_TEST
+    int "PRTS 测试内存堆大小"
+    default 20000
