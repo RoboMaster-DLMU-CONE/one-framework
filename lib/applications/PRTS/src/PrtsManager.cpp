@@ -95,7 +95,7 @@ static int cmd_call(const shell* sh, size_t argc, char** argv)
         if (cd.unitName == unit && cd.cmdName == cmd)
         {
             // 注意 handler 的 argc, argv 都从 cmd 名开始
-            return cd.handler(static_cast<int>(argc - 2), &argv[2]);
+            return cd.handler(sh, static_cast<int>(argc - 2), &argv[2]);
         }
     }
     shell_error(sh, "未在 Unit '%s' 中找到 '%s' 命令。", unit.data(), cmd.data());

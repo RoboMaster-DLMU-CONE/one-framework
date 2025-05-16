@@ -25,7 +25,7 @@ namespace OF::Prts
         std::string_view cmdName;
         std::string_view description;
         std::vector<OptionDesc> options;
-        std::function<int(int, char**)> handler;
+        std::function<int(const shell*, int, char**)> handler;
     };
 
     using ElementGetter = std::function<std::string(const Unit*)>;

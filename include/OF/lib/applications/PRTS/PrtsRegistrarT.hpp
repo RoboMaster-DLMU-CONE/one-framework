@@ -28,34 +28,40 @@ namespace OF::Prts
                 OptsVec::value.end()
                 );
 
+            auto handler = [unitName, cmdName, desc](const struct shell* sh, int argc, char** argv) -> int
+            {
+                std::vector<std::string_view> argvec;
+                for (int i = 1; i < argc; ++i)
+                {
+                    argvec.push_back(argv[i]);
+                }
+                ArgTup args{};
+                if (!ArgParser<0, ArgTup>::parse(args, argvec))
+                {
+                    shell_error(sh, "Missing or invalid options, try prts help [unit] [cmd]");
+                    return -EINVAL;
+                }
+                auto uopt = UnitRegistry::findUnit(unitName);
+                if (!uopt)
+                {
+                    shell_error(sh, "Unit '%s' not found", unitName.data());
+                    return -ENOENT;
+                }
+                C* u = static_cast<C*>(*uopt);
+                return std::apply(
+                    [u]<typename... T>(T&&... a)
+                    {
+                        return (u->*MemFn)(std::forward<T>(a)...);
+                    },
+                    args);
+            };
+
             const CommandDesc cd = {
                 .unitName = unitName,
                 .cmdName = cmdName,
                 .description = desc,
                 .options = std::move(opts),
-                // ReSharper disable once CppParameterMayBeConst
-                .handler = [unitName](int argc, char** argv)-> int
-                {
-                    auto uopt = UnitRegistry::findUnit(unitName);
-                    if (!uopt)
-                        return -1;
-                    C* u = static_cast<C*>(*uopt);
-
-                    std::vector<std::string_view> argvec;
-                    for (int i = 1; i < argc; ++i)
-                    {
-                        argvec.push_back(argv[i]);
-                    }
-                    ArgTup args{};
-                    if (!ArgParser<0, ArgTup>::parse(args, argvec))
-                    {
-                        return -1;
-                    }
-                    return std::apply([u]<typename... T>(T&&... a)
-                    {
-                        return (u->*MemFn)(std::forward<T>(a)...);
-                    }, args);
-                }
+                .handler = handler
             };
             PrtsManager::registerCommand(cd);
         }
