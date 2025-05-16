@@ -37,12 +37,15 @@
 	};
 
 	aliases {
-		led0 = &blue_led;
-		led1 = &green_led;
-		led2 = &red_led;
-		die-temp0 = &die_temp;
 		volt-sensor0 = &vref;
 		volt-sensor1 = &vbat;
+	};
+
+	status_leds: status-leds {
+		compatible = "status-leds";
+		leds = <&leds>;
+		heartbeat-led-index = <0>;
+		error-led-index = <1>;
 	};
 };
 
@@ -158,13 +161,13 @@ zephyr_udc0: &usbotg_fs {
 		reg = <0>;
 		spi-max-frequency = <10000000>;
 		int-gpios = <&gpioc 4 GPIO_ACTIVE_HIGH>;
-		accel-hz = "400";
-		accel-fs = <16>;
+		accel-hz = "800";
+		accel-fs = <4>;
 
-		int1-map-io = <1>; /* 将数据就绪中断映射到INT1 */
-		int1-conf-io = <10>; /* 设置INT1为推挽输出和有效高电平 */
-		int2-map-io = <0>;
-		int2-conf-io = <0>;
+		int1-map-io = <0x01>; /* 将数据就绪中断映射到INT1 */
+		int1-conf-io = <0x0A>; /* 设置INT1为推挽输出和有效高电平 */
+		int2-map-io = <0x00>;
+		int2-conf-io = <0x17>;
 
 		data-sync = <&bmi088_gyro>;
 	};
@@ -174,8 +177,8 @@ zephyr_udc0: &usbotg_fs {
 		reg = <1>;
 		spi-max-frequency = <10000000>;
 		int-gpios = <&gpioc 5 GPIO_ACTIVE_HIGH>;
-		gyro-hz = "400_47";
-		gyro-fs = <2000>;
+		gyro-hz = "1000_116";
+		gyro-fs = <1000>;
 
 		int3-4-map-io = <1>; /* 将数据就绪中断映射到INT3 */
 		int3-4-conf-io = <1>; /* 设置INT3为有效高电平和推挽输出 */

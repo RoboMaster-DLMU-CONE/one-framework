@@ -3,6 +3,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/drivers/sensor.h>
 
 #include <cmath>
 
@@ -53,11 +54,10 @@ int main()
 
     while (true)
     {
+        // 读取温度 (保留原有代码)
         ret = pwm_heater_get_current_temp(heater, &current_temp);
-
         if (ret == 0) {
             if (current_temp < 0) {
-                /* 负温度特殊处理 */
                 LOG_INF("当前温度: -%d.%02d°C",
                         abs(current_temp) / 100, abs(current_temp % 100));
             } else {
@@ -66,6 +66,40 @@ int main()
             }
         } else {
             LOG_ERR("读取温度失败: %d", ret);
+        }
+
+        // 读取加速度计数据
+        struct sensor_value accel_x, accel_y, accel_z;
+        if (sensor_sample_fetch(accel) == 0) {
+            if (sensor_channel_get(accel, SENSOR_CHAN_ACCEL_X, &accel_x) == 0 &&
+                sensor_channel_get(accel, SENSOR_CHAN_ACCEL_Y, &accel_y) == 0 &&
+                sensor_channel_get(accel, SENSOR_CHAN_ACCEL_Z, &accel_z) == 0) {
+
+                double ax = sensor_value_to_double(&accel_x);
+                double ay = sensor_value_to_double(&accel_y);
+                double az = sensor_value_to_double(&accel_z);
+
+                LOG_INF("加速度 (m/s²): X=%.2f, Y=%.2f, Z=%.2f", ax, ay, az);
+                }
+        } else {
+            LOG_ERR("无法读取加速度计数据");
+        }
+
+        // 读取陀螺仪数据
+        struct sensor_value gyro_x, gyro_y, gyro_z;
+        if (sensor_sample_fetch(gyro) == 0) {
+            if (sensor_channel_get(gyro, SENSOR_CHAN_GYRO_X, &gyro_x) == 0 &&
+                sensor_channel_get(gyro, SENSOR_CHAN_GYRO_Y, &gyro_y) == 0 &&
+                sensor_channel_get(gyro, SENSOR_CHAN_GYRO_Z, &gyro_z) == 0) {
+
+                double gx = sensor_value_to_double(&gyro_x);
+                double gy = sensor_value_to_double(&gyro_y);
+                double gz = sensor_value_to_double(&gyro_z);
+
+                LOG_INF("角速度 (rad/s): X=%.2f, Y=%.2f, Z=%.2f", gx, gy, gz);
+                }
+        } else {
+            LOG_ERR("无法读取陀螺仪数据");
         }
 
         k_sleep(K_MSEC(500));
