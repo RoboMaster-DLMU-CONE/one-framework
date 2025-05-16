@@ -213,7 +213,7 @@ ZTEST(pid_c_api, test_with_features)
     zassert_equal(output, 0.0f, "当误差小于死区时，输出应该为0");
     // 大偏差，输出应受限
     output = pid_compute(pid, 10.0f, 0.0f);
-    TC_PRINT("输出限幅测试: %f\n", static_cast<double>(output));
+    TC_PRINT("output limit: %f\n", static_cast<double>(output));
     zassert_true(output <= 5.0f, "输出应该被限制在5.0以内");
 
     // 释放资源
@@ -235,7 +235,7 @@ ZTEST(pid_c_api, test_incremental)
     {
         measurement += output * 0.1f; // 简单系统响应
         output = pid_compute(pid, 10.0f, measurement);
-        TC_PRINT("C API增量式PID: measure: %f, output: %f\n", static_cast<double>(measurement),
+        TC_PRINT("C API PID: measure: %f, output: %f\n", static_cast<double>(measurement),
                  static_cast<double>(output));
     }
 
@@ -266,7 +266,7 @@ ZTEST(pid_c_api, test_reset)
     pid_reset(pid);
     // 重置后应该得到不同的输出
     const float after_reset = pid_compute(pid, 10.0f, measurement);
-    TC_PRINT("重置前: %f, 重置后: %f\n",
+    TC_PRINT("before: %f, after: %f\n",
              static_cast<double>(before_reset), static_cast<double>(after_reset));
 
     // 释放资源
