@@ -1,7 +1,9 @@
-#include <OF/lib/utils/PID.hpp>
+#include <OF/lib/utils/PID/PID.hpp>
 #include <cmath>
 #include <zephyr/tc_util.h>
 #include <zephyr/ztest.h>
+
+#include "OF/lib/utils/PID/pid_c_api.h"
 using namespace OF;
 
 extern "C" {
@@ -174,5 +176,104 @@ ZTEST(pid_controller, test_deadband)
     TC_PRINT("%f\n", static_cast<double>(output));
 }
 
-ZTEST_SUITE(pid_controller, NULL, NULL, NULL, NULL, NULL);
+// 测试C API的基本位置式PID控制器
+ZTEST(pid_c_api, test_positional_basic)
+{
+    // 创建一个简单的位置式PID控制器
+    pid_controller_t pid = pid_create(PID_POSITIONAL, 1.0f, 0.1f, 0.05f, PID_FEATURE_NONE, 0.0f, 0.0f, 0.0f);
+
+    float measurement = 0.0f;
+    float output = pid_compute(pid, 10.0f, measurement);
+    zassert_true(output > 0, "位置式PID应该输出正值");
+
+    // 进行迭代，观察是否最终接近目标值
+    for (int i = 0; i < 50; i++)
+    {
+        measurement += output * 0.1f; // 简单系统响应
+        output = pid_compute(pid, 10.0f, measurement);
+        TC_PRINT("C API PID: measure: %f, output: %f\n", static_cast<double>(measurement), static_cast<double>(output));
+    }
+
+    // 检查最终结果是否接近目标值
+    zassert_true(std::abs(measurement - 10.0f) < 5.0f, "PID控制器应该使系统接近目标值");
+
+    // 释放资源
+    pid_destroy(pid);
+}
+
+// 测试带特性的PID控制器
+ZTEST(pid_c_api, test_with_features)
+{
+    // 测试带死区和输出限幅的PID控制器
+    pid_controller_t pid = pid_create(PID_POSITIONAL, 1.0f, 0.1f, 0.05f,
+                                      PID_FEATURE_DEADBAND | PID_FEATURE_OUTPUT_LIMIT, 5.0f, 1.0f, 0.0f);
+
+    // 误差小于死区
+    float output = pid_compute(pid, 0.5f, 0.0f); // 误差为0.5，小于死区1.0
+    zassert_equal(output, 0.0f, "当误差小于死区时，输出应该为0");
+    // 大偏差，输出应受限
+    output = pid_compute(pid, 10.0f, 0.0f);
+    TC_PRINT("输出限幅测试: %f\n", static_cast<double>(output));
+    zassert_true(output <= 5.0f, "输出应该被限制在5.0以内");
+
+    // 释放资源
+    pid_destroy(pid);
+}
+
+// 测试增量式PID控制器
+ZTEST(pid_c_api, test_incremental)
+{
+    // 创建一个简单的增量式PID控制器
+    pid_controller_t pid = pid_create(PID_INCREMENTAL, 1.0f, 0.1f, 0.05f, PID_FEATURE_NONE, 0.0f, 0.0f, 0.0f);
+
+    float measurement = 0.0f;
+    float output = pid_compute(pid, 10.0f, measurement);
+    zassert_true(output > 0, "增量式PID应该输出正值");
+
+    // 进行迭代
+    for (int i = 0; i < 20; i++)
+    {
+        measurement += output * 0.1f; // 简单系统响应
+        output = pid_compute(pid, 10.0f, measurement);
+        TC_PRINT("C API增量式PID: measure: %f, output: %f\n", static_cast<double>(measurement),
+                 static_cast<double>(output));
+    }
+
+    // 检查最终结果是否接近目标值
+    zassert_true(std::abs(measurement - 10.0f) < 5.0f, "增量式PID控制器应该使系统接近目标值");
+
+    // 释放资源
+    pid_destroy(pid);
+}
+
+// 测试PID重置功能
+ZTEST(pid_c_api, test_reset)
+{
+    // 创建PID控制器
+    pid_controller_t pid = pid_create(PID_POSITIONAL, 1.0f, 0.1f, 0.05f, PID_FEATURE_NONE, 0.0f, 0.0f, 0.0f);
+
+    // 运行几次计算以积累状态
+    float measurement = 0.0f;
+    for (int i = 0; i < 5; i++)
+    {
+        const float output = pid_compute(pid, 10.0f, measurement);
+        measurement += output * 0.1f;
+    }
+
+    // 记录当前输出
+    const float before_reset = pid_compute(pid, 10.0f, measurement);
+    // 重置控制器
+    pid_reset(pid);
+    // 重置后应该得到不同的输出
+    const float after_reset = pid_compute(pid, 10.0f, measurement);
+    TC_PRINT("重置前: %f, 重置后: %f\n",
+             static_cast<double>(before_reset), static_cast<double>(after_reset));
+
+    // 释放资源
+    pid_destroy(pid);
+}
+
+ZTEST_SUITE(pid_c_api, nullptr, NULL, NULL, NULL, NULL);
+
+ZTEST_SUITE(pid_controller, nullptr, NULL, NULL, NULL, NULL);
 }

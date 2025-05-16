@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include "ThreadTestUnit.hpp"
-#include <OF/lib/utils/PID.hpp>
 
 void ThreadTestUnit::run()
 {

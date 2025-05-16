@@ -7,10 +7,13 @@
 #include <OF/lib/applications/Unit/Unit.hpp>
 #include <OF/lib/applications/Unit/UnitRegistry.hpp>
 
-#include "OF/lib/utils/PID.hpp"
+#include "OF/lib/utils/PID/PID.hpp"
 using namespace OF;
 
-class ThreadTestUnit final : public Unit
+class ThreadTestUnit final :
+    public
+
+Unit
 {
 public:
     DEFINE_UNIT_DESCRIPTOR(ThreadTestUnit, "ThreadTestUnit", "Unit for thread testing", 2048, 3)
