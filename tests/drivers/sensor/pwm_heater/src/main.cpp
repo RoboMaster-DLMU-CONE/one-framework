@@ -29,7 +29,7 @@ int main()
     }
     // 初始化PWM加热器
     // 初始化PWM加热器
-    const struct device* heater = DEVICE_DT_GET(DT_NODELABEL(pwm_heater));
+    const device* heater = DEVICE_DT_GET(DT_NODELABEL(pwm_heater));
     if (!device_is_ready(heater))
     {
         LOG_ERR("PWM加热器设备未就绪");

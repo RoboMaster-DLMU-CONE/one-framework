@@ -2,7 +2,10 @@
 #define PWM_HEATER_H
 
 #include <zephyr/device.h>
-#include <zephyr/drivers/sensor.h>
+
+#ifdef __cplusplus
+extern "C"{
+#endif
 
 /**
  * @brief 获取加热器当前温度
@@ -28,5 +31,9 @@ int pwm_heater_enable(const struct device *dev);
  * @return 0表示成功，负数表示错误
  */
 int pwm_heater_disable(const struct device *dev);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //PWM_HEATER_H
