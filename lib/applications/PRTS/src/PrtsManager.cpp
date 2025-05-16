@@ -41,7 +41,7 @@ static int cmd_ls(const shell* sh, size_t argc, char** argv)
             shell_error(sh, "Usage: prts ls cmd <unit>");
             return -EINVAL;
         }
-        std::string_view unit = argv[2];
+        const std::string_view unit = argv[2];
         for (auto& cd : PrtsManager::getCommands())
         {
             if (cd.unitName == unit)

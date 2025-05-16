@@ -16,4 +16,10 @@ config HEAP_MEM_POOL_ADD_SIZE_PRTS
     help
         PRTS所需的堆大小
 
+config SHELL_ECHO_STATUS
+    bool "终端ECHO效果"
+    default n
+    help
+        影响桌面端程序解析字符串，默认关闭
+
 endif # PRTS
