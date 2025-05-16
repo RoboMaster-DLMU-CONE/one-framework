@@ -4,6 +4,7 @@ config ONE_FRAMEWORK
     select SERIAL
     select CONSOLE
     select LOG
+    select CBPRINTF_FP_SUPPORT
     select UART_CONSOLE
     select CPP
     select REQUIRES_FULL_LIBCPP
