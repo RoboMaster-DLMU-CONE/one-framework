@@ -10,6 +10,7 @@
 
 namespace OF::Prts
 {
+
     template <auto MemFn, typename OptsVec>
     struct CommandRegistrarT
     {

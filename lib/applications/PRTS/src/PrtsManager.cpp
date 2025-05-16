@@ -10,16 +10,18 @@
 #include "OF/lib/applications/Unit/UnitRegistry.hpp"
 
 using namespace OF::Prts;
+using enum OptionType;
+
 
 // prts ls unit|cmd
-static int cmd_ls(const struct shell* sh, size_t argc, char** argv)
+static int cmd_ls(const shell* sh, size_t argc, char** argv)
 {
     if (argc < 2)
     {
         shell_error(sh, "Usage: prts ls unit|cmd");
         return -EINVAL;
     }
-    std::string arg = argv[1];
+    const std::string arg = argv[1];
     if (arg == "unit")
     {
         std::unordered_set<std::string_view> names;
@@ -79,15 +81,15 @@ static int cmd_info(const struct shell* sh, size_t argc, char** argv)
 }
 
 // prts call <unit> <cmd> [--opt v …]
-static int cmd_call(const struct shell* sh, size_t argc, char** argv)
+static int cmd_call(const shell* sh, size_t argc, char** argv)
 {
     if (argc < 3)
     {
         shell_error(sh, "Usage: prts call <unit> <cmd> [options]");
         return -EINVAL;
     }
-    const std::string unit = argv[1];
-    const std::string cmd = argv[2];
+    const std::string_view unit = argv[1];
+    const std::string_view cmd = argv[2];
     for (const auto& cd : PrtsManager::getCommands())
     {
         if (cd.unitName == unit && cd.cmdName == cmd)
@@ -96,11 +98,11 @@ static int cmd_call(const struct shell* sh, size_t argc, char** argv)
             return cd.handler(static_cast<int>(argc - 2), &argv[2]);
         }
     }
-    shell_error(sh, "Command '%s' not found for unit '%s'", cmd.c_str(), unit.c_str());
+    shell_error(sh, "未在 Unit '%s' 中找到 '%s' 命令。", unit.data(), cmd.data());
     return -ENOENT;
 }
 
-static int cmd_elements(const struct shell* sh, size_t argc, char** argv)
+static int cmd_elements(const shell* sh, size_t argc, char** argv)
 {
     if (argc != 2)
     {
@@ -131,7 +133,39 @@ static int cmd_elements(const struct shell* sh, size_t argc, char** argv)
     return 0;
 }
 
+static int cmd_help(const struct shell* sh, size_t argc, char** argv)
+{
+    if (argc != 3)
+    {
+        shell_error(sh, "Usage: prts help <unit> <cmd>");
+        return -EINVAL;
+    }
+    const std::string_view unit = argv[1];
+    const std::string_view cmd = argv[2];
+    for (const auto& cd : PrtsManager::getCommands())
+    {
+        if (cd.unitName == unit && cd.cmdName == cmd)
+        {
+            shell_print(sh, "Usage: prts call %s %s", unit.data(), cmd.data());
+            shell_print(sh, "  %s", cd.description.data());
+            for (const auto& [name, type] : cd.options)
+            {
+                const char* t = type == INT
+                    ? "int"
+                    : type == DOUBLE
+                    ? "double"
+                    : "string";
+                shell_print(sh, "    --%s <%s>", name.data(), t);
+            }
+            return 0;
+        }
+    }
+    shell_error(sh, "Command '%s' not found for unit '%s'", cmd.data(), unit.data());
+    return -ENOENT;
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(prts_subcmds,
+                               SHELL_CMD(help, NULL, "Show command help", cmd_help),
                                SHELL_CMD(ls, NULL, "List units or commands", cmd_ls),
                                SHELL_CMD(info, NULL, "Show unit info", cmd_info),
                                SHELL_CMD(call, NULL, "Invoke a unit command",cmd_call),

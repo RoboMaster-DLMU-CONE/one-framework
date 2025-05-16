@@ -6,8 +6,8 @@
 #include <string_view>
 #include <vector>
 #include <functional>
-
-#include "OF/lib/applications/Unit/Unit.hpp"
+#include <zephyr/shell/shell.h>
+#include <OF/lib/applications/Unit/Unit.hpp>
 
 namespace OF::Prts
 {
