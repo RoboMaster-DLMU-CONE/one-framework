@@ -51,7 +51,7 @@ static void pwm_heater_work_handler(struct k_work *work)
 	uint32_t new_duty;
 
     /* 读取当前温度 */
-    if (const int ret = sensor_channel_get(config->temp_sensor, config->temp_channel, &temp_val); ret < 0) {
+    if (const int ret = sensor_channel_get(config->temp_sensor, SENSOR_CHAN_DIE_TEMP, &temp_val); ret < 0) {
 		LOG_ERR("无法读取温度传感器: %d", ret);
 		goto reschedule;
 	}
@@ -109,7 +109,7 @@ static int pwm_heater_init(const device *dev)
 	/* 直接使用Kconfig设置所有参数 */
 	data->target_temp = CONFIG_PWM_HEATER_TARGET_TEMP;
 	data->current_temp = 0;
-	data->pwm_period_us = 100;
+	data->pwm_period_us = 20000;
 	data->duty_cycle_us = 0;
 	data->max_duty_us = (data->pwm_period_us * CONFIG_PWM_HEATER_MAX_DUTY_CYCLE_PCT) / 100;
 	data->enabled = false;  // 默认初始状态为禁用

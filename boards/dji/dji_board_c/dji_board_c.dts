@@ -2,7 +2,6 @@
 #include <st/f4/stm32f407Xg.dtsi>
 #include <st/f4/stm32f407i(e-g)hx-pinctrl.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
-#include <zephyr/dt-bindings/led/led.h>
 
 / {
 	model = "DJI RoboMaster Development Board C";
@@ -187,6 +186,7 @@ zephyr_udc0: &usbotg_fs {
 
 &timers10 {
 	status = "okay";
+	st,prescaler = <84>;
 
 	pwm10: pwm {
 		status = "okay";
@@ -200,7 +200,7 @@ zephyr_udc0: &usbotg_fs {
 		compatible = "pwm-heater";
 		pwms = <&pwm10 1 PWM_USEC(100) PWM_POLARITY_NORMAL>;
 		temp-sensor = <&die_temp>;
-		temp-channel = <6>; /* SENSOR_CHAN_DIE_TEMP */
+		temp-channel = <12>; /* SENSOR_CHAN_DIE_TEMP */
 		status = "okay";
 	};
 };

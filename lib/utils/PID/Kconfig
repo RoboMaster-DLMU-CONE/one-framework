@@ -18,4 +18,10 @@ config PID_Output_LPF_RC_M1K
     help
         PID Output LPF RC value, 300 will be turned into double 0.3
 
+config PID_C_API
+    bool "PID C API"
+    default n
+    help
+        PID控制器的C API，默认关闭
+
 endif # PID
