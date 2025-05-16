@@ -7,6 +7,8 @@
 #include <vector>
 #include <functional>
 
+#include "OF/lib/applications/Unit/Unit.hpp"
+
 namespace OF::Prts
 {
     enum class OptionType { INT, DOUBLE, STRING };
@@ -26,6 +28,8 @@ namespace OF::Prts
         std::function<int(int, char**)> handler;
     };
 
+    using ElementGetter = std::function<std::string(const Unit*)>;
+
     struct ElementDesc
     {
         std::string_view unitName;
@@ -33,6 +37,7 @@ namespace OF::Prts
         std::string_view type; // "button","slider","text"
         double minVal;
         double maxVal;
+        ElementGetter getter;
     };
 
     class PrtsManager

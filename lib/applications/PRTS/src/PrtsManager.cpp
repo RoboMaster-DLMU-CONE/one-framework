@@ -107,14 +107,23 @@ static int cmd_elements(const struct shell* sh, size_t argc, char** argv)
         shell_error(sh, "Usage: prts elements <unit>");
         return -EINVAL;
     }
-    std::string_view unit = argv[1];
+    const std::string_view name = argv[1];
+    auto uopt = OF::UnitRegistry::findUnit(name);
+    if (!uopt)
+    {
+        shell_error(sh, "Unit '%s' not found", name.data());
+    }
+    const OF::Unit* u = *uopt;
+
     for (auto& ed : PrtsManager::getElements())
     {
-        if (ed.unitName == unit)
+        if (ed.unitName == name)
         {
-            shell_print(sh, "%s [%s] min=%g max=%g",
+            std::string_view val = ed.getter(u);
+            shell_print(sh, "%s [%s] = %s (min=%g max=%g)",
                         ed.elemName.data(),
                         ed.type.data(),
+                        val.data(),
                         ed.minVal,
                         ed.maxVal);
         }

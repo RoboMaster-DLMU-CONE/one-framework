@@ -14,7 +14,7 @@ struct ArgParser
         }
         else
         {
-            auto& [name, type] = OF::Prts::PrtsManager::getCommands().back().options[I];
+            auto& [name, type] = Prts::PrtsManager::getCommands().back().options[I];
             using T = std::tuple_element_t<I, Tuple>;
             for (size_t i = 0; i + 1 < opts.size(); ++i)
             {
