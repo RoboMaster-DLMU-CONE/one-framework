@@ -1,0 +1,17 @@
+name: Auto Assign
+on:
+  issues:
+    types: [ opened, edited, labeled, unlabeled ]
+  pull_request:
+    types: [ opened, edited, labeled, unlabeled ]
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: wow-actions/auto-assign@v3
+        if: github.actor != '120MF'
+        with:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          reviewers: |
+            120MF
+          skipKeywords: wip, draft
