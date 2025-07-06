@@ -8,6 +8,8 @@ manifest:
   remotes:
     - name: zephyrproject-rtos
       url-base: https://github.com/zephyrproject-rtos
+    - name: robomaster-dlmu
+      url-base: https://github.com/RoboMaster-DLMU-CONE
 
   projects:
     - name: zephyr
@@ -18,3 +20,8 @@ manifest:
           - cmsis
           - cmsis_6
           - hal_stm32
+    - name: onemotor
+      remote: robomaster-dlmu
+      repo-path: OneMotor
+      revision: main
+      path: modules/lib/onemotor
