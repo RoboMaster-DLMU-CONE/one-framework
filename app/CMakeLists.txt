@@ -10,4 +10,3 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(app LANGUAGES CXX)
 
 target_sources(app PRIVATE src/main.cpp)
-one_framework_init()
