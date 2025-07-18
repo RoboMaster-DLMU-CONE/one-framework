@@ -14,6 +14,8 @@
 		zephyr,flash = &flash0;
 		zephyr,ccm = &ccm0;
 		zephyr,canbus = &can1;
+		can1 = &can1;
+		can2 = &can2;
 	};
 
 	leds: leds {

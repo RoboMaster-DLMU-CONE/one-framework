@@ -14,5 +14,13 @@ using OneMotor::Can::CanFrame;
 
 int main()
 {
+    const device* can_dev1 = DEVICE_DT_GET(DT_CHOSEN(can1));
+    CanDriver can1(can_dev1);
+
+    (void)can1.open().map_error([](const OneMotor::Error& e)
+    {
+        LOG_ERR("%s", e.message.c_str());
+    });
+
     return 0;
 }
