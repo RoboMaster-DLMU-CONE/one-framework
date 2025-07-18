@@ -1,9 +1,11 @@
-# Copyright (c) 2024, Nordic Semiconductor ASA
-# SPDX-License-Identifier: Apache-2.0
-
 name: Documentation
 
-on: [ push, pull_request ]
+on:
+  push:
+    tags:
+      - "v*"
+  pull_request:
+  workflow_dispatch:
 
 env:
   DOXYGEN_VERSION: 1.9.6

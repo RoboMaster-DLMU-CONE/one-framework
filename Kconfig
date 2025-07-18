@@ -9,6 +9,7 @@ config ONE_FRAMEWORK
     select CPP
     select REQUIRES_FULL_LIBCPP
     select INPUT
+    select ONE_MOTOR
     help
         启用One Framework框架。
         包含了One Framework框架的默认、常用Kconfig选项。
