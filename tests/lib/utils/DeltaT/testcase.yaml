@@ -1,6 +1,0 @@
-common:
-  tags: extensibility
-  integration_platforms:
-    - qemu_cortex_m3
-tests:
-  lib.DeltaT: { }

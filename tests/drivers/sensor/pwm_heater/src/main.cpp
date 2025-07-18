@@ -101,7 +101,6 @@ int main()
         } else {
             LOG_ERR("无法读取陀螺仪数据");
         }
-
         k_sleep(K_MSEC(500));
     }
 }

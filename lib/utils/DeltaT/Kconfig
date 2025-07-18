@@ -1,4 +1,0 @@
-menuconfig DELTA_T
-    bool "DeltaT"
-    help
-        Enable DeltaT lib

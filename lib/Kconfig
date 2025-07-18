@@ -1,6 +1,6 @@
 menu "OneFramework Libraries"
 
 rsource "applications/Kconfig"
-rsource "utils/Kconfig"
+rsource "utilities/Kconfig"
 
 endmenu
