@@ -10,7 +10,7 @@
 #include <zephyr/logging/log.h>
 
 #include "OF/drivers/sensor/pwm_heater.h"
-#include "OF/lib/utils/PID/pid_c_api.h"
+#include "OneMotor/Control/pid_c_api.h"
 
 LOG_MODULE_REGISTER(pwm_heater, CONFIG_PWM_HEATER_LOG_LEVEL);
 
@@ -23,13 +23,21 @@ struct pwm_heater_config {
 struct pwm_heater_data {
     struct k_work_delayable work;
     const struct device *dev;
-    pid_controller_t pid;
+    PID_Handle_t pid;
     int32_t target_temp;      /* 目标温度 (单位: 摄氏度x100) */
     int32_t current_temp;     /* 当前温度 (单位: 摄氏度x100) */
     uint32_t pwm_period_us;   /* PWM周期 (微秒) */
     uint32_t duty_cycle_us;   /* 当前占空比 (微秒) */
     uint32_t max_duty_us;     /* 最大占空比 (微秒) */
     bool enabled;             /* 加热器使能状态 */
+};
+const PID_Params_t params = {
+    .Kp = CONFIG_PWM_HEATER_PID_KP / 1000.0f,
+    .Ki = CONFIG_PWM_HEATER_PID_KI / 1000.0f,
+    .Kd = CONFIG_PWM_HEATER_PID_KD / 1000.0f,
+    .IntegralLimit = 50.0f,
+    .MaxOutput = 1000.0f,
+    .Deadband = CONFIG_PWM_HEATER_TEMP_TOLERANCE / 100.f,
 };
 
 static void pwm_heater_work_handler(struct k_work *work)
@@ -108,7 +116,7 @@ static void pwm_heater_work_handler(struct k_work *work)
     }
 
     /* 使用PID控制器计算输出 */
-    pid_output = pid_compute(data->pid,
+    pid_output = PID_Compute(data->pid,
                             (float)(data->target_temp) / 100.0f,
                             (float)(data->current_temp) / 100.0f);
 
@@ -157,14 +165,7 @@ static int pwm_heater_init(const struct device *dev)
     data->enabled = false;  // 默认初始状态为禁用
 
     /* 创建PID控制器 */
-    data->pid = pid_create(PID_POSITIONAL,
-                         CONFIG_PWM_HEATER_PID_KP,
-                         CONFIG_PWM_HEATER_PID_KI,
-                         CONFIG_PWM_HEATER_PID_KD,
-                         PID_FEATURE_OUTPUT_LIMIT | PID_FEATURE_INTEGRAL_LIMIT,
-                         1000.0f,
-                         0.5f,
-                         50.0f);
+    data->pid = PID_Create(&params);
 
     if (data->pid == NULL) {
         LOG_ERR("无法创建PID控制器");
@@ -177,7 +178,7 @@ static int pwm_heater_init(const struct device *dev)
     /* 初始化PWM引脚 */
     if (pwm_set_dt(&config->pwm, data->pwm_period_us, 0) < 0) {
         LOG_ERR("无法设置PWM输出");
-        pid_destroy(data->pid);
+        PID_Destroy(data->pid);
         return -EIO;
     }
 

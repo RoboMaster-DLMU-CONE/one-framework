@@ -1,2 +1,2 @@
-add_subdirectory(utils)
+add_subdirectory(utilities)
 add_subdirectory(applications)

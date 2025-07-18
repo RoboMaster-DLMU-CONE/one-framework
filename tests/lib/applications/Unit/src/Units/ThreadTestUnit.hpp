@@ -7,20 +7,23 @@
 #include <OF/lib/applications/Unit/Unit.hpp>
 #include <OF/lib/applications/Unit/UnitRegistry.hpp>
 
-#include "OF/lib/utils/PID/PID.hpp"
+#include <OneMotor/Control/PID.hpp>
+using OneMotor::Control::PIDController;
+using OneMotor::Control::PID_Params;
+using OneMotor::Control::Positional;
 using namespace OF;
 
 class ThreadTestUnit final :
     public
 
-Unit
+    Unit
 {
 public:
     DEFINE_UNIT_DESCRIPTOR(ThreadTestUnit, "ThreadTestUnit", "Unit for thread testing", 2048, 3)
 
     void run() override;
 
-    PIDController<Positional, int> pid{1, 1, 1};
+    PIDController<Positional, int> pid{{1, 1, 1}};
     int counter = 0;
 };
 

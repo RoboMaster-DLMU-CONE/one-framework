@@ -1,3 +1,0 @@
-zephyr_library()
-zephyr_library_sources_ifdef(CONFIG_PID PID.cpp)
-zephyr_library_sources_ifdef(CONFIG_PID_C_API pid_c_api.cpp)
