@@ -2,9 +2,10 @@ name: Build
 
 on:
   push:
+    tags:
+      - "v*"
   pull_request:
-  schedule:
-    - cron: "0 0 * * *"
+  workflow_dispatch:
 
 jobs:
   build:
