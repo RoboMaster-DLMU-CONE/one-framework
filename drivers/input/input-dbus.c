@@ -22,7 +22,7 @@ struct dbus_input_channel
     uint32_t zephyr_code;
 };
 
-/* DBUS使用的UART配置 - 大疆遥控器使用100000波特率奇偶校验 */
+/* DBUS UART配置 - 100kbps波特率 奇偶校验 */
 const struct uart_config uart_cfg_dbus = {.baudrate = 100000,
                                           .parity = UART_CFG_PARITY_EVEN,
                                           .stop_bits = UART_CFG_STOP_BITS_2,
@@ -41,6 +41,38 @@ struct input_dbus_config
 #define DBUS_TRANSMISSION_TIME_MS 4
 #define DBUS_INTERFRAME_SPACING_MS 20
 #define DBUS_CHANNEL_COUNT 28 /* 通道总数：5个摇杆+2个开关+4个鼠标+1个滚轮+16个键盘 */
+
+static const struct dbus_input_channel input_channels_full[DBUS_CHANNEL_COUNT] = {
+    {0, INPUT_EV_ABS, INPUT_ABS_RX}, /* right_stick_x */
+    {1, INPUT_EV_ABS, INPUT_ABS_RY}, /* right_stick_y */
+    {2, INPUT_EV_ABS, INPUT_ABS_X}, /* left_stick_x */
+    {3, INPUT_EV_ABS, INPUT_ABS_Y}, /* left_stick_y */
+    {4, INPUT_EV_KEY, INPUT_KEY_F1}, /* switch_right */
+    {5, INPUT_EV_KEY, INPUT_KEY_F2}, /* switch_left */
+    {6, INPUT_EV_REL, INPUT_REL_X}, /* mouse_x */
+    {7, INPUT_EV_REL, INPUT_REL_Y}, /* mouse_y */
+    {8, INPUT_EV_REL, INPUT_REL_Z}, /* mouse_z */
+    {9, INPUT_EV_KEY, INPUT_BTN_LEFT}, /* mouse_left */
+    {10, INPUT_EV_KEY, INPUT_BTN_RIGHT}, /* mouse_right */
+    {11, INPUT_EV_ABS, INPUT_ABS_WHEEL}, /* wheel */
+    /* 键盘 16 键 */
+    {12, INPUT_EV_KEY, INPUT_KEY_W},
+    {13, INPUT_EV_KEY, INPUT_KEY_S},
+    {14, INPUT_EV_KEY, INPUT_KEY_D},
+    {15, INPUT_EV_KEY, INPUT_KEY_A},
+    {16, INPUT_EV_KEY, INPUT_KEY_RIGHTSHIFT},
+    {17, INPUT_EV_KEY, INPUT_KEY_RIGHTCTRL},
+    {18, INPUT_EV_KEY, INPUT_KEY_Q},
+    {19, INPUT_EV_KEY, INPUT_KEY_E},
+    {20, INPUT_EV_KEY, INPUT_KEY_R},
+    {21, INPUT_EV_KEY, INPUT_KEY_F},
+    {22, INPUT_EV_KEY, INPUT_KEY_G},
+    {23, INPUT_EV_KEY, INPUT_KEY_Z},
+    {24, INPUT_EV_KEY, INPUT_KEY_X},
+    {25, INPUT_EV_KEY, INPUT_KEY_C},
+    {26, INPUT_EV_KEY, INPUT_KEY_V},
+    {27, INPUT_EV_KEY, INPUT_KEY_B},
+};
 
 #define RC_CH_VALUE_OFFSET 1024
 #define REPORT_FILTER CONFIG_INPUT_DBUS_REPORT_FILTER
@@ -65,6 +97,7 @@ struct input_dbus_data
     K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_INPUT_DBUS_THREAD_STACK_SIZE);
 };
 
+
 static void input_dbus_report(const struct device* dev, unsigned int dbus_channel, unsigned int value)
 {
     const struct input_dbus_config* const config = dev->config;
@@ -72,42 +105,44 @@ static void input_dbus_report(const struct device* dev, unsigned int dbus_channe
 
     int channel = data->channel_mapping[dbus_channel];
 
+    LOG_DBG("report dbus_ch=%u map_idx=%d type=%u code=%u val=%u",
+            dbus_channel, channel,
+            config->channel_info[channel].type,
+            config->channel_info[channel].zephyr_code,
+            value);
     /* 未映射 */
-    if (channel == -1)
+    if (channel <= 0)
+        return;
+
+    if (config->channel_info[channel].type == INPUT_EV_KEY)
     {
+        const bool pressed = (value > CHANNEL_VALUE_ONE);
+        if (pressed != (bool)data->last_reported_value[channel])
+        {
+            input_report_key(dev,
+                             config->channel_info[channel].zephyr_code,
+                             pressed, false, K_FOREVER);
+            data->last_reported_value[channel] = pressed;
+        }
         return;
     }
 
-    if (value >= (data->last_reported_value[channel] + REPORT_FILTER) ||
-        value <= (data->last_reported_value[channel] - REPORT_FILTER))
-    {
-        switch (config->channel_info[channel].type)
-        {
-        case INPUT_EV_ABS:
-        case INPUT_EV_MSC:
-            input_report(dev, config->channel_info[channel].type, config->channel_info[channel].zephyr_code, value,
-                         false, K_FOREVER);
-            break;
+    if (value < data->last_reported_value[channel] + REPORT_FILTER && value > data->last_reported_value[channel] -
+        REPORT_FILTER)
+        return;
 
-        default:
-            if (value > CHANNEL_VALUE_ONE)
-            {
-                input_report_key(dev, config->channel_info[channel].zephyr_code, 1, false, K_FOREVER);
-            }
-            else if (value < CHANNEL_VALUE_ZERO)
-            {
-                input_report_key(dev, config->channel_info[channel].zephyr_code, 0, false, K_FOREVER);
-            }
-        }
-        data->last_reported_value[channel] = value;
-    }
+
+    input_report(dev,
+                 config->channel_info[channel].type,
+                 config->channel_info[channel].zephyr_code,
+                 value, false, K_FOREVER);
 }
 
 static void input_dbus_input_report_thread(const struct device* dev, void* dummy2, void* dummy3)
 {
     struct input_dbus_data* const data = dev->data;
-    uint8_t* dbus_buf;
-    uint16_t keyboard, last_keyboard = 0;
+    const struct input_dbus_config* const config = dev->config;
+    uint16_t last_keyboard = 0;
     bool connected_reported = false;
 
     ARG_UNUSED(dummy2);
@@ -158,7 +193,7 @@ static void input_dbus_input_report_thread(const struct device* dev, void* dummy
         }
 
         /* 解析DBUS数据 */
-        dbus_buf = data->dbus_frame;
+        const uint8_t* dbus_buf = data->dbus_frame;
 
         /* 报告通道1-4（遥控器摇杆） */
         input_dbus_report(dev, 0, ((uint16_t)dbus_buf[0] | ((uint16_t)dbus_buf[1] << 8)) & 0x07FF);
@@ -183,14 +218,20 @@ static void input_dbus_input_report_thread(const struct device* dev, void* dummy
         input_dbus_report(dev, 11, ((uint16_t)dbus_buf[16] | ((uint16_t)dbus_buf[17] << 8)) & 0x07FF);
 
         /* 键盘数据 - 通道12-27 */
-        keyboard = dbus_buf[14] | (dbus_buf[15] << 8);
+        const uint16_t keyboard = dbus_buf[14] | (dbus_buf[15] << 8);
         if (keyboard != last_keyboard)
         {
             for (int i = 0; i < 16; i++)
             {
-                if ((keyboard & (1 << i)) != (last_keyboard & (1 << i)))
+                const uint16_t bit = 1u << i;
+                if ((keyboard & bit) != (last_keyboard & bit))
                 {
-                    input_dbus_report(dev, 12 + i, (keyboard & (1 << i)) ? 1 : 0);
+                    /* 只报变化那一位 */
+                    const struct dbus_input_channel* ch = &config->channel_info[12 + i];
+                    input_report_key(dev,
+                                     ch->zephyr_code,
+                                     (keyboard & bit) ? 1 : 0,
+                                     false, K_FOREVER);
                 }
             }
             last_keyboard = keyboard;
@@ -277,6 +318,7 @@ static int input_dbus_init(const struct device* dev)
     data->in_sync = false;
     data->last_rx_time = 0;
 
+    LOG_DBG("num_channels: %d", config->num_channels);
     for (i = 0; i < config->num_channels; i++)
     {
         data->channel_mapping[config->channel_info[i].dbus_channel] = i;
@@ -320,34 +362,15 @@ static int input_dbus_init(const struct device* dev)
     return ret;
 }
 
-#define INPUT_CHANNEL_CHECK(input_channel_id)                                                                          \
-    BUILD_ASSERT(IN_RANGE(DT_PROP(input_channel_id, channel), 0, 26), "无效的通道号");                                 \
-    BUILD_ASSERT(DT_PROP(input_channel_id, type) == INPUT_EV_ABS || DT_PROP(input_channel_id, type) == INPUT_EV_KEY || \
-                     DT_PROP(input_channel_id, type) == INPUT_EV_MSC,                                                  \
-                 "无效的通道类型");
+static struct input_dbus_data dbus_data;
+static const struct input_dbus_config dbus_cfg = {
+    .channel_info = input_channels_full,
+    .uart_dev = DEVICE_DT_GET(DT_BUS(DT_DRV_INST(0))),
+    .num_channels = ARRAY_SIZE(input_channels_full),
+    .cb = dbus_uart_isr,
+};
 
-#define DBUS_INPUT_CHANNEL_INITIALIZER(input_channel_id)                                                               \
-    {                                                                                                                  \
-        .dbus_channel = DT_PROP(input_channel_id, channel),                                                            \
-        .type = DT_PROP(input_channel_id, type),                                                                       \
-        .zephyr_code = DT_PROP(input_channel_id, zephyr_code),                                                         \
-    },
-
-#define INPUT_DBUS_INIT(n)                                                                                             \
-                                                                                                                       \
-    static const struct dbus_input_channel input_##n[] = {DT_INST_FOREACH_CHILD(n, DBUS_INPUT_CHANNEL_INITIALIZER)};   \
-    DT_INST_FOREACH_CHILD(n, INPUT_CHANNEL_CHECK)                                                                      \
-                                                                                                                       \
-    static struct input_dbus_data dbus_data_##n;                                                                       \
-                                                                                                                       \
-    static const struct input_dbus_config dbus_cfg_##n = {                                                             \
-        .channel_info = input_##n,                                                                                     \
-        .uart_dev = DEVICE_DT_GET(DT_INST_BUS(n)),                                                                     \
-        .num_channels = ARRAY_SIZE(input_##n),                                                                         \
-        .cb = dbus_uart_isr,                                                                                           \
-    };                                                                                                                 \
-                                                                                                                       \
-    DEVICE_DT_INST_DEFINE(n, input_dbus_init, NULL, &dbus_data_##n, &dbus_cfg_##n, POST_KERNEL,                        \
-                          CONFIG_INPUT_INIT_PRIORITY, NULL);
-
-DT_INST_FOREACH_STATUS_OKAY(INPUT_DBUS_INIT)
+DEVICE_DT_INST_DEFINE(0,
+                      input_dbus_init, NULL,
+                      &dbus_data, &dbus_cfg,
+                      POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY, NULL);

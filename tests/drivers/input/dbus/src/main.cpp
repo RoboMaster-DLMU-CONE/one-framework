@@ -22,7 +22,7 @@ static void input_callback(input_event* evt, void* user_data)
         LOG_INF("摇杆或滚轮: code=%u, value=%d", evt->code, evt->value);
         break;
     case INPUT_EV_REL:
-        LOG_INF("鼠标移动: code=%u, value=%d", evt->code, evt->value);
+        // LOG_INF("鼠标移动: code=%u, value=%d", evt->code, evt->value);
         break;
     case INPUT_EV_KEY:
         LOG_INF("按键或开关: code=%u, state=%s", evt->code, evt->value ? "按下" : "释放");

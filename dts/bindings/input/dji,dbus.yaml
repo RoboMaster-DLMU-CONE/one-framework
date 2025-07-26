@@ -7,62 +7,16 @@ description: |
   DBUS是通过UART通信的协议，使用100000波特率，偶校验，2个停止位。
   驱动将DBUS信号绑定到Zephyr输入系统使用INPUT_EV_CODES。
 
-  配置方式支持两种:
-  1. 使用预设配置 - 设置preset属性即可自动配置所有通道
-  2. 手动配置 - 单独定义每个需要的通道
-
-  预设配置示例:
-  &uart1 {
+  配置示例:
+  &usart3 {
     status = "okay";
     dbus {
         compatible = "dji,dbus";
-        preset = "full"; /* 预配置所有通道，可选: basic, full */
+        status = "okay";
     };
   };
 
-  手动配置示例:
-  &uart1 {
-    status = "okay";
-    dbus {
-        compatible = "dji,dbus";
-        right_stick_x {
-            channel = <0>;
-            type = <INPUT_EV_ABS>;
-            zephyr,code = <INPUT_ABS_RX>;
-        };
-        /* 更多通道配置... */
-    };
-  };
 
 compatible: "dji,dbus"
 
 include: [ base.yaml, uart-device.yaml ]
-
-properties:
-  preset:
-    type: phandle
-    description: |
-      从预设配置节点复制所有子节点。
-      可以引用 dbus_preset_basic 或 dbus_preset_full。
-      这允许用户通过包含预设文件并引用预设节点来快速配置所有通道。
-
-child-binding:
-  description: |
-    DBUS通道到输入事件代码的绑定
-    INPUT_EV_ABS和INPUT_EV_MSC提供原始输入值
-    INPUT_EV_KEY模拟按键
-  properties:
-    channel:
-      type: int
-      required: true
-      description: |
-        DBUS输入通道
-        有效范围: 0 - 27 (5个摇杆通道, 2个开关, 4个鼠标, 1个滚轮, 16个键盘)
-    type:
-      type: int
-      required: true
-      description: 输入事件类型，参见INPUT_EV_CODES
-    zephyr,code:
-      type: int
-      required: true
-      description: 要发送的事件代码

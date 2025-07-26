@@ -1,5 +1,3 @@
-#include <common/dbus-preset.dtsi>
-
 / {
 	status_leds: status-leds {
 		compatible = "status-leds";
@@ -14,7 +12,6 @@
 
 	dbus {
 		compatible = "dji,dbus";
-		preset = <&dbus_preset_basic>;
+		status = "okay";
 	};
 };
-

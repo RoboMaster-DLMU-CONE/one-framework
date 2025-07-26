@@ -30,7 +30,7 @@ config INPUT_DBUS_REPORT_FILTER
 
 config INPUT_DBUS_SEND_SYNC
 	bool "Send Sync to input subsys on each SBUS frame"
-	default y
+	default n
 	help
 	  Sends sync message to input subsys with sync bit.
 
