@@ -13,7 +13,6 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,ccm = &ccm0;
-		zephyr,canbus = &can1;
 		can1 = &can1;
 		can2 = &can2;
 	};
@@ -198,6 +197,17 @@ zephyr_udc0: &usbotg_fs {
 		int3-4-conf-io = <1>; /* 设置INT3为有效高电平和推挽输出 */
 
 		data-sync;
+	};
+};
+
+&timers4 {
+	status = "okay";
+	st,prescaler = <167>;
+
+	pwm4: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim4_ch3_pd14>;
+		pinctrl-names = "default";
 	};
 };
 
