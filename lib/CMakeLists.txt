@@ -1,2 +1,3 @@
 add_subdirectory(utilities)
 add_subdirectory(applications)
+add_subdirectory(modules)

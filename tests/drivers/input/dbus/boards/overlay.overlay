@@ -1,17 +1,2 @@
-/ {
-	status_leds: status-leds {
-		compatible = "status-leds";
-		leds = <&leds>;
-		heartbeat-led-index = <0>;
-		error-led-index = <1>;
-	};
-};
 
-&usart3 {
-	status = "okay";
 
-	dbus {
-		compatible = "dji,dbus";
-		status = "okay";
-	};
-};

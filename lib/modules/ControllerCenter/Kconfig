@@ -1,0 +1,22 @@
+menuconfig CONTROLLER_CENTER
+    bool "ControllerCenter"
+    depends on INPUT_DBUS || INPUT_SBUS
+    help
+        启用OneFramework控制器中心
+
+if CONTROLLER_CENTER
+
+config CONTROLLER_CENTER_LOG_LEVEL
+    int "控制器中心系统日志级别"
+    default 3
+    range 0 4
+    help
+        设置控制器中心系统的日志级别
+        - 0: OFF
+        - 1: ERROR
+        - 2: WARNING
+        - 3: INFO
+        - 4: DEBUG
+
+
+endif # CONTROLLER_CENTER

@@ -105,37 +105,18 @@ static void input_dbus_report(const struct device* dev, unsigned int dbus_channe
 
     int channel = data->channel_mapping[dbus_channel];
 
-    LOG_DBG("report dbus_ch=%u map_idx=%d type=%u code=%u val=%u",
-            dbus_channel, channel,
-            config->channel_info[channel].type,
-            config->channel_info[channel].zephyr_code,
-            value);
+    LOG_DBG("report dbus_ch=%u map_idx=%d type=%u code=%u val=%u", dbus_channel, channel,
+            config->channel_info[channel].type, config->channel_info[channel].zephyr_code, value);
     /* 未映射 */
-    if (channel <= 0)
+    if (channel < 0)
         return;
 
-    if (config->channel_info[channel].type == INPUT_EV_KEY)
-    {
-        const bool pressed = (value > CHANNEL_VALUE_ONE);
-        if (pressed != (bool)data->last_reported_value[channel])
-        {
-            input_report_key(dev,
-                             config->channel_info[channel].zephyr_code,
-                             pressed, false, K_FOREVER);
-            data->last_reported_value[channel] = pressed;
-        }
-        return;
-    }
-
-    if (value < data->last_reported_value[channel] + REPORT_FILTER && value > data->last_reported_value[channel] -
-        REPORT_FILTER)
+    if (value < data->last_reported_value[channel] + REPORT_FILTER &&
+        value > data->last_reported_value[channel] - REPORT_FILTER)
         return;
 
-
-    input_report(dev,
-                 config->channel_info[channel].type,
-                 config->channel_info[channel].zephyr_code,
-                 value, false, K_FOREVER);
+    input_report(dev, config->channel_info[channel].type, config->channel_info[channel].zephyr_code, value, false,
+                 K_FOREVER);
 }
 
 static void input_dbus_input_report_thread(const struct device* dev, void* dummy2, void* dummy3)
@@ -228,10 +209,7 @@ static void input_dbus_input_report_thread(const struct device* dev, void* dummy
                 {
                     /* 只报变化那一位 */
                     const struct dbus_input_channel* ch = &config->channel_info[12 + i];
-                    input_report_key(dev,
-                                     ch->zephyr_code,
-                                     (keyboard & bit) ? 1 : 0,
-                                     false, K_FOREVER);
+                    input_report_key(dev, ch->zephyr_code, (keyboard & bit) ? 1 : 0, false, K_FOREVER);
                 }
             }
             last_keyboard = keyboard;
@@ -370,7 +348,4 @@ static const struct input_dbus_config dbus_cfg = {
     .cb = dbus_uart_isr,
 };
 
-DEVICE_DT_INST_DEFINE(0,
-                      input_dbus_init, NULL,
-                      &dbus_data, &dbus_cfg,
-                      POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY, NULL);
+DEVICE_DT_INST_DEFINE(0, input_dbus_init, NULL, &dbus_data, &dbus_cfg, POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY, NULL);

@@ -49,6 +49,7 @@
 		heartbeat-led-index = <0>;
 		error-led-index = <1>;
 	};
+
 };
 
 &clk_lsi {
@@ -103,6 +104,11 @@
 	pinctrl-names = "default";
 	current-speed = <100000>;
 	status = "okay";
+
+	dbus {
+		compatible = "dji,dbus";
+		status = "okay";
+	};
 };
 
 &rtc {
