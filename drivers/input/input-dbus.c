@@ -145,15 +145,15 @@ static void input_dbus_input_report_thread(const struct device* dev, void* dummy
         }
         else
         {
-            int ret = k_sem_take(&data->report_lock, K_MSEC(DBUS_INTERFRAME_SPACING_MS));
-            if (ret == -EBUSY)
+            const int ret = k_sem_take(&data->report_lock, K_MSEC(DBUS_INTERFRAME_SPACING_MS));
+            if (ret == -EBUSY || ret == -EAGAIN)
             {
                 continue;
             }
-            else if (ret < 0 || !data->in_sync)
+            if (ret < 0 || !data->in_sync)
             {
                 /* 与UART接收器失去同步 */
-                unsigned int key = irq_lock();
+                const unsigned int key = irq_lock();
 
                 data->in_sync = false;
                 data->xfer_bytes = 0;
@@ -226,6 +226,7 @@ static void dbus_uart_isr(const struct device* uart_dev, void* user_data)
     const struct device* dev = user_data;
     struct input_dbus_data* const data = dev->data;
     uint8_t* rd_data = data->rd_data;
+    LOG_DBG("isr enter in_sync=%d xfer_bytes=%d", data->in_sync, data->xfer_bytes);
 
     if (uart_dev == NULL)
     {
@@ -257,6 +258,7 @@ static void dbus_uart_isr(const struct device* uart_dev, void* user_data)
             if (data->xfer_bytes == DBUS_FRAME_LEN)
             {
                 data->in_sync = true;
+                k_sem_give(&data->report_lock);
             }
         }
     }
@@ -265,6 +267,8 @@ static void dbus_uart_isr(const struct device* uart_dev, void* user_data)
     {
         data->in_sync = false;
         data->xfer_bytes = 0;
+        uart_irq_rx_disable(uart_dev);
+        uart_irq_rx_enable(uart_dev);
         k_sem_give(&data->report_lock);
     }
     else if (data->in_sync && data->xfer_bytes == DBUS_FRAME_LEN)
@@ -296,7 +300,6 @@ static int input_dbus_init(const struct device* dev)
     data->in_sync = false;
     data->last_rx_time = 0;
 
-    LOG_DBG("num_channels: %d", config->num_channels);
     for (i = 0; i < config->num_channels; i++)
     {
         data->channel_mapping[config->channel_info[i].dbus_channel] = i;
