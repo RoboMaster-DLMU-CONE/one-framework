@@ -1,0 +1,11 @@
+// Device tree overlay for PWM buzzer test
+// Uses PWM10 channel 2 (different from heater which uses channel 1)
+
+/ {
+	pwm_buzzer: pwm-buzzer {
+		compatible = "pwm-buzzer";
+		pwms = <&pwm10 2 0 PWM_POLARITY_NORMAL>;
+		base-frequency-hz = <440>; // A4 note as base frequency
+		status = "okay";
+	};
+};
