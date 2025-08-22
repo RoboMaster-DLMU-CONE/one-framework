@@ -20,20 +20,20 @@ namespace OF::Prts
             )
         {
             using Traits = FunctionTraits<decltype(MemFn)>;
-            using C = typename Traits::ClassType;
-            using ArgTup = typename Traits::ArgTuple;
+            using C = Traits::ClassType;
+            using ArgTup = Traits::ArgTuple;
 
             std::vector<OptionDesc> opts(
                 OptsVec::value.begin(),
                 OptsVec::value.end()
                 );
 
-            auto handler = [unitName, cmdName, desc](const struct shell* sh, int argc, char** argv) -> int
+            auto handler = [unitName](const struct shell* sh, int argc, char** argv) -> int
             {
                 std::vector<std::string_view> argvec;
                 for (int i = 1; i < argc; ++i)
                 {
-                    argvec.push_back(argv[i]);
+                    argvec.emplace_back(argv[i]);
                 }
                 ArgTup args{};
                 if (!ArgParser<0, ArgTup>::parse(args, argvec))
