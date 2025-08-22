@@ -1,1 +1,2 @@
 add_subdirectory_ifdef(CONFIG_PWM_BUZZER buzzer)
+add_subdirectory_ifdef(CONFIG_STATUS_LEDS status-leds)
