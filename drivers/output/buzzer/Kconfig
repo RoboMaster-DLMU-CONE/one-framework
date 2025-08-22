@@ -1,0 +1,35 @@
+menuconfig PWM_BUZZER
+    bool "PWM蜂鸣器驱动"
+    select PWM
+    depends on OUTPUT
+    help
+        启用基于PWM的蜂鸣器驱动，用于产生不同音高和响度的声音
+
+if PWM_BUZZER
+
+config PWM_BUZZER_NAME
+    string "PWM蜂鸣器设备名称"
+    default "PWM_BUZZER"
+    help
+        PWM蜂鸣器设备的名称
+
+config PWM_BUZZER_INIT_PRIORITY
+    int "PWM蜂鸣器初始化优先级"
+    default 90
+    help
+        PWM蜂鸣器设备驱动初始化优先级
+
+config PWM_BUZZER_LOG_LEVEL
+    int "PWM蜂鸣器日志级别"
+    default LOG_DEFAULT_LEVEL
+    help
+        PWM蜂鸣器设备驱动日志级别
+
+config PWM_BUZZER_DEFAULT_VOLUME
+    int "默认音量(0-100)"
+    range 0 100
+    default 50
+    help
+        蜂鸣器默认音量，范围0-100
+
+endif # PWM_BUZZER

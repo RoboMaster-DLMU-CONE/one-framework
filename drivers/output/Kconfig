@@ -1,0 +1,3 @@
+if OUTPUT
+rsource "buzzer/Kconfig"
+endif # OUTPUT
