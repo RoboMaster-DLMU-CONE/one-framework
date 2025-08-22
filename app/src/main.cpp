@@ -1,4 +1,4 @@
-#include <OF/drivers/utils/status_leds.h>
+#include <OF/drivers/output/status_leds.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/kernel.h>
