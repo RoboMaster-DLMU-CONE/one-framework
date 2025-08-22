@@ -4,7 +4,7 @@
 / {
 	pwm_buzzer: pwm-buzzer {
 		compatible = "pwm-buzzer";
-		pwms = <&pwm10 2 0 PWM_POLARITY_NORMAL>;
+		pwms = <&pwm10 2 PWM_USEC(2270) PWM_POLARITY_NORMAL>; // ~440Hz period
 		base-frequency-hz = <440>; // A4 note as base frequency
 		status = "okay";
 	};
