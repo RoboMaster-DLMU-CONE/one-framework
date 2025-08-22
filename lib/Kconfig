@@ -1,7 +1,7 @@
 menu "OneFramework Libraries"
 
-rsource "applications/Kconfig"
-rsource "utilities/Kconfig"
-rsource "modules/Kconfig"
+rsource "Unit/Kconfig"
+rsource "PRTS/Kconfig"
+rsource "ControllerCenter/Kconfig"
 
 endmenu

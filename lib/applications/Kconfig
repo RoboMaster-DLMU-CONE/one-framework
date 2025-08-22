@@ -1,6 +1,0 @@
-menu "Applications"
-
-rsource "Unit/Kconfig"
-rsource "PRTS/Kconfig"
-
-endmenu

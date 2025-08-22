@@ -1,17 +1,9 @@
-// for PRTS configuration
-#include "PRTS/displays/ili9341_controller.dtsi"
-#include "PRTS/boards/dji_board_c.dtsi"
-
-
 / {
-
-	// use dji_board_c
 	status_leds: status-leds {
 		compatible = "status-leds";
 		leds = <&leds>;
 		heartbeat-led-index = <0>;
 		error-led-index = <1>;
 	};
-
 };
 
