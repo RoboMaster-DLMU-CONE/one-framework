@@ -1,3 +1,4 @@
 if OUTPUT
 rsource "buzzer/Kconfig"
+rsource "status-leds/Kconfig"
 endif # OUTPUT

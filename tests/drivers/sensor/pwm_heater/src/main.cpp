@@ -8,7 +8,7 @@
 #include <cmath>
 
 #include "OF/drivers/sensor/pwm_heater.h"
-#include "OF/drivers/utils/status_leds.h"
+#include "OF/drivers/output/status_leds.h"
 
 LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
 

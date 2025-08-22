@@ -1,6 +1,6 @@
 #define DT_DRV_COMPAT status_leds
 
-#include <OF/drivers/utils/status_leds.h>
+#include <OF/drivers/output/status_leds.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/led.h>

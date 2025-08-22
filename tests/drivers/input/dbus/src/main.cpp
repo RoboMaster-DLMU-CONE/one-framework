@@ -6,7 +6,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
-#include <OF/drivers/utils/status_leds.h>
+#include <OF/drivers/output/status_leds.h>
 
 // 注册日志模块
 LOG_MODULE_REGISTER(dbus_test, CONFIG_LOG_DEFAULT_LEVEL);
