@@ -1,3 +1,3 @@
-add_subdirectory(utilities)
-add_subdirectory(applications)
-add_subdirectory(modules)
+add_subdirectory_ifdef(CONFIG_UNIT Unit)
+add_subdirectory_ifdef(CONFIG_PRTS PRTS)
+add_subdirectory_ifdef(CONFIG_CONTROLLER_CENTER ControllerCenter)

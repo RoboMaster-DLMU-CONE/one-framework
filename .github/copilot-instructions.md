@@ -43,7 +43,7 @@ west build -t clean
 west twister -T tests -v --inline-logs --integration
 
 # 运行特定测试
-west twister -T tests/lib/applications/Unit -v
+west twister -T tests/lib/Unit -v
 
 # 在模拟器上运行测试 (更快)
 west twister -T tests --platform qemu_cortex_m3 -v
@@ -70,11 +70,9 @@ one-framework/
 │   ├── prj.conf          # 项目配置
 │   └── boards/cone/       # 开发板特定覆盖配置
 ├── lib/                   # 框架核心库
-│   ├── applications/      # 高级应用模块
-│   │   ├── Unit/         # 单元系统 (线程、生命周期)
-│   │   └── PRTS/         # 打印/调试系统
-│   ├── modules/          # 功能模块
-│   └── utilities/        # 实用工具库
+│   ├── Unit/              # 单元系统 (线程、生命周期)
+│   ├── PRTS/              # 打印/调试系统
+│   └── ControllerCenter/  # 控制器中心模块
 ├── drivers/              # 硬件驱动
 │   ├── input/           # 输入驱动 (DBUS 等)
 │   ├── output/          # 输出驱动 (蜂鸣器、电机)
@@ -142,7 +140,7 @@ CI 管道运行这些步骤 - 本地复现:
 
 - **Unit.hpp**: 线程化应用组件的基类
 - **UnitRegistry.hpp**: 全局单元管理和生命周期
-- **测试**: `tests/lib/applications/Unit/` 演示用法
+- **测试**: `tests/lib/Unit/` 演示用法
 
 ### 设备抽象
 
