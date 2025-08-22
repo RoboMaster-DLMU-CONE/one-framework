@@ -1,4 +1,9 @@
 
+config OUTPUT
+    bool "Output drivers"
+    help
+        Enable support for output drivers like buzzers, motors, etc.
+
 config ONE_FRAMEWORK
     bool "One Framework框架"
     select SERIAL
@@ -9,6 +14,7 @@ config ONE_FRAMEWORK
     select CPP
     select REQUIRES_FULL_LIBCPP
     select INPUT
+    select OUTPUT
     select ONE_MOTOR
     help
         启用One Framework框架。

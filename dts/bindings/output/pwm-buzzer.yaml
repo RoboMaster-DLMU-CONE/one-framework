@@ -1,0 +1,22 @@
+# Copyright (c) 2025 MoonFeather
+# SPDX-License-Identifier: BSD-3-Clause
+
+description: PWM-driven buzzer
+
+compatible: "pwm-buzzer"
+
+include: base.yaml
+
+properties:
+  pwms:
+    required: true
+    type: phandle-array
+    description: |
+      PWM specifier driving this buzzer.
+
+  base-frequency-hz:
+    required: true
+    type: int
+    description: |
+      Base frequency in Hz for the buzzer. This is used as a reference
+      frequency for musical notes.
