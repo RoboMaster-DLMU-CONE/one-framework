@@ -43,9 +43,9 @@ int main()
     }
 
     // 测试设置音量
-    ret = pwm_buzzer_set_volume(buzzer, 70);
+    ret = pwm_buzzer_set_volume(buzzer, 20);
     if (ret == 0) {
-        LOG_INF("音量设置为70%%");
+        LOG_INF("音量设置为20%%");
     } else {
         LOG_ERR("设置音量失败: %d", ret);
     }
@@ -59,7 +59,7 @@ int main()
         for (int i = 0; i < 5; i++) {
             LOG_INF("播放音符: %s (%u Hz)", note_names[i], test_frequencies[i]);
             
-            ret = pwm_buzzer_play_tone(buzzer, test_frequencies[i], 70);
+            ret = pwm_buzzer_play_tone(buzzer, test_frequencies[i], 1);
             if (ret < 0) {
                 LOG_ERR("播放音调失败: %d", ret);
             }
@@ -84,7 +84,7 @@ int main()
         for (int i = 0; i < 5; i++) {
             LOG_INF("播放音程: %s (倍数: %.3f)", interval_names[i], (double)note_multipliers[i]);
             
-            ret = pwm_buzzer_play_note(buzzer, note_multipliers[i], 50);
+            ret = pwm_buzzer_play_note(buzzer, note_multipliers[i], 70);
             if (ret < 0) {
                 LOG_ERR("播放音符失败: %d", ret);
             }
