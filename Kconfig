@@ -9,13 +9,13 @@ config ONE_FRAMEWORK
     select SERIAL
     select CONSOLE
     select LOG
-    select CBPRINTF_FP_SUPPORT
+#     select CBPRINTF_FP_SUPPORT
     select UART_CONSOLE
     select CPP
     select REQUIRES_FULL_LIBCPP
-    select INPUT
-    select OUTPUT
-    select ONE_MOTOR
+#     select INPUT
+#     select OUTPUT
+#     select ONE_MOTOR
     help
         启用One Framework框架。
         包含了One Framework框架的默认、常用Kconfig选项。

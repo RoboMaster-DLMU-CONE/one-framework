@@ -1,4 +1,9 @@
 / {
+	chosen {
+		zephyr,console = &cdc_acm_uart0;
+		zephyr,shell-uart = &cdc_acm_uart0;
+	};
+
 	status_leds: status-leds {
 		compatible = "status-leds";
 		leds = <&leds>;
@@ -6,4 +11,5 @@
 		error-led-index = <1>;
 	};
 };
+
 
