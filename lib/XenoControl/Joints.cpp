@@ -55,8 +55,10 @@ namespace OF::XenoControl
             return 0.0f;
         }
 
-        OneMotor::Util::SpinLockGuard guard(data_lock_);
-        return joint_data_[index].velocity_reading;
+        data_lock_.lock();
+        float result = joint_data_[index].velocity_reading;
+        data_lock_.unlock();
+        return result;
     }
 
     float Joints::getVelocityCalibration(JointType joint) const
@@ -66,8 +68,10 @@ namespace OF::XenoControl
             return 1.0f;
         }
 
-        OneMotor::Util::SpinLockGuard guard(data_lock_);
-        return joint_data_[index].velocity_calibration;
+        data_lock_.lock();
+        float result = joint_data_[index].velocity_calibration;
+        data_lock_.unlock();
+        return result;
     }
 
     float Joints::getPositionReading(JointType joint) const
@@ -77,8 +81,10 @@ namespace OF::XenoControl
             return 0.0f;
         }
 
-        OneMotor::Util::SpinLockGuard guard(data_lock_);
-        return joint_data_[index].position_reading;
+        data_lock_.lock();
+        float result = joint_data_[index].position_reading;
+        data_lock_.unlock();
+        return result;
     }
 
     float Joints::getPositionCalibration(JointType joint) const
@@ -88,8 +94,10 @@ namespace OF::XenoControl
             return 0.0f;
         }
 
-        OneMotor::Util::SpinLockGuard guard(data_lock_);
-        return joint_data_[index].position_calibration;
+        data_lock_.lock();
+        float result = joint_data_[index].position_calibration;
+        data_lock_.unlock();
+        return result;
     }
 
     void Joints::setVelocityCalibration(JointType joint, float calibration)
@@ -99,8 +107,9 @@ namespace OF::XenoControl
             return;
         }
 
-        OneMotor::Util::SpinLockGuard guard(data_lock_);
+        data_lock_.lock();
         joint_data_[index].velocity_calibration = calibration;
+        data_lock_.unlock();
     }
 
     void Joints::setPositionCalibration(JointType joint, float calibration)
@@ -110,8 +119,9 @@ namespace OF::XenoControl
             return;
         }
 
-        OneMotor::Util::SpinLockGuard guard(data_lock_);
+        data_lock_.lock();
         joint_data_[index].position_calibration = calibration;
+        data_lock_.unlock();
     }
 
     void Joints::setTargetVelocity(JointType joint, float velocity)
@@ -123,10 +133,9 @@ namespace OF::XenoControl
 
         // 应用速度标定值
         float calibrated_velocity;
-        {
-            OneMotor::Util::SpinLockGuard guard(data_lock_);
-            calibrated_velocity = velocity * joint_data_[index].velocity_calibration;
-        }
+        data_lock_.lock();
+        calibrated_velocity = velocity * joint_data_[index].velocity_calibration;
+        data_lock_.unlock();
 
         // 根据关节类型设置对应电机的速度
         switch (joint) {
@@ -163,10 +172,9 @@ namespace OF::XenoControl
 
         // 应用位置标定值
         float calibrated_position;
-        {
-            OneMotor::Util::SpinLockGuard guard(data_lock_);
-            calibrated_position = position + joint_data_[index].position_calibration;
-        }
+        data_lock_.lock();
+        calibrated_position = position + joint_data_[index].position_calibration;
+        data_lock_.unlock();
 
         // 根据关节类型设置对应电机的位置
         switch (joint) {
@@ -255,9 +263,10 @@ namespace OF::XenoControl
         // 从各个电机获取状态并更新读取值
         auto update_joint_data = [this](size_t index, auto& motor) {
             auto status = motor->getStatus();
-            OneMotor::Util::SpinLockGuard guard(data_lock_);
+            data_lock_.lock();
             joint_data_[index].velocity_reading = status.angular;
             joint_data_[index].position_reading = status.total_angle;
+            data_lock_.unlock();
         };
 
         update_joint_data(0, motor1_);  // LIFT
