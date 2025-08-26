@@ -3,5 +3,7 @@ menu "OneFramework Libraries"
 rsource "Unit/Kconfig"
 rsource "PRTS/Kconfig"
 rsource "ControllerCenter/Kconfig"
+rsource "XenoControl/Kconfig"
+rsource "XenoHardwareInterface/Kconfig"
 
 endmenu

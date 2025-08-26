@@ -1,0 +1,20 @@
+config XENO_CONTROL
+	bool "Xeno Control Library"
+	depends on ONEMOTOR
+	help
+	  Enable the Xeno Control library for robotic arm joint control.
+	  Provides unified interface for managing 7-DOF robotic arm joints
+	  using OneMotor M3508 motors.
+
+if XENO_CONTROL
+
+config XENO_CONTROL_LOG_LEVEL
+	int "Xeno Control Log Level"
+	depends on LOG
+	default 3
+	range 0 4
+	help
+	  Set log level for Xeno Control library:
+	  0 = OFF, 1 = ERROR, 2 = WARNING, 3 = INFO, 4 = DEBUG
+
+endif # XENO_CONTROL

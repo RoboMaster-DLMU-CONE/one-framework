@@ -1,0 +1,20 @@
+config XENO_HARDWARE_INTERFACE
+	bool "Xeno Hardware Interface"
+	depends on XENO_CONTROL
+	help
+	  Enable the Xeno Hardware Interface for high-level robotic arm control.
+	  Provides a unified interface for controlling the 7-DOF robotic arm
+	  through the Xeno Control joints system.
+
+if XENO_HARDWARE_INTERFACE
+
+config XENO_HARDWARE_INTERFACE_LOG_LEVEL
+	int "Xeno Hardware Interface Log Level"
+	depends on LOG
+	default 3
+	range 0 4
+	help
+	  Set log level for Xeno Hardware Interface:
+	  0 = OFF, 1 = ERROR, 2 = WARNING, 3 = INFO, 4 = DEBUG
+
+endif # XENO_HARDWARE_INTERFACE
