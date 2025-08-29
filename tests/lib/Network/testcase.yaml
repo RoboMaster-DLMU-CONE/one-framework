@@ -1,0 +1,6 @@
+common:
+  tags: network
+  integration_platforms:
+    - qemu_cortex_m3
+tests:
+  lib.Network: { }

@@ -1,0 +1,38 @@
+# Copyright (c) 2025. MoonFeather
+# SPDX-License-Identifier: BSD-3-Clause
+
+config NETWORK
+	bool "Network Interface Management"
+	default n
+	help
+	  Enable Network interface management system with support for
+	  CAN and VCAN interfaces. Provides Netlink communication and
+	  Daemon-based interface management.
+
+if NETWORK
+
+config NETWORK_LOG_LEVEL
+	int "Network module log level"
+	default 3
+	range 0 4
+	help
+	  Set the log level for Network module components:
+	  0 - OFF, 1 - ERROR, 2 - WARNING, 3 - INFO, 4 - DEBUG
+
+config NETWORK_MAX_INTERFACES
+	int "Maximum number of network interfaces"
+	default 8
+	range 1 32
+	help
+	  Maximum number of network interfaces that can be managed
+	  simultaneously by the Network module.
+
+config NETWORK_INTERFACE_NAME_MAX_LEN
+	int "Maximum interface name length"
+	default 15
+	range 8 32
+	help
+	  Maximum length for network interface names. Standard Linux
+	  limit is 15 characters.
+
+endif # NETWORK
