@@ -2,6 +2,7 @@ menuconfig COMM_BRIDGE
     bool "CommunicationBridge"
     select STDOUT_CONSOLE
     select UART_LINE_CTRL
+    select RPL
     help
         启用OneFramework通信桥接器
 

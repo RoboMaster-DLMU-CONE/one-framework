@@ -3,10 +3,12 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/usb/usbd.h>
 #include <zephyr/sys/ring_buffer.h>
 
 #include "zephyr/drivers/uart.h"
+
+#include <OF/lib/CommBridge/CommBridge.hpp>
+#include <RPL/Packets/Sample/SampleA.hpp>
 
 LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
 
@@ -55,6 +57,7 @@ static void uart_isr_callback(const struct device* dev, void* user_data)
 
 int main()
 {
+    OF::CommBridge<SampleA> bridge;
 
     const struct device* status_led_dev = DEVICE_DT_GET(DT_NODELABEL(status_leds));
     uart_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));

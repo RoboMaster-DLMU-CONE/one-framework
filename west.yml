@@ -22,3 +22,8 @@ manifest:
       repo-path: OneMotor
       revision: main
       path: modules/lib/onemotor
+    - name: rpl
+      remote: robomaster-dlmu
+      repo-path: rpl
+      revision: main
+      path: modules/lib/rpl
