@@ -1,3 +1,4 @@
 add_subdirectory_ifdef(CONFIG_UNIT Unit)
 add_subdirectory_ifdef(CONFIG_PRTS PRTS)
 add_subdirectory_ifdef(CONFIG_CONTROLLER_CENTER ControllerCenter)
+add_subdirectory_ifdef(CONFIG_COMM_BRIDGE CommBridge)

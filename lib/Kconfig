@@ -3,5 +3,6 @@ menu "OneFramework Libraries"
 rsource "Unit/Kconfig"
 rsource "PRTS/Kconfig"
 rsource "ControllerCenter/Kconfig"
+rsource "CommBridge/Kconfig"
 
 endmenu

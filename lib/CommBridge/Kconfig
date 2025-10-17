@@ -1,0 +1,23 @@
+menuconfig COMM_BRIDGE
+    bool "CommunicationBridge"
+    select STDOUT_CONSOLE
+    select UART_LINE_CTRL
+    help
+        启用OneFramework通信桥接器
+
+if COMM_BRIDGE
+
+config COMM_BRIDGE_LOG_LEVEL
+    int "通信桥接器系统日志级别"
+    default 3
+    range 0 4
+    help
+        设置通信桥接器系统的日志级别
+        - 0: OFF
+        - 1: ERROR
+        - 2: WARNING
+        - 3: INFO
+        - 4: DEBUG
+
+
+endif # 通信桥接器

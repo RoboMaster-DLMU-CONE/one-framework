@@ -2,7 +2,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 zephyr_include_directories(boards)
 
-if (ONE_FRAMEWORK)
+if (CONFIG_ONE_FRAMEWORK)
     include(modules/OF)
 
     zephyr_syscall_include_directories(include)

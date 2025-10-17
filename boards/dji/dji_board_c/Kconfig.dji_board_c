@@ -21,3 +21,44 @@ config CONSOLE_HAS_DRIVER
 config SERIAL_SUPPORT_INTERRUPT
         bool
         default y
+
+config BOARD_DJI_BOARD_C_USB_COMM
+        bool "Enable DJI Board C USB Communication (CDC ACM)"
+        depends on BOARD_DJI_BOARD_C
+        help
+          Enable USB CDC ACM support for DJI Board C.
+          This allows the board to communicate with a host PC via USB
+          using the CDC ACM (Communication Device Class - Abstract Control Model) protocol.
+          When enabled, USB device stack and CDC ACM class will be configured automatically.
+
+if BOARD_DJI_BOARD_C_USB_COMM
+
+	config USB_DEVICE_STACK_NEXT
+			bool
+			default y
+
+	config USBD_CDC_ACM_CLASS
+			bool
+			default y
+
+	config CDC_ACM_SERIAL_INITIALIZE_AT_BOOT
+			bool
+			default y
+
+	config UART_LINE_CTRL
+			bool
+			default y
+
+	config STDOUT_CONSOLE
+			bool
+			default y
+
+	config CDC_ACM_SERIAL_PID
+			hex
+			default 0x0004
+
+	config CDC_ACM_SERIAL_PRODUCT_STRING
+			string
+			default "TeamCOnePresent"
+
+endif # BOARD_DJI_BOARD_C_USB_COMM

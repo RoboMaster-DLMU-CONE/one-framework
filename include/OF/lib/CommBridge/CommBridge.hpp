@@ -1,0 +1,4 @@
+#ifndef OF_COMMBRIDGE_HPP
+#define OF_COMMBRIDGE_HPP
+
+#endif //OF_COMMBRIDGE_HPP
