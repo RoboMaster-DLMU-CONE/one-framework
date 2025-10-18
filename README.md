@@ -24,15 +24,26 @@
 - 能够正常连接Github的网络环境；
 - Zephyr工具链。[安装教程](https://docs.zephyrproject.org/latest/develop/getting_started/index.html)
 
+### 换源
+
+在较难访问Github的网络环境下，可以先借助Git切换Github的克隆源
+
+```bash
+# 使用https://ghproxy.link/获取最新代理地址
+git config --global url."https://ghfast.top/https://github.com/".insteadOf "https://github.com/"
+# 克隆完后可以取消换源
+# git config --global --unset url."https://ghfast.top/https://github.com/".insteadOf
+```
+
 ### 克隆代码
 
 ```shell
 # 先激活west环境，比如：
 # cd && .\zephyrproject\.venv\Scripts\Activate.ps1
-west init -m https://github.com/RoboMaster-DLMU-CONE/one-framework --mr main zephyr_workspace
+west init -m https://github.com/RoboMaster-DLMU-CONE/one-framework --mr main --clone-opt=--depth=1 zephyr_workspace 
 # workspace名称是任意的
 cd zephyr_workspace
-west update
+west update --fetch-opt=--depth=1
 ```
 
 ### 命令行构建

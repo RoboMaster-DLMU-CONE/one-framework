@@ -51,6 +51,7 @@ namespace OF::CommBridge
 
         void stop() const
         {
+            LOG_MODULE_DECLARE(CommBridge, CONFIG_COMM_BRIDGE_LOG_LEVEL);
             if (m_UseAsyncApi)
             {
                 int ret = uart_rx_disable(m_UartDev);
@@ -109,7 +110,7 @@ namespace OF::CommBridge
                         break;
                     }
                     LOG_DBG("Read %d bytes from FIFO", read_len);
-                    receiver->m_Parser->push_data(receiver->m_Buffer, read_len);
+                    receiver->m_Parser.push_data(receiver->m_Buffer, read_len);
                 }
             }
         }
@@ -125,13 +126,13 @@ namespace OF::CommBridge
             {
             case UART_RX_RDY:
             {
-                receiver->m_Parser->push_data(receiver->m_Buffer, evt->data.rx.len);
+                receiver->m_Parser.push_data(receiver->m_Buffer, evt->data.rx.len);
                 break;
             }
             case UART_RX_BUF_REQUEST:
             {
                 LOG_DBG("RX_BUF_REQUEST");
-                receiver->m_Parser->push_data(receiver->m_Buffer, evt->data.rx.len);
+                receiver->m_Parser.push_data(receiver->m_Buffer, evt->data.rx.len);
 
 
                 const int ret = uart_rx_buf_rsp(dev, receiver->m_Buffer, CONFIG_COMM_BRIDGE_MAX_RX_SIZE);
@@ -155,7 +156,7 @@ namespace OF::CommBridge
                 LOG_WRN("RX_STOPPED: reason=%d", evt->data.rx_stop.reason);
                 if (evt->data.rx_stop.data.len > 0)
                 {
-                    receiver->m_Parser->push_data(receiver->m_Buffer, evt->data.rx.len);
+                    receiver->m_Parser.push_data(receiver->m_Buffer, evt->data.rx.len);
                 }
                 receiver->start_receive();
                 break;

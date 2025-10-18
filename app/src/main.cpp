@@ -13,7 +13,7 @@
 
 LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
 
-static const struct device* uart_dev;
+static const device* uart_dev;
 
 // 定义环形缓冲区用于存储接收到的数据
 #define RING_BUF_SIZE 1024
