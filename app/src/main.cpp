@@ -7,7 +7,7 @@
 
 #include "zephyr/drivers/uart.h"
 
-#include <OF/lib/CommBridge/CommBridge.hpp>
+#include <OF/lib/CommBridge/Sender.hpp>
 #include <RPL/Packets/Sample/SampleA.hpp>
 
 LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
@@ -57,8 +57,7 @@ static void uart_isr_callback(const struct device* dev, void* user_data)
 
 int main()
 {
-    OF::CommBridge<SampleA> bridge;
-
+    OF::CommBridge::Sender<SampleA> sender(uart_dev);
     const struct device* status_led_dev = DEVICE_DT_GET(DT_NODELABEL(status_leds));
     uart_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
     uint32_t dtr = 0;
