@@ -1,0 +1,7 @@
+menu "Zephyr"
+source "Kconfig.zephyr"
+endmenu
+
+module = test_comm_bridge
+module-str = test_comm_bridge
+source "subsys/logging/Kconfig.template.log_config"
