@@ -7,10 +7,9 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
-LOG_MODULE_REGISTER(CommBridgeSender, CONFIG_COMM_BRIDGE_LOG_LEVEL);
-
 namespace OF::CommBridge
 {
+
     template <typename... Ts>
     class Sender
     {
@@ -19,6 +18,7 @@ namespace OF::CommBridge
             m_UartDev(uart_dev),
             m_WaitForCompletion(wait_for_completion)
         {
+            LOG_MODULE_DECLARE(CommBridge, CONFIG_COMM_BRIDGE_LOG_LEVEL);
             if (!device_is_ready(m_UartDev))
             {
                 LOG_ERR("指定的UART设备未就绪");
@@ -52,6 +52,8 @@ namespace OF::CommBridge
             requires(RPL::Serializable<Packets, Ts...> && ...)
         void send(const Packets&... packets)
         {
+            LOG_MODULE_DECLARE(CommBridge, CONFIG_COMM_BRIDGE_LOG_LEVEL);
+
             // 等待上一次发送完成（防止buffer被覆盖）
             k_sem_take(&m_TxDoneSem, K_FOREVER);
 
@@ -104,7 +106,7 @@ namespace OF::CommBridge
         uint8_t m_Seq{};
 
         // 信号量用于同步（初始值为1）
-        k_sem m_TxDoneSem;
+        k_sem m_TxDoneSem{};
 
         // 中断模式使用的变量
         size_t m_TxBytesRemaining{0};
@@ -116,7 +118,9 @@ namespace OF::CommBridge
             int ret = uart_tx(m_UartDev, buffer, len, SYS_FOREVER_US);
             if (ret != 0)
             {
-                printk("UART async tx 启动失败: %d\n", ret);
+                LOG_MODULE_DECLARE(CommBridge, CONFIG_COMM_BRIDGE_LOG_LEVEL);
+
+                LOG_WRN("UART async tx 启动失败: %d\n", ret);
                 // 发送失败，释放信号量
                 k_sem_give(&m_TxDoneSem);
             }
@@ -138,6 +142,8 @@ namespace OF::CommBridge
                                         uart_event* evt,
                                         void* user_data)
         {
+            LOG_MODULE_DECLARE(CommBridge, CONFIG_COMM_BRIDGE_LOG_LEVEL);
+
             auto* sender = static_cast<Sender*>(user_data);
 
             switch (evt->type)
@@ -149,7 +155,7 @@ namespace OF::CommBridge
 
             case UART_TX_ABORTED:
                 // 传输中止，也释放信号量
-                printk("UART TX 中止\n");
+                LOG_WRN("UART TX 中止");
                 k_sem_give(&sender->m_TxDoneSem);
                 break;
 

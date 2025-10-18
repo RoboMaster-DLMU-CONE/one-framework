@@ -39,8 +39,7 @@ west update
 
 ```shell
 # 确保根目录在one_framework
-# 为C·One步兵构建
-west build -b dji_board_c app -- -DDTC_OVERLAY_FILE=boards/cone/infantry.overlay
+west build -b dji_board_c app
 ```
 
 ### 烧录与调试
@@ -64,12 +63,12 @@ Wiki](https://robomaster-dlmu-cone.github.io/one-framework/develop.html)
 
 ## Todo
 
-- [ ] PRTS界面设计
-- [ ] 电机drivers
-- [ ] Buzzer
+- [x] 电机drivers
+- [x] Buzzer
 - [x] application基类
 - [x] CPU负载计数器
-- [ ] 使用std::expected（需等待Zephyr更新编译器）
+- [ ] 使用Zephyr SDK 1.0 ，为模板类启用ccm内存优化
+- [ ] 底盘Unit
 
 ## Credit
 

@@ -20,5 +20,16 @@ config COMM_BRIDGE_LOG_LEVEL
         - 3: INFO
         - 4: DEBUG
 
+config COMM_BRIDGE_RX_TIMEOUT_US
+    int "UART RX timeout in microseconds"
+    default 100000
+    help
+    	UART异步接收操作的最大延时（默认100ms）
+
+config COMM_BRIDGE_MAX_RX_SIZE
+	int "UART Max Receive size"
+	default 4096
+	help
+		UART异步接收的最大大小（Byte）
 
 endif # 通信桥接器
