@@ -4,7 +4,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
-#include <OF/lib/CommBridge/Manager.hpp>
+#include <OF/lib/CommBridge/CommBridge.hpp>
 #include <RPL/Packets/Sample/SampleA.hpp>
 #include <RPL/Packets/Sample/SampleB.hpp>
 
@@ -31,39 +31,37 @@ int main()
     }
 
 
-    LOG_INF("Creating CommBridge Manager...");
+    LOG_INF("Creating CommBridge...");
 
-    // 创建统一的 Manager
-    // 第一个模板参数是发送的数据包类型，第二个是接收的数据包类型
-    OF::CommBridge::Manager<std::tuple<SampleA>, std::tuple<SampleB>> manager(uart_dev);
+    // 使用工厂函数创建 CommBridge 对象
+    const auto bridge = OF::CommBridge<std::tuple<SampleA>, std::tuple<SampleB>>::create(uart_dev);
 
 
     LOG_INF("Start receiving");
-    manager.start_receive();
+    bridge->start_receive();
 
 
     SampleA packet_send{};
-
-    constexpr double idx = 1.0;
 
     LOG_INF("Enter main loop...");
 
     while (true)
     {
+        constexpr double idx = 1.0;
         SampleB packet_received{};
         auto& [a, b, c, d] = packet_send;
         a += idx;
         b += idx;
         c += static_cast<float>(idx / 10.0);
         d += idx / 100.0;
-        // 通过 Manager 发送
-        manager.send(packet_send);
+        // 通过 CommBridge 发送
+        bridge->send(packet_send);
 
-        // 通过 Manager 获取接收到的数据
-        // packet_received = manager.get<SampleB>();
+        // 通过 CommBridge 获取接收到的数据
+        packet_received = bridge->get<SampleB>();
 
         LOG_INF("Sending Sample A: a=%d, b=%d, c=%.2f, d=%.2lf", a, b, c, d);
-        // LOG_INF("Receiving Sample B: x=%d, y=%.2lf", packet_received.x, packet_received.y);
+        LOG_INF("Receiving Sample B: x=%d, y=%.2lf", packet_received.x, packet_received.y);
 
         k_sleep(K_MSEC(1000));
     }
