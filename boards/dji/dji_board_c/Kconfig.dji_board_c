@@ -57,8 +57,24 @@ if BOARD_DJI_BOARD_C_USB_COMM
 			hex
 			default 0x0004
 
+    config CDC_ACM_SERIAL_MANUFACTURER_STRING
+            string
+            default "WeaveFeather"
+
 	config CDC_ACM_SERIAL_PRODUCT_STRING
 			string
 			default "TeamCOnePresent"
+
+	choice USBD_LOG_LEVEL_CHOICE
+            default USBD_LOG_LEVEL_WRN
+    endchoice
+
+    choice USBD_CDC_ACM_LOG_LEVEL_CHOICE
+            default USBD_CDC_ACM_LOG_LEVEL_WRN
+    endchoice
+
+    choice UDC_DRIVER_LOG_LEVEL_CHOICE
+            default UDC_DRIVER_LOG_LEVEL_WRN
+    endchoice
 
 endif # BOARD_DJI_BOARD_C_USB_COMM

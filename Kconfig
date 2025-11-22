@@ -11,6 +11,7 @@ config ONE_FRAMEWORK
     select LOG
 #     select CBPRINTF_FP_SUPPORT
     select UART_CONSOLE
+    select LOG_BACKEND_UART_OUTPUT
     select CPP
     select REQUIRES_FULL_LIBCPP
     select INPUT
