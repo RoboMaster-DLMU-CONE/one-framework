@@ -3,8 +3,12 @@
 
 #ifndef CONTROLLERCENTER_HPP
 #define CONTROLLERCENTER_HPP
+
+#include <OF/utils/SeqlockBuf.hpp>
+
 #include <zephyr/input/input.h>
 #include <zephyr/sys/atomic.h>
+
 namespace OF
 {
 
@@ -42,11 +46,14 @@ namespace OF
     private:
         ControllerCenter();
         static ControllerCenter instance_;
+
         struct State
         {
             int16_t leftX{0}, leftY{0}, rightX{0}, rightY{0}, wheel{0}, swL{0}, swR{0};
         };
+
         State buffers[2];
+
         static atomic_t idx;
         static void input_cb(input_event* evt, void* user_data);
     };

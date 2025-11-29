@@ -3,9 +3,10 @@
 
 #include <OF/lib/ControllerCenter/ControllerCenter.hpp>
 
+
 #include "zephyr/logging/log.h"
 
-LOG_MODULE_REGISTER(CC, CONFIG_CONTROLLER_CENTER_LOG_LEVEL);
+LOG_MODULE_REGISTER(ControllerCenter, CONFIG_CONTROLLER_CENTER_LOG_LEVEL);
 
 
 namespace OF
@@ -58,7 +59,7 @@ namespace OF
 
         if (evt->type == INPUT_EV_ABS)
         {
-            // LOG_DBG("code: %d, value: %d", evt->code, evt->value);
+            LOG_DBG("code: %d, value: %d", evt->code, evt->value);
 
             switch (evt->code)
             {
