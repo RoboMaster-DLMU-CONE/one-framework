@@ -2,8 +2,6 @@ name: Documentation
 
 on:
   push:
-    tags:
-      - "v*"
   pull_request:
   workflow_dispatch:
 
