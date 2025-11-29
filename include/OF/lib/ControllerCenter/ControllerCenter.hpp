@@ -4,10 +4,11 @@
 #ifndef CONTROLLERCENTER_HPP
 #define CONTROLLERCENTER_HPP
 
+#include <array>
+
 #include <OF/utils/SeqlockBuf.hpp>
 
 #include <zephyr/input/input.h>
-#include <zephyr/sys/atomic.h>
 
 namespace OF
 {
@@ -36,9 +37,26 @@ namespace OF
 #endif
         };
 
+        class State
+        {
+        public:
+            int16_t& operator[](Channel ch)
+            {
+                return arr[static_cast<size_t>(ch)];
+            }
+
+            int16_t operator[](Channel ch) const
+            {
+                return arr[static_cast<size_t>(ch)];
+            }
+
+        private:
+            std::array<int16_t, 7> arr{};
+        };
+
         static ControllerCenter& getInstance();
 
-        int16_t operator[](Channel ch) const;
+        State getState();
 
         ControllerCenter(ControllerCenter&) = delete;
         ControllerCenter& operator=(const ControllerCenter&) = delete;
@@ -47,14 +65,8 @@ namespace OF
         ControllerCenter();
         static ControllerCenter instance_;
 
-        struct State
-        {
-            int16_t leftX{0}, leftY{0}, rightX{0}, rightY{0}, wheel{0}, swL{0}, swR{0};
-        };
 
-        State buffers[2];
-
-        static atomic_t idx;
+        SeqlockBuf<State> m_buf{};
         static void input_cb(input_event* evt, void* user_data);
     };
 } // namespace OF

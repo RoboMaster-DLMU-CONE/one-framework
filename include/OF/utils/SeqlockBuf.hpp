@@ -1,17 +1,21 @@
 #ifndef OF_DOUBLEBUFFER_HPP
 #define OF_DOUBLEBUFFER_HPP
 
+#include <functional>
+
 #include <zephyr/sys/atomic.h>
+#include <zephyr/kernel.h>
 
 namespace OF
 {
 
-    template<typename T>
+    template <typename T>
     class SeqlockBuf
     {
     public:
         // no lock
-        void write(const T& val) {
+        void write(const T& val)
+        {
             // 1. version + 1 (odd), writing...
             atomic_inc(&m_version);
 
@@ -24,16 +28,33 @@ namespace OF
             atomic_inc(&m_version);
         }
 
+        void manipulate(std::function<void(T&, void*)> func, void* data)
+        {
+            // 1. version + 1 (odd), writing...
+            atomic_inc(&m_version);
+
+            // 2. manipulate data
+            compiler_barrier();
+            func(m_data, data);
+            compiler_barrier();
+
+            // 3. version + 1 (even)，written done.
+            atomic_inc(&m_version);
+        };
+
         // optimistic reading
-        T read() {
+        T read()
+        {
             T val;
-            uint32_t v1, v2;
-            do {
+            uint32_t v1, v2{};
+            do
+            {
                 // 1. get version
                 v1 = atomic_get(&m_version);
 
                 // odd -> someone's writing, keep waiting...
-                if (v1 & 1) {
+                if (v1 & 1)
+                {
                     k_yield();
                     continue;
                 }
@@ -47,7 +68,8 @@ namespace OF
                 v2 = atomic_get(&m_version);
 
                 // 4. version changed(v1 != v2) means data corrupted, retry.
-            } while (v1 != v2);
+            }
+            while (v1 != v2);
 
             return val;
         }
