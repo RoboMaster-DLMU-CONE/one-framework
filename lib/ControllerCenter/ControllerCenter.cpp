@@ -12,7 +12,6 @@ namespace OF
 {
 
     using enum ControllerCenter::Channel;
-    // TODO: make a tuple template unfold structure to gracefully add all reflect.
     static constexpr frozen::unordered_map<uint8_t, ControllerCenter::Channel, 7> MAP{
         {INPUT_ABS_X, LEFT_X},
         {INPUT_ABS_Y, LEFT_Y},
@@ -40,19 +39,29 @@ namespace OF
 
     void ControllerCenter::input_cb(input_event* evt, void* user_data)
     {
+        // filter message unwanted
         if (evt->type == 0)
             return;
 
         auto& inst = getInstance();
+        // Get the reflected channel enum
         if (const auto it = MAP.find(evt->type); it != MAP.end())
         {
-            std::pair<uint8_t, Channel> new_value = {evt->value, it->second};
+            // how about more optimization, maybe compare new and old value to optionally
+            // tigger the data push, but that need another update and find()...
+
+            // push it into a key-value pair
+            std::pair<Channel, uint8_t> key_and_val = {it->second, evt->value};
+
+            // constexpr, won't re-create everytime
             static constexpr auto func = [](State& state, void* pair)
             {
-                const auto [value, ch] = *static_cast<std::pair<uint8_t, Channel>*>(pair);
+                const auto [ch, value] = *static_cast<std::pair<Channel, uint8_t>*>(pair);
+                // only set the channel we want
                 state[ch] = value;
             };
-            inst.m_buf.manipulate(func, &new_value);
+            // push the new value into seqlock buffer
+            inst.m_buf.manipulate(func, &key_and_val);
         }
     };
 
