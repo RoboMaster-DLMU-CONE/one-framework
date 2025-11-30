@@ -1,0 +1,40 @@
+menuconfig IMU_CENTER
+    bool "IMUService"
+    depends on SENSOR
+    help
+        启用 OneFramework IMU 中心
+
+if IMU_CENTER
+
+choice
+    prompt "IMU Device"
+    default IMU_CENTER_USE_BMI08X
+    help
+        IMU中心使用的IMU设备
+
+config IMU_CENTER_USE_BMI08X
+    bool "IMU Center use BMI08x"
+    select CONFIG_BMI08X
+    select SENSOR_ASYNC_API
+    help
+        使用BMI08X作为IMU Center设备
+
+endchoice
+
+if IMU_CENTER_USE_BMI08X
+    choice BMI08X_ACCEL_TRIGGER_MODE
+    	prompt "Accelerometer trigger mode"
+    	default BMI08X_ACCEL_TRIGGER_GLOBAL_THREAD
+    	help
+    	  Specify the type of triggering to be used by the driver.
+    endchoice
+endif
+
+
+
+module = IMU_CENTER
+module-str = IMU_CENTER
+source "subsys/logging/Kconfig.template.log_config"
+
+
+endif # IMU_CENTER

@@ -1,8 +1,6 @@
 menuconfig PWM_HEATER
     bool "PWM加热器驱动"
     select PWM
-    select PID
-    select PID_C_API
     depends on SENSOR
     help
         启用基于PID控制的PWM加热器驱动，用于控制传感器温度
