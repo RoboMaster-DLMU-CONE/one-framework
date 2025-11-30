@@ -23,7 +23,8 @@ int main()
         const auto rightY = state[RIGHT_Y];
         const auto swL = state[SW_L];
         const auto swR = state[SW_R];
-        LOG_INF("%ld, %ld, %ld, %ld, %ld, %ld", leftX, leftY, rightX, rightY, swL, swR);
+        const auto wheel = state[WHEEL];
+        LOG_INF("%d, %d, %d, %d, %d, %d, %d", leftX, leftY, rightX, rightY, swL, swR, wheel);
         k_sleep(K_MSEC(500));
     }
 }
