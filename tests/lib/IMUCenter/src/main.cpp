@@ -3,7 +3,6 @@
 
 #include <OF/lib/IMUCenter/IMUCenter.hpp>
 #include <zephyr/logging/log.h>
-#include <autoconf.h>
 #include <zephyr/kernel.h>
 
 
