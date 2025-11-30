@@ -13,5 +13,6 @@ if (CONFIG_ONE_FRAMEWORK)
     add_subdirectory(drivers)
     add_subdirectory(lib)
 
-    zephyr_link_libraries_ifdef(tl::expected)
+    zephyr_link_libraries(tl::expected)
+    zephyr_link_libraries(frozen::frozen)
 endif ()

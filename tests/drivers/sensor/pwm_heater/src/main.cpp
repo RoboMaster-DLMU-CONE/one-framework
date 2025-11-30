@@ -14,7 +14,7 @@ LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
 
 int main()
 {
-    const device* status_led_dev = DEVICE_DT_GET(DT_NODELABEL(status_leds));
+    const device* status_led_de v = DEVICE_DT_GET(DT_NODELABEL(status_leds));
     if (!device_is_ready(status_led_dev))
     {
         LOG_ERR("状态LED设备未就绪\n");

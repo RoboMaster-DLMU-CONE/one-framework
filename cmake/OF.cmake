@@ -1,5 +1,5 @@
 message(STATUS "One Framework 构建系统已激活")
 
-if(CONFIG_CONTROLLER_CENTER)
+include(FetchContent)
 include(Modules/FindFrozen)
-endif ()
+include(Modules/FindTlExpected)
