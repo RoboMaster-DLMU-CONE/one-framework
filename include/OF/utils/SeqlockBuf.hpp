@@ -28,7 +28,7 @@ namespace OF
             atomic_inc(&m_version);
         }
 
-        void manipulate(std::function<void(T&, void*)> func, void* data)
+        void manipulate(const std::function<void(T&, void*)>& func, void* data)
         {
             // 1. version + 1 (odd), writing...
             atomic_inc(&m_version);

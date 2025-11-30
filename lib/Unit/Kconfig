@@ -7,17 +7,9 @@ menuconfig UNIT
 
 if UNIT
 
-config UNIT_LOG_LEVEL
-    int "Unit系统日志级别"
-    default 3
-    range 0 4
-    help
-        设置Unit系统的日志级别：
-        - 0: OFF
-        - 1: ERROR
-        - 2: WARNING
-        - 3: INFO
-        - 4: DEBUG
+module = UNIT
+module-str = Unit
+source "subsys/logging/Kconfig.template.log_config"
 
 config UNIT_THREAD_ANALYZER
     bool "为Unit启用线程分析"

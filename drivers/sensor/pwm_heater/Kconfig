@@ -21,11 +21,9 @@ config PWM_HEATER_INIT_PRIORITY
     help
         PWM加热器设备驱动初始化优先级
 
-config PWM_HEATER_LOG_LEVEL
-    int "PWM加热器日志级别"
-    default LOG_DEFAULT_LEVEL
-    help
-        PWM加热器设备驱动日志级别
+module = PWM_HEATER
+module-str = PWM_HEATER
+source "subsys/logging/Kconfig.template.log_config"
 
 config PWM_HEATER_TARGET_TEMP
     int "目标温度(摄氏度x100)"

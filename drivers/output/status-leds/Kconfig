@@ -15,11 +15,9 @@ config STATUS_LEDS_INIT_PRIORITY
 	help
 	    status_leds device drivers init priority.
 
-config STATUS_LEDS_LOG_LEVEL
-    int "Status LEDS device drivers log level"
-    default LOG_DEFAULT_LEVEL
-    help
-        status_leds device drivers log level.
+module = STATUS_LEDS
+module-str = STATUS_LEDS
+source "subsys/logging/Kconfig.template.log_config"
 
 config HEARTBEAT_LED_BLINK_INTERVAL
     int "Heartbeat LED blink interval in ms"
@@ -33,8 +31,6 @@ config ERROR_LED_INTERVAL
         help
         Error LED interval in milliseconds
 
-module = STATUS_LEDS
-module-str = status_leds
 
 
 endif # STATUS_LEDS

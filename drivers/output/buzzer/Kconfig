@@ -19,11 +19,9 @@ config PWM_BUZZER_INIT_PRIORITY
     help
         PWM蜂鸣器设备驱动初始化优先级
 
-config PWM_BUZZER_LOG_LEVEL
-    int "PWM蜂鸣器日志级别"
-    default LOG_DEFAULT_LEVEL
-    help
-        PWM蜂鸣器设备驱动日志级别
+module = PWM_BUZZER
+module-str = PWM_BUZZER
+source "subsys/logging/Kconfig.template.log_config"
 
 config PWM_BUZZER_DEFAULT_VOLUME
     int "默认音量(0-100)"
