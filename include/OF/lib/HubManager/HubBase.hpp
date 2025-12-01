@@ -3,13 +3,16 @@
 
 #include <zephyr/device.h>
 
-#include "OF/utils/SeqlockBuf.hpp"
-#include "zephyr/logging/log.h"
+#include <OF/utils/SeqlockBuf.hpp>
+#include <zephyr/logging/log.h>
+
+#include <algorithm>
 
 namespace OF
 {
     class IHub
     {
+    public:
         [[nodiscard]] virtual constexpr char* getName() const = 0;
         virtual void init() = 0;
         virtual bool isReady() = 0;
@@ -28,29 +31,28 @@ namespace OF
             return instance;
         }
 
-        void bindDevice(const device* device)
+        void bindDevice(std::vector<const device*> devices)
         {
-            m_dev = device;
+            m_devs = std::move(devices);
         }
 
         void init() override
         {
-            if (!m_dev)
+            LOG_MODULE_DECLARE(HubManager, CONFIG_HUB_MANAGER_LOG_LEVEL);
+            for (int i = 0; i < m_devs.size(); ++i)
             {
-                LOG_ERR("%s has no device bound", getName());
-                return;
-            }
-            if (!device_is_ready(m_dev))
-            {
-                LOG_ERR("Device for %s is not ready!", getName());
-                return;
+                if (!device_is_ready(m_devs[i]))
+                {
+                    LOG_ERR("Device %d for %s is not ready!", i, getName());
+                    return;
+                }
             }
             static_cast<T*>(this)->setup();
         };
 
         bool isReady() override
         {
-            return m_dev && device_is_ready(m_dev);
+            return std::ranges::all_of(m_devs, [](auto* dev) { return device_is_ready(dev); });
         };
 
         DataT getData()
@@ -60,7 +62,7 @@ namespace OF
 
     protected:
         HubBase() = default;
-        const device* m_dev{nullptr};
+        std::vector<const device*> m_devs;
 
         void updateData(const DataT& data)
         {
