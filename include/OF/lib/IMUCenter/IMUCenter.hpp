@@ -41,10 +41,10 @@ namespace OF
 
         static IMUCenter m_instance;
 
-        static void threadEntry(void* p1, void* p2, void* p3);
-        void threadLoop();
+        static void workHandler(struct k_work* work);
+        void workLoop();
 
-        struct k_thread m_thread{};
+        struct k_work_delayable m_work{};
 
         const struct device* m_accel_dev;
         const struct device* m_gyro_dev;

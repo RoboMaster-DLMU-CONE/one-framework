@@ -20,6 +20,6 @@ int main()
         LOG_INF("accel: %f, %f, %f;", x, y, z);
         auto& [a, b, c] = data.gyro;
         LOG_INF("gyro: %f, %f, %f;", a, b, c);
-        k_sleep(K_MSEC(500));
+        k_sleep(K_MSEC(100));
     }
 }

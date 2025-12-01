@@ -20,21 +20,6 @@ config IMU_CENTER_USE_BMI08X
         使用BMI08X作为IMU Center设备
 endchoice
 
-config IMU_CENTER_THREAD_STACK_SIZE
-    int "IMU Center Thread Stack Size"
-    default 1024
-    depends on IMU_CENTER
-    help
-        设置IMU中心线程的栈大小（以字节为单位）
-
-config IMU_CENTER_THREAD_PRIORITY
-    int "IMU Center Thread Priority"
-    range 0 31
-    default 5
-    depends on IMU_CENTER
-    help
-        设置IMU中心线程的优先级（0-31）数值越小优先级越低
-
 config IMU_CENTER_SAMPLING_FREQUENCY
     int "IMU Center Sampling Frequency (Hz)"
     range 1 1000
