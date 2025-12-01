@@ -25,7 +25,7 @@ namespace OF
         float temp;
     };
 
-    class ImuHub : public HubBase<ImuHub, IMUData>
+    class ImuHub final : public HubBase<ImuHub, IMUData>
     {
     public:
         ImuHub(const ImuHub&) = delete;
@@ -46,7 +46,7 @@ namespace OF
         static void workHandler(struct k_work* work);
         void workLoop();
 
-        struct k_work_delayable m_work{};
+        k_work_delayable m_work{};
     };
 }
 

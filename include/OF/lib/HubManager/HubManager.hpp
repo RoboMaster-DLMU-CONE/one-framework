@@ -29,6 +29,7 @@ namespace OF
                         ;
                     HubT::getInstance().configure(std::forward<Args>(args)...);
                 }
+                HubManager::registerHub(&HubT::getInstance());
                 return *this;
             }
         };
@@ -39,7 +40,7 @@ namespace OF
 
             for (auto* hub : getHubs())
             {
-                LOG_DBG("Init Hub: %s", hub->getName());
+                LOG_INF("Init Hub: %s", hub->getName());
                 hub->init();
             }
         }

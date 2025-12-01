@@ -5,14 +5,24 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/kernel.h>
 
+#include "OF/lib/HubManager/HubManager.hpp"
+
 
 LOG_MODULE_REGISTER(imu_test, CONFIG_LOG_DEFAULT_LEVEL);
 
-using OF::ImuHub;
+using namespace OF;
 
 int main()
 {
     LOG_INF("main");
+
+    HubManager::Builder().bind<ImuHub>(
+    {
+        DEVICE_DT_GET(DT_NODELABEL(bmi088_accel)),
+        DEVICE_DT_GET(DT_NODELABEL(bmi088_gyro))
+    });
+    HubManager::startAll();
+
     while (true)
     {
         auto data = ImuHub::getInstance().getData();

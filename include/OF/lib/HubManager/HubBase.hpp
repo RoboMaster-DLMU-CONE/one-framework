@@ -7,13 +7,12 @@
 #include <zephyr/logging/log.h>
 
 #include <algorithm>
-#include <atomic>
-#include <mutex>
 
 namespace OF
 {
     // Forward declaration
     class HubManager;
+
     class IHub
     {
     public:
@@ -32,12 +31,6 @@ namespace OF
         static T& getInstance()
         {
             static T instance;
-            static std::atomic<bool> registered{false};
-            bool expected = false;
-            if (registered.compare_exchange_strong(expected, true))
-            {
-                HubManager::registerHub(&instance);
-            }
             return instance;
         }
 
@@ -49,7 +42,7 @@ namespace OF
         void init() override
         {
             LOG_MODULE_DECLARE(HubManager, CONFIG_HUB_MANAGER_LOG_LEVEL);
-            for (int i = 0; i < m_devs.size(); ++i)
+            for (size_t i = 0; i < m_devs.size(); ++i)
             {
                 if (!device_is_ready(m_devs[i]))
                 {
@@ -67,11 +60,10 @@ namespace OF
 
         DataT getData()
         {
-            std::call_once(m_init_flag, [this]() { this->init(); });
             return m_data.read();
         }
 
-        template<typename Func, typename... Args>
+        template <typename Func, typename... Args>
         void manipulateData(Func func, Args&&... args)
         {
             m_data.manipulate(func, std::forward<Args>(args)...);
@@ -88,7 +80,6 @@ namespace OF
 
     private:
         SeqlockBuf<DataT> m_data;
-        std::once_flag m_init_flag;
     };
 };
 

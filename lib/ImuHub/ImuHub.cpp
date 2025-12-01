@@ -8,27 +8,17 @@ namespace OF
 {
     void ImuHub::setup()
     {
-        // If devices weren't bound via HubManager, get them from device tree
-        if (m_devs.empty())
-        {
-            m_devs.push_back(DEVICE_DT_GET(DT_NODELABEL(bmi088_accel)));
-            m_devs.push_back(DEVICE_DT_GET(DT_NODELABEL(bmi088_gyro)));
-        }
-
-        // Note: Device ordering matters - m_devs[0] should be accel, m_devs[1] should be gyro
-        // This is enforced when binding via HubManager or by the default device tree setup above
-
         // Initialize the delayed work
-        k_work_init_delayable(&m_work, ImuHub::workHandler);
+        k_work_init_delayable(&m_work, workHandler);
 
         // Schedule the initial work execution
-        int32_t delay_ms = 1000 / CONFIG_IMU_HUB_SAMPLING_FREQUENCY;
+        constexpr int32_t delay_ms = 1000 / CONFIG_IMU_HUB_SAMPLING_FREQUENCY;
         k_work_reschedule(&m_work, K_MSEC(delay_ms));
 
         LOG_DBG("ImuHub initialized and work scheduled");
     }
 
-    void ImuHub::workHandler(struct k_work* work)
+    void ImuHub::workHandler(k_work* work)
     {
         ImuHub* instance = CONTAINER_OF(work, ImuHub, m_work);
         instance->workLoop();
@@ -39,9 +29,8 @@ namespace OF
         IMUData data{};
         bool new_data_ok = true;
 
-        // Assuming m_devs[0] is accel and m_devs[1] is gyro
-        const struct device* m_accel_dev = m_devs.size() > 0 ? m_devs[0] : nullptr;
-        const struct device* m_gyro_dev = m_devs.size() > 1 ? m_devs[1] : nullptr;
+        const device* m_accel_dev = m_devs[0];
+        const device* m_gyro_dev = m_devs[1];
 
         if (m_accel_dev)
         {
