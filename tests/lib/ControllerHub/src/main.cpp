@@ -1,17 +1,18 @@
 // Copyright (c) 2025. MoonFeather
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <OF/lib/ControllerCenter/ControllerCenter.hpp>
+#include <OF/lib/ControllerHub/ControllerHub.hpp>
 
 #include "zephyr/logging/log.h"
+#include <zephyr/kernel.h>
 
 LOG_MODULE_REGISTER(cc_test, CONFIG_LOG_DEFAULT_LEVEL);
 
-using enum OF::ControllerCenter::Channel;
+using enum OF::ControllerHub::Channel;
 
 int main()
 {
-    auto& inst = OF::ControllerCenter::getInstance();
+    auto& inst = OF::ControllerHub::getInstance();
     while (true)
     {
         auto state = inst.getState();

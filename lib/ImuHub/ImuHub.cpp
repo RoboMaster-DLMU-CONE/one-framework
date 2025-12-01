@@ -1,30 +1,30 @@
-#include <OF/lib/IMUCenter/IMUCenter.hpp>
+#include <OF/lib/ImuHub/ImuHub.hpp>
 #include <zephyr/logging/log.h>
 #include <zephyr/kernel.h>
 
-LOG_MODULE_REGISTER(IMUCenter, CONFIG_IMU_CENTER_LOG_LEVEL);
+LOG_MODULE_REGISTER(ImuHub, CONFIG_IMU_HUB_LOG_LEVEL);
 
 namespace OF
 {
-    IMUCenter IMUCenter::m_instance;
+    ImuHub ImuHub::m_instance;
 
-    IMUCenter& IMUCenter::getInstance()
+    ImuHub& ImuHub::getInstance()
     {
         return m_instance;
     }
 
-    IMUData IMUCenter::getData()
+    IMUData ImuHub::getData()
     {
         return m_data_buf.read();
     }
 
-    void IMUCenter::workHandler(struct k_work* work)
+    void ImuHub::workHandler(struct k_work* work)
     {
-        IMUCenter* instance = CONTAINER_OF(work, IMUCenter, m_work);
+        ImuHub* instance = CONTAINER_OF(work, ImuHub, m_work);
         instance->workLoop();
     }
 
-    void IMUCenter::workLoop()
+    void ImuHub::workLoop()
     {
         IMUData data{};
         bool new_data_ok = true;
@@ -80,11 +80,11 @@ namespace OF
         }
 
         // Schedule the next execution based on sampling frequency
-        constexpr int32_t delay_ms = 1000 / CONFIG_IMU_CENTER_SAMPLING_FREQUENCY;
+        constexpr int32_t delay_ms = 1000 / CONFIG_IMU_HUB_SAMPLING_FREQUENCY;
         k_work_reschedule(&m_work, K_MSEC(delay_ms));
     }
 
-    IMUCenter::IMUCenter() :
+    ImuHub::ImuHub() :
         m_accel_dev(nullptr), m_gyro_dev(nullptr)
     {
         m_accel_dev = DEVICE_DT_GET(DT_NODELABEL(bmi088_accel));
@@ -102,13 +102,13 @@ namespace OF
         }
 
         // Initialize the delayed work
-        k_work_init_delayable(&m_work, IMUCenter::workHandler);
+        k_work_init_delayable(&m_work, ImuHub::workHandler);
 
         // Schedule the initial work execution
-        int32_t delay_ms = 1000 / CONFIG_IMU_CENTER_SAMPLING_FREQUENCY;
+        int32_t delay_ms = 1000 / CONFIG_IMU_HUB_SAMPLING_FREQUENCY;
         k_work_reschedule(&m_work, K_MSEC(delay_ms));
 
-        LOG_DBG("IMUCenter initialized and work scheduled");
+        LOG_DBG("ImuHub initialized and work scheduled");
     }
 
 }
