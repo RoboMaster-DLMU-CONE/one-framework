@@ -6,9 +6,7 @@ LOG_MODULE_REGISTER(IMUCenter, CONFIG_IMU_CENTER_LOG_LEVEL);
 
 namespace OF
 {
-    static constexpr size_t STACK_SIZE = 1024;
-    static constexpr int THREAD_PRIORITY = 5;
-    static K_THREAD_STACK_DEFINE(m_stack, STACK_SIZE);
+    static K_THREAD_STACK_DEFINE(m_stack, CONFIG_IMU_CENTER_THREAD_STACK_SIZE);
     IMUCenter IMUCenter::m_instance;
 
     IMUCenter& IMUCenter::getInstance()
@@ -28,7 +26,9 @@ namespace OF
 
     void IMUCenter::threadLoop()
     {
-        constexpr auto sleep_time = K_MSEC(100);
+        // Calculate sleep time based on sampling frequency
+        int32_t sleep_ms = 1000 / CONFIG_IMU_CENTER_SAMPLING_FREQUENCY;
+        k_timeout_t sleep_time = K_MSEC(sleep_ms);
 
         while (true)
         {
@@ -108,7 +108,7 @@ namespace OF
                                       K_THREAD_STACK_SIZEOF(m_stack),
                                       IMUCenter::threadEntry,
                                       this, nullptr, nullptr,
-                                      K_PRIO_PREEMPT(THREAD_PRIORITY),
+                                      K_PRIO_PREEMPT(CONFIG_IMU_CENTER_THREAD_PRIORITY),
                                       0,
                                       K_NO_WAIT);
         k_thread_name_set(tid, "IMU_Sampling");
