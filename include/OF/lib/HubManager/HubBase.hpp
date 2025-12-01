@@ -10,6 +10,8 @@
 
 namespace OF
 {
+    // Forward declaration
+    class HubManager;
     class IHub
     {
     public:
@@ -28,6 +30,12 @@ namespace OF
         static T& getInstance()
         {
             static T instance;
+            static bool registered = false;
+            if (!registered)
+            {
+                HubManager::registerHub(&instance);
+                registered = true;
+            }
             return instance;
         }
 
@@ -58,6 +66,12 @@ namespace OF
         DataT getData()
         {
             return m_data.read();
+        }
+
+        template<typename Func, typename... Args>
+        void manipulateData(Func func, Args&&... args)
+        {
+            m_data.manipulate(func, std::forward<Args>(args)...);
         }
 
     protected:
