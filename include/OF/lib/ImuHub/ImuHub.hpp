@@ -31,9 +31,9 @@ namespace OF
         ImuHub(const ImuHub&) = delete;
         ImuHub operator=(const ImuHub&) = delete;
 
-        [[nodiscard]] constexpr char* getName() const override
+        [[nodiscard]] const char* getName() const override
         {
-            return const_cast<char*>("ImuHub");
+            return "ImuHub";
         }
 
         void setup();

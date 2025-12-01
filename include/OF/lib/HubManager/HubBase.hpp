@@ -7,6 +7,8 @@
 #include <zephyr/logging/log.h>
 
 #include <algorithm>
+#include <atomic>
+#include <mutex>
 
 namespace OF
 {
@@ -15,7 +17,7 @@ namespace OF
     class IHub
     {
     public:
-        [[nodiscard]] virtual constexpr char* getName() const = 0;
+        [[nodiscard]] virtual const char* getName() const = 0;
         virtual void init() = 0;
         virtual bool isReady() = 0;
 
@@ -30,11 +32,11 @@ namespace OF
         static T& getInstance()
         {
             static T instance;
-            static bool registered = false;
-            if (!registered)
+            static std::atomic<bool> registered{false};
+            bool expected = false;
+            if (registered.compare_exchange_strong(expected, true))
             {
                 HubManager::registerHub(&instance);
-                registered = true;
             }
             return instance;
         }
@@ -56,7 +58,6 @@ namespace OF
                 }
             }
             static_cast<T*>(this)->setup();
-            m_initialized = true;
         };
 
         bool isReady() override
@@ -66,10 +67,7 @@ namespace OF
 
         DataT getData()
         {
-            if (!m_initialized)
-            {
-                init();
-            }
+            std::call_once(m_init_flag, [this]() { this->init(); });
             return m_data.read();
         }
 
@@ -90,7 +88,7 @@ namespace OF
 
     private:
         SeqlockBuf<DataT> m_data;
-        bool m_initialized = false;
+        std::once_flag m_init_flag;
     };
 };
 

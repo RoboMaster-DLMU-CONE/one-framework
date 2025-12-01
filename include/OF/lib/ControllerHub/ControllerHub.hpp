@@ -57,9 +57,9 @@ namespace OF
 #endif
         };
 
-        [[nodiscard]] constexpr char* getName() const override
+        [[nodiscard]] const char* getName() const override
         {
-            return const_cast<char*>("ControllerHub");
+            return "ControllerHub";
         }
 
         State getState();

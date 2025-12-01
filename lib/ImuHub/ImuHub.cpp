@@ -15,6 +15,9 @@ namespace OF
             m_devs.push_back(DEVICE_DT_GET(DT_NODELABEL(bmi088_gyro)));
         }
 
+        // Note: Device ordering matters - m_devs[0] should be accel, m_devs[1] should be gyro
+        // This is enforced when binding via HubManager or by the default device tree setup above
+
         // Initialize the delayed work
         k_work_init_delayable(&m_work, ImuHub::workHandler);
 
