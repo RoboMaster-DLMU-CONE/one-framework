@@ -15,7 +15,7 @@ int main()
     LOG_INF("main");
     while (true)
     {
-        auto data = IMUCenter::getData();
+        auto data = IMUCenter::getInstance().getData();
         auto& [x, y, z] = data.accel;
         LOG_INF("accel: %f, %f, %f;", x, y, z);
         auto& [a, b, c] = data.gyro;

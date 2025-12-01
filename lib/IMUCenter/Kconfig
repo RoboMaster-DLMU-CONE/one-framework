@@ -20,15 +20,6 @@ config IMU_CENTER_USE_BMI08X
         使用BMI08X作为IMU Center设备
 endchoice
 
-if IMU_CENTER_USE_BMI08X
-    choice BMI08X_ACCEL_TRIGGER_MODE
-    	prompt "Accelerometer trigger mode"
-    	default BMI08X_ACCEL_TRIGGER_GLOBAL_THREAD
-    	help
-    	  Specify the type of triggering to be used by the driver.
-    endchoice
-endif
-
 module = IMU_CENTER
 module-str = IMU_CENTER
 source "subsys/logging/Kconfig.template.log_config"

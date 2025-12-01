@@ -10,22 +10,18 @@ namespace OF
 {
     struct IMUData
     {
-        struct Quaternion
-        {
-            float w, x, y, z;
-        } quat;
-
-        struct Euler
-        {
-            float yaw, pitch, roll;
-        };
-
         struct Vector3
         {
             float x, y, z;
         };
 
-        Vector3 gyro, accel;
+        struct Quaternion
+        {
+            float w, x, y, z;
+        } quat;
+
+        Vector3 gyro;
+        Vector3 accel;
         float temp;
     };
 
@@ -37,11 +33,24 @@ namespace OF
 
         static IMUCenter& getInstance();
 
-        static IMUData getData();
+        IMUData getData();
 
     private:
-        static IMUCenter m_instance;
         IMUCenter();
+        ~IMUCenter() = default;
+
+        static IMUCenter m_instance;
+
+        static void threadEntry(void* p1, void* p2, void* p3);
+        void threadLoop();
+
+        struct k_thread m_thread{};
+
+        const struct device* m_accel_dev;
+        const struct device* m_gyro_dev;
+
+        // 顺序锁缓存，用于线程间数据传输
+        SeqlockBuf<IMUData> m_data_buf; // 假设 SeqlockBuf 在 OF::Utils 命名空间下
     };
 }
 

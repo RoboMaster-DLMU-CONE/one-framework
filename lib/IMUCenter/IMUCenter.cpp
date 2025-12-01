@@ -6,6 +6,9 @@ LOG_MODULE_REGISTER(IMUCenter, CONFIG_IMU_CENTER_LOG_LEVEL);
 
 namespace OF
 {
+    static constexpr size_t STACK_SIZE = 1024;
+    static constexpr int THREAD_PRIORITY = 5;
+    static K_THREAD_STACK_DEFINE(m_stack, STACK_SIZE);
     IMUCenter IMUCenter::m_instance;
 
     IMUCenter& IMUCenter::getInstance()
@@ -15,62 +18,101 @@ namespace OF
 
     IMUData IMUCenter::getData()
     {
-        IMUData data{};
-        const device* accel = DEVICE_DT_GET(DT_NODELABEL(bmi088_accel));
-        const device* gyro = DEVICE_DT_GET(DT_NODELABEL(bmi088_gyro));
-        sensor_value accel_xyz[3];
-        if (sensor_sample_fetch(accel) == 0)
+        return m_data_buf.read();
+    }
+
+    void IMUCenter::threadEntry(void* p1, void* p2, void* p3)
+    {
+        static_cast<IMUCenter*>(p1)->threadLoop();
+    }
+
+    void IMUCenter::threadLoop()
+    {
+        constexpr auto sleep_time = K_MSEC(100);
+
+        while (true)
         {
-            if (sensor_channel_get(accel, SENSOR_CHAN_ACCEL_XYZ, accel_xyz) == 0)
+            IMUData data{};
+            bool new_data_ok = true;
+
+            sensor_value accel_xyz[3];
+            if (sensor_sample_fetch(m_accel_dev) == 0)
             {
-                auto& [x, y, z] = data.accel;
-                x = sensor_value_to_float(&accel_xyz[0]);
-                y = sensor_value_to_float(&accel_xyz[1]);
-                z = sensor_value_to_float(&accel_xyz[2]);
-                LOG_DBG("Accel: %f, %f, %f (raw: %d.%06d, %d.%06d, %d.%06d)",
-                        x, y, z,
-                        accel_xyz[0].val1, accel_xyz[0].val2,
-                        accel_xyz[1].val1, accel_xyz[1].val2,
-                        accel_xyz[2].val1, accel_xyz[2].val2);
+                if (sensor_channel_get(m_accel_dev, SENSOR_CHAN_ACCEL_XYZ, accel_xyz) == 0)
+                {
+                    data.accel.x = sensor_value_to_float(&accel_xyz[0]);
+                    data.accel.y = sensor_value_to_float(&accel_xyz[1]);
+                    data.accel.z = sensor_value_to_float(&accel_xyz[2]);
+                }
+                else
+                {
+                    LOG_ERR("Failed to read accel channel");
+                    new_data_ok = false;
+                }
             }
             else
             {
-                LOG_ERR("Can't read accel channel: %s", strerror(errno));
+                LOG_ERR("Failed to fetch accel sample");
+                new_data_ok = false;
             }
-        }
-        else
-        {
-            LOG_ERR("Can't fetch accel data: %s", strerror(errno));
-        }
-        sensor_value gyro_xyz[3];
-        if (sensor_sample_fetch(gyro) == 0)
-        {
-            if (sensor_channel_get(gyro, SENSOR_CHAN_GYRO_XYZ, gyro_xyz) == 0)
+
+            sensor_value gyro_xyz[3];
+            if (sensor_sample_fetch(m_gyro_dev) == 0)
             {
-                auto& [x, y, z] = data.gyro;
-                x = sensor_value_to_float(&gyro_xyz[0]);
-                y = sensor_value_to_float(&gyro_xyz[1]);
-                z = sensor_value_to_float(&gyro_xyz[2]);
-                LOG_DBG("Gyro: %f, %f, %f", x, y, z);
+                if (sensor_channel_get(m_gyro_dev, SENSOR_CHAN_GYRO_XYZ, gyro_xyz) == 0)
+                {
+                    data.gyro.x = sensor_value_to_float(&gyro_xyz[0]);
+                    data.gyro.y = sensor_value_to_float(&gyro_xyz[1]);
+                    data.gyro.z = sensor_value_to_float(&gyro_xyz[2]);
+                }
+                else
+                {
+                    LOG_ERR("Failed to read gyro channel");
+                    new_data_ok = false;
+                }
             }
+            else
+            {
+                LOG_ERR("Failed to fetch gyro sample");
+                new_data_ok = false;
+            }
+
+            if (new_data_ok)
+            {
+                m_data_buf.write(data);
+                LOG_DBG("Updated IMU: A(%.2f, %.2f, %.2f) G(%.2f, %.2f, %.2f)",
+                        data.accel.x, data.accel.y, data.accel.z,
+                        data.gyro.x, data.gyro.y, data.gyro.z);
+            }
+            k_sleep(sleep_time);
         }
-        else
-        {
-            LOG_ERR("Can't read gyro data: %s", strerror(errno));
-        }
-        return data;
     }
 
-    IMUCenter::IMUCenter()
+    IMUCenter::IMUCenter() :
+        m_accel_dev(nullptr), m_gyro_dev(nullptr)
     {
-#ifdef CONFIG_IMU_CENTER_USE_BMI08X
-        const device* dev = DEVICE_DT_GET(DT_NODELABEL(bmi088_accel));
-        if (!device_is_ready(dev))
+        m_accel_dev = DEVICE_DT_GET(DT_NODELABEL(bmi088_accel));
+        m_gyro_dev = DEVICE_DT_GET(DT_NODELABEL(bmi088_gyro));
+
+        if (!device_is_ready(m_accel_dev))
         {
-            LOG_ERR("device is not ready");
+            LOG_ERR("Accel device not ready");
             k_panic();
         }
-#endif
+        if (!device_is_ready(m_gyro_dev))
+        {
+            LOG_ERR("Gyro device not ready");
+            k_panic();
+        }
+        k_tid_t tid = k_thread_create(&m_thread, m_stack,
+                                      K_THREAD_STACK_SIZEOF(m_stack),
+                                      IMUCenter::threadEntry,
+                                      this, nullptr, nullptr,
+                                      K_PRIO_PREEMPT(THREAD_PRIORITY),
+                                      0,
+                                      K_NO_WAIT);
+        k_thread_name_set(tid, "IMU_Sampling");
+        LOG_DBG("IMUCenter initialized and thread started");
     }
 
 }
