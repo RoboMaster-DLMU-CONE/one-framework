@@ -14,7 +14,7 @@ choice
 
 config IMU_CENTER_USE_BMI08X
     bool "IMU Center use BMI08x"
-    select CONFIG_BMI08X
+    select BMI08X
     select SENSOR_ASYNC_API
     help
         使用BMI08X作为IMU Center设备
