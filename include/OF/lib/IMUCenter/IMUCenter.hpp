@@ -37,7 +37,7 @@ namespace OF
 
         static IMUCenter& getInstance();
 
-        IMUData getData();
+        static IMUData getData();
 
     private:
         static IMUCenter m_instance;
