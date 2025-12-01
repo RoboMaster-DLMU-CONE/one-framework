@@ -4,6 +4,7 @@
 #include <OF/lib/ControllerHub/ControllerHub.hpp>
 
 #include "zephyr/logging/log.h"
+#include <zephyr/kernel.h>
 
 LOG_MODULE_REGISTER(cc_test, CONFIG_LOG_DEFAULT_LEVEL);
 
