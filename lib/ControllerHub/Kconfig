@@ -1,6 +1,7 @@
 menuconfig CONTROLLER_HUB
     bool "ControllerHub"
     depends on INPUT_DBUS || INPUT_SBUS
+    select HUB_MANAGER
     help
         启用OneFramework控制器中心
 
