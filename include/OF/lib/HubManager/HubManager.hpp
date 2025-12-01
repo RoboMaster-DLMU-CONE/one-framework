@@ -44,16 +44,16 @@ namespace OF
             }
         }
 
+        static void registerHub(IHub* hub)
+        {
+            getHubs().push_back(hub);
+        }
+
     private:
         static std::vector<IHub*>& getHubs()
         {
             static std::vector<IHub*> hubs;
             return hubs;
-        }
-
-        static void registerHub(IHub* hub)
-        {
-            getHubs().push_back(hub);
         }
     };
 }

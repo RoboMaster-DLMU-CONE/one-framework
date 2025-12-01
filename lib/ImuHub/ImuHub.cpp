@@ -6,16 +6,26 @@ LOG_MODULE_REGISTER(ImuHub, CONFIG_IMU_HUB_LOG_LEVEL);
 
 namespace OF
 {
-    ImuHub ImuHub::m_instance;
-
-    ImuHub& ImuHub::getInstance()
+    void ImuHub::setup()
     {
-        return m_instance;
-    }
+        // If devices weren't bound via HubManager, get them from device tree
+        if (m_devs.empty())
+        {
+            m_devs.push_back(DEVICE_DT_GET(DT_NODELABEL(bmi088_accel)));
+            m_devs.push_back(DEVICE_DT_GET(DT_NODELABEL(bmi088_gyro)));
+        }
 
-    IMUData ImuHub::getData()
-    {
-        return m_data_buf.read();
+        // Note: Device ordering matters - m_devs[0] should be accel, m_devs[1] should be gyro
+        // This is enforced when binding via HubManager or by the default device tree setup above
+
+        // Initialize the delayed work
+        k_work_init_delayable(&m_work, ImuHub::workHandler);
+
+        // Schedule the initial work execution
+        int32_t delay_ms = 1000 / CONFIG_IMU_HUB_SAMPLING_FREQUENCY;
+        k_work_reschedule(&m_work, K_MSEC(delay_ms));
+
+        LOG_DBG("ImuHub initialized and work scheduled");
     }
 
     void ImuHub::workHandler(struct k_work* work)
@@ -29,51 +39,61 @@ namespace OF
         IMUData data{};
         bool new_data_ok = true;
 
-        sensor_value accel_xyz[3];
-        if (sensor_sample_fetch(m_accel_dev) == 0)
+        // Assuming m_devs[0] is accel and m_devs[1] is gyro
+        const struct device* m_accel_dev = m_devs.size() > 0 ? m_devs[0] : nullptr;
+        const struct device* m_gyro_dev = m_devs.size() > 1 ? m_devs[1] : nullptr;
+
+        if (m_accel_dev)
         {
-            if (sensor_channel_get(m_accel_dev, SENSOR_CHAN_ACCEL_XYZ, accel_xyz) == 0)
+            sensor_value accel_xyz[3];
+            if (sensor_sample_fetch(m_accel_dev) == 0)
             {
-                data.accel.x = sensor_value_to_float(&accel_xyz[0]);
-                data.accel.y = sensor_value_to_float(&accel_xyz[1]);
-                data.accel.z = sensor_value_to_float(&accel_xyz[2]);
+                if (sensor_channel_get(m_accel_dev, SENSOR_CHAN_ACCEL_XYZ, accel_xyz) == 0)
+                {
+                    data.accel.x = sensor_value_to_float(&accel_xyz[0]);
+                    data.accel.y = sensor_value_to_float(&accel_xyz[1]);
+                    data.accel.z = sensor_value_to_float(&accel_xyz[2]);
+                }
+                else
+                {
+                    LOG_ERR("Failed to read accel channel");
+                    new_data_ok = false;
+                }
             }
             else
             {
-                LOG_ERR("Failed to read accel channel");
+                LOG_ERR("Failed to fetch accel sample");
                 new_data_ok = false;
             }
-        }
-        else
-        {
-            LOG_ERR("Failed to fetch accel sample");
-            new_data_ok = false;
         }
 
-        sensor_value gyro_xyz[3];
-        if (sensor_sample_fetch(m_gyro_dev) == 0)
+        if (m_gyro_dev)
         {
-            if (sensor_channel_get(m_gyro_dev, SENSOR_CHAN_GYRO_XYZ, gyro_xyz) == 0)
+            sensor_value gyro_xyz[3];
+            if (sensor_sample_fetch(m_gyro_dev) == 0)
             {
-                data.gyro.x = sensor_value_to_float(&gyro_xyz[0]);
-                data.gyro.y = sensor_value_to_float(&gyro_xyz[1]);
-                data.gyro.z = sensor_value_to_float(&gyro_xyz[2]);
+                if (sensor_channel_get(m_gyro_dev, SENSOR_CHAN_GYRO_XYZ, gyro_xyz) == 0)
+                {
+                    data.gyro.x = sensor_value_to_float(&gyro_xyz[0]);
+                    data.gyro.y = sensor_value_to_float(&gyro_xyz[1]);
+                    data.gyro.z = sensor_value_to_float(&gyro_xyz[2]);
+                }
+                else
+                {
+                    LOG_ERR("Failed to read gyro channel");
+                    new_data_ok = false;
+                }
             }
             else
             {
-                LOG_ERR("Failed to read gyro channel");
+                LOG_ERR("Failed to fetch gyro sample");
                 new_data_ok = false;
             }
-        }
-        else
-        {
-            LOG_ERR("Failed to fetch gyro sample");
-            new_data_ok = false;
         }
 
         if (new_data_ok)
         {
-            m_data_buf.write(data);
+            updateData(data);
             LOG_DBG("Updated IMU: A(%.2f, %.2f, %.2f) G(%.2f, %.2f, %.2f)",
                     data.accel.x, data.accel.y, data.accel.z,
                     data.gyro.x, data.gyro.y, data.gyro.z);
@@ -84,31 +104,6 @@ namespace OF
         k_work_reschedule(&m_work, K_MSEC(delay_ms));
     }
 
-    ImuHub::ImuHub() :
-        m_accel_dev(nullptr), m_gyro_dev(nullptr)
-    {
-        m_accel_dev = DEVICE_DT_GET(DT_NODELABEL(bmi088_accel));
-        m_gyro_dev = DEVICE_DT_GET(DT_NODELABEL(bmi088_gyro));
-
-        if (!device_is_ready(m_accel_dev))
-        {
-            LOG_ERR("Accel device not ready");
-            k_panic();
-        }
-        if (!device_is_ready(m_gyro_dev))
-        {
-            LOG_ERR("Gyro device not ready");
-            k_panic();
-        }
-
-        // Initialize the delayed work
-        k_work_init_delayable(&m_work, ImuHub::workHandler);
-
-        // Schedule the initial work execution
-        int32_t delay_ms = 1000 / CONFIG_IMU_HUB_SAMPLING_FREQUENCY;
-        k_work_reschedule(&m_work, K_MSEC(delay_ms));
-
-        LOG_DBG("ImuHub initialized and work scheduled");
-    }
+    ImuHub::ImuHub() = default;
 
 }

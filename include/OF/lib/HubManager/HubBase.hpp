@@ -7,13 +7,17 @@
 #include <zephyr/logging/log.h>
 
 #include <algorithm>
+#include <atomic>
+#include <mutex>
 
 namespace OF
 {
+    // Forward declaration
+    class HubManager;
     class IHub
     {
     public:
-        [[nodiscard]] virtual constexpr char* getName() const = 0;
+        [[nodiscard]] virtual const char* getName() const = 0;
         virtual void init() = 0;
         virtual bool isReady() = 0;
 
@@ -28,6 +32,12 @@ namespace OF
         static T& getInstance()
         {
             static T instance;
+            static std::atomic<bool> registered{false};
+            bool expected = false;
+            if (registered.compare_exchange_strong(expected, true))
+            {
+                HubManager::registerHub(&instance);
+            }
             return instance;
         }
 
@@ -57,7 +67,14 @@ namespace OF
 
         DataT getData()
         {
+            std::call_once(m_init_flag, [this]() { this->init(); });
             return m_data.read();
+        }
+
+        template<typename Func, typename... Args>
+        void manipulateData(Func func, Args&&... args)
+        {
+            m_data.manipulate(func, std::forward<Args>(args)...);
         }
 
     protected:
@@ -71,6 +88,7 @@ namespace OF
 
     private:
         SeqlockBuf<DataT> m_data;
+        std::once_flag m_init_flag;
     };
 };
 

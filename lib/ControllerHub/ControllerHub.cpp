@@ -27,21 +27,24 @@ namespace OF
         {make_key(INPUT_EV_KEY, INPUT_KEY_F1), SW_R},
         {make_key(INPUT_EV_KEY, INPUT_KEY_F2), SW_L},
     };
-    ControllerHub ControllerHub::instance_;
 
-    ControllerHub& ControllerHub::getInstance() { return instance_; }
+    ControllerHub::ControllerHub() = default;
 
     ControllerHub::State ControllerHub::getState()
     {
-        return m_buf.read();
+        return getData();
     }
 
-    ControllerHub::ControllerHub()
+    void ControllerHub::setup()
     {
-#ifdef CONFIG_INPUT_DBUS
-        INPUT_CALLBACK_DEFINE(DEVICE_DT_GET_ANY(dji_dbus), input_cb, nullptr);
-#endif
+        // Setup is called after devices are ready
+        // Input callback is registered at compile time below
     }
+
+#ifdef CONFIG_INPUT_DBUS
+    // Register input callback at compile time (must be at file scope)
+    INPUT_CALLBACK_DEFINE(DEVICE_DT_GET_ANY(dji_dbus), ControllerHub::input_cb, nullptr);
+#endif
 
     void ControllerHub::input_cb(input_event* evt, void* user_data)
     {
@@ -70,8 +73,8 @@ namespace OF
                 // only set the channel we want
                 state[ch] = value;
             };
-            // push the new value into seqlock buffer
-            inst.m_buf.manipulate(func, &key_and_val);
+            // push the new value into seqlock buffer using HubBase's manipulation
+            inst.manipulateData(func, &key_and_val);
         }
     };
 
