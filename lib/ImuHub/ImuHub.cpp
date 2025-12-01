@@ -8,6 +8,13 @@ namespace OF
 {
     void ImuHub::setup()
     {
+        // If devices weren't bound via HubManager, get them from device tree
+        if (m_devs.empty())
+        {
+            m_devs.push_back(DEVICE_DT_GET(DT_NODELABEL(bmi088_accel)));
+            m_devs.push_back(DEVICE_DT_GET(DT_NODELABEL(bmi088_gyro)));
+        }
+
         // Initialize the delayed work
         k_work_init_delayable(&m_work, ImuHub::workHandler);
 

@@ -56,6 +56,7 @@ namespace OF
                 }
             }
             static_cast<T*>(this)->setup();
+            m_initialized = true;
         };
 
         bool isReady() override
@@ -65,6 +66,10 @@ namespace OF
 
         DataT getData()
         {
+            if (!m_initialized)
+            {
+                init();
+            }
             return m_data.read();
         }
 
@@ -85,6 +90,7 @@ namespace OF
 
     private:
         SeqlockBuf<DataT> m_data;
+        bool m_initialized = false;
     };
 };
 

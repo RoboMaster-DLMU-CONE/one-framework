@@ -37,10 +37,14 @@ namespace OF
 
     void ControllerHub::setup()
     {
-#ifdef CONFIG_INPUT_DBUS
-        INPUT_CALLBACK_DEFINE(DEVICE_DT_GET_ANY(dji_dbus), input_cb, nullptr);
-#endif
+        // Setup is called after devices are ready
+        // Input callback is registered at compile time below
     }
+
+#ifdef CONFIG_INPUT_DBUS
+    // Register input callback at compile time (must be at file scope)
+    INPUT_CALLBACK_DEFINE(DEVICE_DT_GET_ANY(dji_dbus), ControllerHub::input_cb, nullptr);
+#endif
 
     void ControllerHub::input_cb(input_event* evt, void* user_data)
     {
