@@ -1,5 +1,5 @@
-#ifndef OF_LIB_IMU_CENTER_HPP
-#define OF_LIB_IMU_CENTER_HPP
+#ifndef OF_LIB_IMU_HUB_HPP
+#define OF_LIB_IMU_HUB_HPP
 
 #include <OF/utils/SeqlockBuf.hpp>
 
@@ -25,21 +25,21 @@ namespace OF
         float temp;
     };
 
-    class IMUCenter
+    class ImuHub
     {
     public:
-        IMUCenter(const IMUCenter&) = delete;
-        IMUCenter operator=(const IMUCenter&) = delete;
+        ImuHub(const ImuHub&) = delete;
+        ImuHub operator=(const ImuHub&) = delete;
 
-        static IMUCenter& getInstance();
+        static ImuHub& getInstance();
 
         IMUData getData();
 
     private:
-        IMUCenter();
-        ~IMUCenter() = default;
+        ImuHub();
+        ~ImuHub() = default;
 
-        static IMUCenter m_instance;
+        static ImuHub m_instance;
 
         static void workHandler(struct k_work* work);
         void workLoop();
@@ -54,4 +54,4 @@ namespace OF
     };
 }
 
-#endif //OF_LIB_IMU_CENTER_HPP
+#endif //OF_LIB_IMU_HUB_HPP

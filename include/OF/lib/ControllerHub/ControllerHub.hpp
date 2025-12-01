@@ -1,8 +1,8 @@
 // Copyright (c) 2025. MoonFeather
 // SPDX-License-Identifier: BSD-3-Clause
 
-#ifndef CONTROLLERCENTER_HPP
-#define CONTROLLERCENTER_HPP
+#ifndef CONTROLLERHUB_HPP
+#define CONTROLLERHUB_HPP
 
 #include <array>
 
@@ -13,7 +13,7 @@
 namespace OF
 {
 
-    class ControllerCenter
+    class ControllerHub
     {
     public:
         enum class Channel
@@ -54,20 +54,20 @@ namespace OF
             std::array<int16_t, 7> arr{};
         };
 
-        static ControllerCenter& getInstance();
+        static ControllerHub& getInstance();
 
         State getState();
 
-        ControllerCenter(ControllerCenter&) = delete;
-        ControllerCenter& operator=(const ControllerCenter&) = delete;
+        ControllerHub(ControllerHub&) = delete;
+        ControllerHub& operator=(const ControllerHub&) = delete;
 
     private:
-        ControllerCenter();
-        static ControllerCenter instance_;
+        ControllerHub();
+        static ControllerHub instance_;
 
 
         SeqlockBuf<State> m_buf{};
         static void input_cb(input_event* evt, void* user_data);
     };
 } // namespace OF
-#endif // CONTROLLERCENTER_HPP
+#endif // CONTROLLERHUB_HPP
