@@ -25,6 +25,7 @@ namespace OF
             bool enabled = false;
         };
 
+        // Channel spec arrays define which sensor channels we request from device
         sensor_chan_spec accel_channels[] = {
             {SENSOR_CHAN_ACCEL_XYZ, 0},
         };
@@ -33,6 +34,8 @@ namespace OF
             {SENSOR_CHAN_GYRO_XYZ, 0},
         };
 
+        // Read configs used by the RTIO I/O device wrappers. These point at the
+        // channel spec arrays above and configure streaming behavior.
         sensor_read_config accel_read_cfg = {
             .sensor = nullptr,
             .is_streaming = false,
@@ -49,9 +52,11 @@ namespace OF
             .max = std::size(gyro_channels),
         };
 
+        // Define two RTIO I/O device wrappers, one for accel and one for gyro.
         RTIO_IODEV_DEFINE(imu_accel_iodev, &__sensor_iodev_api, &accel_read_cfg);
         RTIO_IODEV_DEFINE(imu_gyro_iodev, &__sensor_iodev_api, &gyro_read_cfg);
 
+        // Per-context state used when submitting async reads and handling completions.
         AsyncSensorContext accel_ctx = {
             .iodev = &imu_accel_iodev,
             .channels = accel_channels,
@@ -68,10 +73,13 @@ namespace OF
 
         constexpr AsyncSensorContext* const contexts[] = {&accel_ctx, &gyro_ctx};
 
+        // RTIO worker thread stack + thread control object.
         K_THREAD_STACK_DEFINE(imu_rtio_stack, CONFIG_IMU_HUB_RTIO_STACK_SIZE);
         k_thread imu_rtio_thread_data;
         bool imu_rtio_thread_started;
 
+        // Thread priority validation - ensure configured priority is within
+        // application thread bounds.
         constexpr int kRtioThreadPriority =
             (CONFIG_IMU_HUB_RTIO_THREAD_PRIORITY == 0)
             ? K_LOWEST_APPLICATION_THREAD_PRIO
@@ -81,11 +89,14 @@ namespace OF
                       kRtioThreadPriority <= K_LOWEST_APPLICATION_THREAD_PRIO,
                       "Invalid IMU Hub RTIO thread priority");
 
+        // Helper: convert q31 fixed-point samples into float using shift value.
         float q31_to_float(q31_t value, int8_t shift)
         {
             return ldexpf(static_cast<float>(value), shift - 31);
         }
 
+        // Bind a Zephyr sensor device to an AsyncSensorContext and configure
+        // sampling frequency. Returns 0 on success or negative errno.
         int configure_context(AsyncSensorContext& ctx, const device* dev)
         {
             if (dev == nullptr)
@@ -105,6 +116,7 @@ namespace OF
                 return err;
             }
 
+            // Try to set the sensor sampling frequency; non-fatal if it fails.
             constexpr sensor_value freq = {
                 .val1 = CONFIG_IMU_HUB_SAMPLING_FREQUENCY,
                 .val2 = 0,
@@ -119,6 +131,8 @@ namespace OF
             return 0;
         }
 
+        // Submit an asynchronous read request using the RTIO mempool-backed API.
+        // Returns 0 on success or negative errno.
         int submit_async_read(AsyncSensorContext& ctx)
         {
             if (!ctx.enabled)
@@ -136,6 +150,9 @@ namespace OF
             return err;
         }
 
+        // Create and start the RTIO worker thread which processes the RTIO
+        // completion queue. This thread runs sensor_processing_with_callback
+        // to dispatch completed entries to the provided callback.
         void start_worker_thread()
         {
             if (imu_rtio_thread_started)
@@ -152,6 +169,8 @@ namespace OF
         }
     } // namespace
 
+    // Public API: configure contexts for registered devices, start worker and
+    // submit initial read requests.
     void ImuHub::setup()
     {
         bool configured = false;
@@ -172,8 +191,11 @@ namespace OF
             return;
         }
 
+        // Start the RTIO completion processing thread once contexts are bound.
         start_worker_thread();
 
+        // Submit the first async reads for each enabled context so the pipeline
+        // becomes active.
         for (auto* ctx : contexts)
         {
             if (ctx->enabled)
@@ -185,6 +207,8 @@ namespace OF
         LOG_DBG("ImuHub async pipeline started");
     }
 
+    // RTOS thread entry: continuously process RTIO completions and invoke the
+    // static callback `process_imu_data` for each completed read.
     void ImuHub::async_worker_thread(void* p1, void* p2, void* p3)
     {
         ARG_UNUSED(p1);
@@ -193,10 +217,14 @@ namespace OF
 
         while (true)
         {
+            // Blocks until completions are available, then dispatches callbacks.
             sensor_processing_with_callback(&imu_rtio_ctx, process_imu_data);
         }
     }
 
+    // RTIO completion callback. This function validates the context and result,
+    // decodes the sensor buffer using the device decoder, converts fixed-point
+    // data to float and updates the shared IMUData instance.
     void ImuHub::process_imu_data(int result, uint8_t* buf, uint32_t buf_len, void* userdata)
     {
         ARG_UNUSED(buf_len);
@@ -209,6 +237,7 @@ namespace OF
             return;
         }
 
+        // Check read result and re-submit on transient failures.
         if (result != 0)
         {
             LOG_ERR("Async read failed for %s: %d", ctx->dev->name, result);
@@ -216,6 +245,7 @@ namespace OF
             return;
         }
 
+        // Obtain sensor-specific decoder to interpret raw buffer into structured values.
         const sensor_decoder_api* decoder = nullptr;
         int rc = sensor_get_decoder(ctx->dev, &decoder);
 
@@ -226,13 +256,16 @@ namespace OF
             return;
         }
 
+        // Prepare decoding targets.
         sensor_three_axis_data decoded = {};
         uint32_t fit = 0;
-        sensor_chan_spec channel = {
-            .chan_type = ctx->channel_type,
+        const sensor_chan_spec channel = {
+            .chan_type = static_cast<uint16_t>(ctx->channel_type),
             .chan_idx = 0,
         };
 
+        // Decode raw buffer into a sensor_three_axis_data struct. If decoding
+        // fails or returns no samples, re-submit the read and return.
         rc = decoder->decode(buf, channel, &fit, 1, &decoded);
         if (rc <= 0)
         {
@@ -241,26 +274,35 @@ namespace OF
             return;
         }
 
+        // Hand the decoded values to the instance method which converts q31 to
+        // float and stores it inside the shared IMUData structure.
         getInstance().handle_axis_update(ctx->channel_type, decoded);
 
+        // Re-submit another async read to continue streaming data.
         submit_async_read(*ctx);
+
+        // Small sleep to avoid tight looping if device provides data continuously
+        // and to give other threads CPU time.
         k_sleep(K_TICKS(10));
     }
 
+    // Convert decoded q31 samples to float and update the hub's shared state.
     void ImuHub::handle_axis_update(const sensor_channel channel,
                                     const sensor_three_axis_data& data)
     {
-        auto to_float = [&](q31_t value)
+        auto to_float = [&](const q31_t value)
         {
             return q31_to_float(value, data.shift);
         };
 
-        IMUData::Vector3 vec{
+        const IMUData::Vector3 vec{
             to_float(data.readings[0].x),
             to_float(data.readings[0].y),
             to_float(data.readings[0].z),
         };
 
+        // Use HubBase-provided manipulateData helper to safely update the
+        // shared IMUData object under the appropriate locking/ownership model.
         manipulateData([&](IMUData& imu, void* _)
         {
             if (channel == SENSOR_CHAN_ACCEL_XYZ)
