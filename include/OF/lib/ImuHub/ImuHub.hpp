@@ -37,14 +37,19 @@ namespace OF
         }
 
         void setup();
+        static void async_worker_thread(void* p1, void* p2, void* p3);
 
     private:
-        friend class HubBase<ImuHub, IMUData>;
+        friend class HubBase;
         ImuHub();
         ~ImuHub() = default;
 
         static void workHandler(struct k_work* work);
         void workLoop();
+
+        static void process_imu_data(int result, uint8_t* buf, uint32_t buf_len, void* userdata);
+        void handle_axis_update(sensor_channel channel, const struct sensor_three_axis_data& data);
+        static void process_completion_queue();
 
         k_work_delayable m_work{};
     };

@@ -23,11 +23,25 @@ endchoice
 
 config IMU_HUB_SAMPLING_FREQUENCY
     int "IMU Hub Sampling Frequency (Hz)"
-    range 1 1000
+    range 1 2000
     default 10
     depends on IMU_HUB
     help
         设置IMU中心的采样频率（Hz）
+
+config IMU_HUB_RTIO_STACK_SIZE
+    int "IMU Hub RTIO线程栈大小"
+    range 512 8192
+    default 4096
+    help
+        RTIO完成回调线程的栈大小，数值越大可容纳更多解析逻辑。
+
+config IMU_HUB_RTIO_THREAD_PRIORITY
+    int "IMU Hub RTIO线程优先级"
+    default 0
+    help
+        RTIO完成回调线程的优先级，数值越小优先级越高。
+        设为0表示自动使用 K_LOWEST_APPLICATION_THREAD_PRIO，避免打断日志线程。
 
 module = IMU_HUB
 module-str = IMU_HUB
