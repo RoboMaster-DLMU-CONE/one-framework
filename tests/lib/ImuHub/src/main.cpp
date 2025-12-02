@@ -4,6 +4,7 @@
 #include <OF/lib/ImuHub/ImuHub.hpp>
 #include <zephyr/logging/log.h>
 #include <zephyr/kernel.h>
+#include <zephyr/debug/cpu_load.h>
 
 #include "OF/lib/HubManager/HubManager.hpp"
 
@@ -35,6 +36,8 @@ int main()
         LOG_INF("quat: %f, %f, %f, %f;", w, qx, qy, qz);
         auto& [p, r, y] = data.euler_angle;
         LOG_INF("euler: %f, %f, %f;", p, r, y);
+        uint32_t load = cpu_load_get(false);
+        LOG_INF("cpu: %u.%u%%", load / 10, load % 10);
         k_sleep(K_MSEC(500));
     }
 }
