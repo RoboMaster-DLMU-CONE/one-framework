@@ -1,24 +1,24 @@
 // Copyright (c) 2025. MoonFeather
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <OF/lib/ControllerCenter/ControllerCenter.hpp>
+#include <OF/lib/ControllerHub/ControllerHub.hpp>
 #include <frozen/unordered_map.h>
 #include "zephyr/logging/log.h"
 
-LOG_MODULE_REGISTER(ControllerCenter, CONFIG_CONTROLLER_CENTER_LOG_LEVEL);
+LOG_MODULE_REGISTER(ControllerHub, CONFIG_CONTROLLER_HUB_LOG_LEVEL);
 
 
 namespace OF
 {
 
-    using enum ControllerCenter::Channel;
+    using enum ControllerHub::Channel;
 
     constexpr uint32_t make_key(const uint8_t type, const uint16_t code)
     {
         return (static_cast<uint32_t>(type) << 16) | code;
     }
 
-    static constexpr frozen::unordered_map<uint32_t, ControllerCenter::Channel, 7> MAP{
+    static constexpr frozen::unordered_map<uint32_t, ControllerHub::Channel, 7> MAP{
         {make_key(INPUT_EV_ABS, INPUT_ABS_X), LEFT_X},
         {make_key(INPUT_EV_ABS, INPUT_ABS_Y), LEFT_Y},
         {make_key(INPUT_EV_ABS, INPUT_ABS_RX), RIGHT_X},
@@ -27,23 +27,26 @@ namespace OF
         {make_key(INPUT_EV_KEY, INPUT_KEY_F1), SW_R},
         {make_key(INPUT_EV_KEY, INPUT_KEY_F2), SW_L},
     };
-    ControllerCenter ControllerCenter::instance_;
 
-    ControllerCenter& ControllerCenter::getInstance() { return instance_; }
+    ControllerHub::ControllerHub() = default;
 
-    ControllerCenter::State ControllerCenter::getState()
+    ControllerHub::State ControllerHub::getState()
     {
-        return m_buf.read();
+        return getData();
     }
 
-    ControllerCenter::ControllerCenter()
+    void ControllerHub::setup()
     {
+        // Setup is called after devices are ready
+        // Input callback is registered at compile time below
+    }
+
 #ifdef CONFIG_INPUT_DBUS
-        INPUT_CALLBACK_DEFINE(DEVICE_DT_GET_ANY(dji_dbus), input_cb, nullptr);
+    // Register input callback at compile time (must be at file scope)
+    INPUT_CALLBACK_DEFINE(DEVICE_DT_GET_ANY(dji_dbus), ControllerHub::input_cb, nullptr);
 #endif
-    }
 
-    void ControllerCenter::input_cb(input_event* evt, void* user_data)
+    void ControllerHub::input_cb(input_event* evt, void* user_data)
     {
         // filter message unwanted
         if (evt->type == 0)
@@ -70,8 +73,8 @@ namespace OF
                 // only set the channel we want
                 state[ch] = value;
             };
-            // push the new value into seqlock buffer
-            inst.m_buf.manipulate(func, &key_and_val);
+            // push the new value into seqlock buffer using HubBase's manipulation
+            inst.manipulateData(func, &key_and_val);
         }
     };
 

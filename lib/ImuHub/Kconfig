@@ -1,0 +1,37 @@
+menuconfig IMU_HUB
+    bool "IMU Hub"
+    select SENSOR
+    select HUB_MANAGER
+    help
+        启用 OneFramework IMU 中心
+
+if IMU_HUB
+
+choice
+    prompt "IMU Device"
+    default IMU_HUB_USE_BMI08X
+    help
+        IMU中心使用的IMU设备
+
+config IMU_HUB_USE_BMI08X
+    bool "IMU Hub use BMI08x"
+    select BMI08X
+    select SENSOR_ASYNC_API
+    help
+        使用BMI08X作为IMU Hub设备
+endchoice
+
+config IMU_HUB_SAMPLING_FREQUENCY
+    int "IMU Hub Sampling Frequency (Hz)"
+    range 1 1000
+    default 10
+    depends on IMU_HUB
+    help
+        设置IMU中心的采样频率（Hz）
+
+module = IMU_HUB
+module-str = IMU_HUB
+source "subsys/logging/Kconfig.template.log_config"
+
+
+endif # IMU_HUB
