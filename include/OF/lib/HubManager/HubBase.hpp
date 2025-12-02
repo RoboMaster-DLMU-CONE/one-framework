@@ -63,10 +63,10 @@ namespace OF
             return m_data.read();
         }
 
-        template <typename Func, typename... Args>
-        void manipulateData(Func func, Args&&... args)
+        template <typename Func>
+        void manipulateData(Func& func)
         {
-            m_data.manipulate(func, std::forward<Args>(args)...);
+            m_data.manipulate(func);
         }
 
     protected:

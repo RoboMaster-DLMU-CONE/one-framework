@@ -28,14 +28,15 @@ namespace OF
             atomic_inc(&m_version);
         }
 
-        void manipulate(const std::function<void(T&, void*)>& func, void* data)
+        template <typename Func>
+        void manipulate(Func& func)
         {
             // 1. version + 1 (odd), writing...
             atomic_inc(&m_version);
 
             // 2. manipulate data
             compiler_barrier();
-            func(m_data, data);
+            func(m_data);
             compiler_barrier();
 
             // 3. version + 1 (even)，written done.

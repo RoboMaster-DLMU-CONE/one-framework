@@ -286,6 +286,8 @@ namespace OF
         k_sleep(K_TICKS(10));
     }
 
+    std::function<void(IMUData&)> update_func;
+
     // Convert decoded q31 samples to float and update the hub's shared state.
     void ImuHub::handle_axis_update(const sensor_channel channel,
                                     const sensor_three_axis_data& data)
@@ -301,9 +303,7 @@ namespace OF
             to_float(data.readings[0].z),
         };
 
-        // Use HubBase-provided manipulateData helper to safely update the
-        // shared IMUData object under the appropriate locking/ownership model.
-        manipulateData([&](IMUData& imu, void* _)
+        update_func = [&](IMUData& imu)
         {
             if (channel == SENSOR_CHAN_ACCEL_XYZ)
             {
@@ -313,7 +313,11 @@ namespace OF
             {
                 imu.gyro = vec;
             }
-        }, nullptr);
+        };
+
+        // Use HubBase-provided manipulateData helper to safely update the
+        // shared IMUData object under the appropriate locking/ownership model.
+        manipulateData(update_func);
 
         LOG_DBG("IMU %s updated: (%.3f, %.3f, %.3f)",
                 channel == SENSOR_CHAN_ACCEL_XYZ ? "accel" : "gyro",
