@@ -29,10 +29,12 @@ config IMU_HUB_SAMPLING_FREQUENCY
     help
         设置IMU中心的采样频率（Hz）
 
+menu "RTIO Thread"
+
 config IMU_HUB_RTIO_STACK_SIZE
     int "IMU Hub RTIO线程栈大小"
     range 512 8192
-    default 4096
+    default 1024
     help
         RTIO完成回调线程的栈大小，数值越大可容纳更多解析逻辑。
 
@@ -43,6 +45,16 @@ config IMU_HUB_RTIO_THREAD_PRIORITY
         RTIO完成回调线程的优先级，数值越小优先级越高。
         设为0表示自动使用 K_LOWEST_APPLICATION_THREAD_PRIO，避免打断日志线程。
 
+config IMU_HUB_PUBLISH_EVERY_N_FRAME
+    int "IMU Hub 数据更新频率"
+    default 5
+    help
+        在硬件采集 [该值] 帧 后更新数据给外部访问，这个值越大，对外部来说，Imu Hub的数据更新频率越慢，CPU占用越小
+
+endmenu
+
+menu "Algorithm"
+endmenu
 module = IMU_HUB
 module-str = IMU_HUB
 source "subsys/logging/Kconfig.template.log_config"

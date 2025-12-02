@@ -1,13 +1,18 @@
 #include <OF/lib/ImuHub/ImuHub.hpp>
+#include <OF/utils/CCM.h>
 
-#include <errno.h>
-#include <math.h>
+#include <cerrno>
+#include <cmath>
 
 #include <zephyr/logging/log.h>
 #include <zephyr/rtio/rtio.h>
 #include <zephyr/sys/util.h>
 
 LOG_MODULE_REGISTER(ImuHub, CONFIG_IMU_HUB_LOG_LEVEL);
+
+OF_CCM_ATTR uint8_t cnt{};
+constexpr uint16_t UPDATE_COUNT = CONFIG_IMU_HUB_PUBLISH_EVERY_N_FRAME / 2 * 2;
+BUILD_ASSERT(CONFIG_IMU_HUB_PUBLISH_EVERY_N_FRAME != 0, "CONFIG_IMU_HUB_DATA_UPDATE_FRAME_CNT should not be 0!");
 
 namespace OF
 {
@@ -125,7 +130,7 @@ namespace OF
             err = sensor_attr_set(dev, SENSOR_CHAN_ALL, SENSOR_ATTR_SAMPLING_FREQUENCY, &freq);
             if (err != 0)
             {
-                LOG_DBG("Unable to set sampling frequency for %s: %d", dev->name, err);
+                LOG_WRN("Unable to set sampling frequency for %s: %d", dev->name, err);
             }
 
             return 0;
@@ -169,8 +174,6 @@ namespace OF
         }
     } // namespace
 
-    // Public API: configure contexts for registered devices, start worker and
-    // submit initial read requests.
     void ImuHub::setup()
     {
         bool configured = false;
@@ -315,8 +318,9 @@ namespace OF
             }
         };
 
-        // Use HubBase-provided manipulateData helper to safely update the
-        // shared IMUData object under the appropriate locking/ownership model.
+        if (cnt++ < UPDATE_COUNT)
+            return;
+        cnt = 0;
         manipulateData(update_func);
 
         LOG_DBG("IMU %s updated: (%.3f, %.3f, %.3f)",
