@@ -47,13 +47,33 @@ config IMU_HUB_RTIO_THREAD_PRIORITY
 
 config IMU_HUB_PUBLISH_EVERY_N_FRAME
     int "IMU Hub 数据更新频率"
-    default 5
+    default 10
     help
         在硬件采集 [该值] 帧 后更新数据给外部访问，这个值越大，对外部来说，Imu Hub的数据更新频率越慢，CPU占用越小
 
 endmenu
 
 menu "Algorithm"
+
+choice IMU_HUB_RESOLVER
+    prompt "IMU Hub 解算器"
+    default IMU_HUB_RESOLVER_MAHONY
+    help
+        IMU Hub 使用的解算器，默认使用Mahony解算器。若设置为IMU_HUB_RESOLVER_NONE则不会进行数据解算，
+        只会发布未处理的数据。届时IMUData结构体的定义也将发生变化。
+
+config IMU_HUB_RESOLVER_NONE
+    bool "IMU Hub 不使用解算器"
+    help
+        不使用任何解算器对IMU数据进行解算
+
+config IMU_HUB_RESOLVER_MAHONY
+    bool "IMU Hub Mahony解算器"
+    help
+        使用 Mahony 互补滤波算法对 6-DOF IMU数据进行解算，得出四元数和欧拉角
+
+endchoice
+
 endmenu
 module = IMU_HUB
 module-str = IMU_HUB

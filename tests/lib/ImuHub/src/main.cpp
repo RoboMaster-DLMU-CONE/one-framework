@@ -26,10 +26,15 @@ int main()
     while (true)
     {
         auto data = ImuHub::getInstance().getData();
-        auto& [x, y, z] = data.accel;
-        LOG_INF("accel: %f, %f, %f;", x, y, z);
+        LOG_INF("----");
+        auto& [ax, ay, az] = data.accel;
+        LOG_INF("accel: %f, %f, %f;", ax, ay, az);
         auto& [a, b, c] = data.gyro;
         LOG_INF("gyro: %f, %f, %f;", a, b, c);
-        k_sleep(K_MSEC(100));
+        auto& [w, qx, qy, qz] = data.quat;
+        LOG_INF("quat: %f, %f, %f, %f;", w, qx, qy, qz);
+        auto& [p, r, y] = data.euler_angle;
+        LOG_INF("euler: %f, %f, %f;", p, r, y);
+        k_sleep(K_MSEC(500));
     }
 }

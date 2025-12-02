@@ -23,12 +23,19 @@ namespace OF
             float x, y, z; /**< X/Y/Z components in SI units (m/s^2 or rad/s). */
         };
 
+#ifndef CONFIG_IMU_HUB_RESOLVER_NONE
         /** Basic quaternion representation for orientation. */
         struct Quaternion
         {
             float w, x, y, z; /**< Unit quaternion components (w is scalar part). */
         } quat;
 
+        struct EulerAngle
+        {
+            float pitch, roll, yaw;
+        } euler_angle;
+
+#endif
         Vector3 gyro; /**< Gyroscope readings (rad/s). */
         Vector3 accel; /**< Accelerometer readings (m/s^2). */
         float temp; /**< Sensor temperature in degrees Celsius (if available). */

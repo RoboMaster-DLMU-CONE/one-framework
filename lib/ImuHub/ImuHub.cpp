@@ -1,4 +1,5 @@
 #include <OF/lib/ImuHub/ImuHub.hpp>
+#include <OF/utils/Mahony.hpp>
 #include <OF/utils/CCM.h>
 
 #include <cerrno>
@@ -10,12 +11,16 @@
 
 LOG_MODULE_REGISTER(ImuHub, CONFIG_IMU_HUB_LOG_LEVEL);
 
-OF_CCM_ATTR uint8_t cnt{};
+OF_CCM_ATTR uint8_t g_cnt{};
 constexpr uint16_t UPDATE_COUNT = CONFIG_IMU_HUB_PUBLISH_EVERY_N_FRAME / 2 * 2;
 BUILD_ASSERT(CONFIG_IMU_HUB_PUBLISH_EVERY_N_FRAME != 0, "CONFIG_IMU_HUB_DATA_UPDATE_FRAME_CNT should not be 0!");
 
+
 namespace OF
 {
+    OF_CCM_ATTR Mahony g_mahony{};
+    OF_CCM_ATTR IMUData g_imu_data{};
+    OF_CCM_ATTR uint64_t g_prev_timestamp{};
     RTIO_DEFINE_WITH_MEMPOOL(imu_rtio_ctx, 16, 16, 16, 512, sizeof(void *));
 
     namespace
@@ -306,26 +311,42 @@ namespace OF
             to_float(data.readings[0].z),
         };
 
-        update_func = [&](IMUData& imu)
+        if (channel == SENSOR_CHAN_ACCEL_XYZ)
         {
-            if (channel == SENSOR_CHAN_ACCEL_XYZ)
-            {
-                imu.accel = vec;
-            }
-            else if (channel == SENSOR_CHAN_GYRO_XYZ)
-            {
-                imu.gyro = vec;
-            }
-        };
+            g_imu_data.accel = vec;
+        }
+        else if (channel == SENSOR_CHAN_GYRO_XYZ)
+        {
+            g_imu_data.gyro = vec;
+        }
+        auto [ax, ay, az] = g_imu_data.accel;
+        auto [gx, gy, gz] = g_imu_data.gyro;
 
-        if (cnt++ < UPDATE_COUNT)
+        const uint64_t timestamp = data.header.base_timestamp_ns;
+        if (g_prev_timestamp == 0)
+        {
+            g_prev_timestamp = timestamp;
             return;
-        cnt = 0;
-        manipulateData(update_func);
+        }
 
-        LOG_DBG("IMU %s updated: (%.3f, %.3f, %.3f)",
-                channel == SENSOR_CHAN_ACCEL_XYZ ? "accel" : "gyro",
-                vec.x, vec.y, vec.z);
+        if (timestamp <= g_prev_timestamp)
+        {
+            g_prev_timestamp = timestamp;
+            return;
+        }
+
+        const uint64_t delta_ns = timestamp - g_prev_timestamp;
+        g_prev_timestamp = timestamp;
+        const float dt = static_cast<float>(delta_ns) * 1e-9f;
+        g_mahony.update(gx, gy, gz, ax, ay, az, dt);
+
+        if (g_cnt++ < UPDATE_COUNT)
+            return;
+        g_cnt = 0;
+        g_imu_data.quat = {g_mahony.q[0], g_mahony.q[1], g_mahony.q[2], g_mahony.q[3]};
+        auto& [p, r, y] = g_imu_data.euler_angle;
+        g_mahony.getEulerAngle(p, r, y);
+        updateData(g_imu_data);
     }
 
     ImuHub::ImuHub() = default;
