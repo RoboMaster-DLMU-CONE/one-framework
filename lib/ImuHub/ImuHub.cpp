@@ -18,7 +18,7 @@ BUILD_ASSERT(CONFIG_IMU_HUB_PUBLISH_EVERY_N_FRAME != 0, "CONFIG_IMU_HUB_DATA_UPD
 
 namespace OF
 {
-    OF_CCM_ATTR Mahony g_mahony{};
+    OF_CCM_ATTR Mahony g_mahony{1.5f, 0.0f};
     OF_CCM_ATTR IMUData g_imu_data{};
     OF_CCM_ATTR uint64_t g_prev_timestamp{};
     RTIO_DEFINE_WITH_MEMPOOL(imu_rtio_ctx, 16, 16, 16, 512, sizeof(void *));
@@ -36,6 +36,11 @@ namespace OF
     OF_CCM_ATTR uint32_t g_calib_sample_count{};
     OF_CCM_ATTR int64_t g_calib_start_time = -1;
     OF_CCM_ATTR bool g_is_calibrated = false;
+#endif
+
+#ifdef CONFIG_IMU_HUB_YAW_DRIFT_CORRECTION
+    OF_CCM_ATTR double g_gyro_z_accum{};
+    OF_CCM_ATTR float g_gyro_z_bias{};
 #endif
 
     namespace
@@ -183,7 +188,8 @@ namespace OF
         LOG_DBG("ImuHub async pipeline started");
 
 #ifdef CONFIG_IMU_HUB_INITIAL_CALIBRATION
-        LOG_INF("Starting IMU calibration (%d ms). Please keep stationary.", CONFIG_IMU_HUB_CALIBRATION_DURATION_MS);
+        LOG_INF("Starting IMU calibration (%d ms). Please keep stationary.",
+                CONFIG_IMU_HUB_INIT_CALIBRATION_DURATION_MS);
 #endif
     }
 
@@ -280,7 +286,7 @@ namespace OF
 
             // 检查时间是否到达
             const int64_t now = k_uptime_get();
-            if ((now - g_calib_start_time) >= CONFIG_IMU_HUB_CALIBRATION_DURATION_MS)
+            if ((now - g_calib_start_time) >= CONFIG_IMU_HUB_INIT_CALIBRATION_DURATION_MS)
             {
                 if (g_calib_sample_count > 0)
                 {
@@ -326,6 +332,19 @@ namespace OF
         gz -= g_gyro_bias.z;
         g_imu_data.gyro = {gx, gy, gz};
 #endif
+
+        // 速度计死区
+        if constexpr (constexpr uint64_t CONFIG_GYRO_DEADBAND = CONFIG_IMU_HUB_GYRO_DEADBAND; CONFIG_GYRO_DEADBAND > 0)
+        {
+            constexpr float GYRO_DEADBAND = static_cast<float>(CONFIG_IMU_HUB_GYRO_DEADBAND) / 1000;
+
+            if (std::abs(gx) < GYRO_DEADBAND)
+                gx = 0.0f;
+            if (std::abs(gy) < GYRO_DEADBAND)
+                gy = 0.0f;
+            if (std::abs(gz) < GYRO_DEADBAND)
+                gz = 0.0f;
+        }
 
         const uint64_t timestamp = data.header.base_timestamp_ns;
         if (g_prev_timestamp == 0)

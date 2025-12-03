@@ -22,15 +22,15 @@ config PWM_HEATER_INIT_PRIORITY
 
 config PWM_HEATER_TARGET_TEMP
     int "目标温度(摄氏度x100)"
-    default 5000
+    default 4500
     help
         目标温度值，单位为摄氏度x100(例如：5000表示50.00°C)
 
 config PWM_HEATER_TEMP_TOLERANCE
     int "温度容差范围(摄氏度x100)"
-    default 50
+    default 20
     help
-        温度容差范围，单位为摄氏度x100(例如：50表示±0.50°C)
+        温度容差范围，单位为摄氏度x100(例如：20表示±0.20°C)
 
 config PWM_HEATER_UPDATE_INTERVAL_MS
     int "PID控制器更新间隔(毫秒)"

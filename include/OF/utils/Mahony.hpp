@@ -9,7 +9,7 @@ namespace OF
     class Mahony
     {
     public:
-        explicit Mahony(const float kp = 2.0f, const float ki = 0.001f) :
+        explicit Mahony(const float kp = 2.0f, const float ki = 0.01f) :
             kp(kp), ki(ki)
         {
             q[0] = 1.0f;

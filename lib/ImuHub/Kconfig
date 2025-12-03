@@ -76,18 +76,28 @@ endchoice
 
 endmenu
 
+menu "Calibration"
+
 config IMU_HUB_INITIAL_CALIBRATION
     bool "IMU Hub 初始校准"
     default y
     help
       启用后，系统会在启动时收集速度计采样，消除零偏
 
-config IMU_HUB_CALIBRATION_DURATION_MS
+config IMU_HUB_INIT_CALIBRATION_DURATION_MS
     int "Calibration duration (ms)"
-    default 2000
+    default 2500
     depends on IMU_HUB_INITIAL_CALIBRATION
     help
       收集初始校准采样的延迟，延迟越长意味着更高的准确率和更慢的启动时间
+
+config IMU_HUB_GYRO_DEADBAND
+    int "Gyro Deadband(x1000)"
+    default 15
+    help
+      用于抑制速度计偏移的死区值，放大1000倍。可防止静止偏移。设为0时，不进行该死区计算。
+
+endmenu
 
 module = IMU_HUB
 module-str = IMU_HUB
