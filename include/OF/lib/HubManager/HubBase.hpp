@@ -64,10 +64,6 @@ namespace OF
             return m_data.read();
         }
 
-    protected:
-        HubBase() = default;
-        std::vector<const device*> m_devs;
-
         template <typename Func>
         void manipulateData(Func& func)
         {
@@ -78,6 +74,10 @@ namespace OF
         {
             m_data.write(data);
         }
+
+    protected:
+        HubBase() = default;
+        std::vector<const device*> m_devs;
 
     private:
         SeqlockBuf<DataT> m_data;

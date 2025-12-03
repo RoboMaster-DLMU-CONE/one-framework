@@ -73,7 +73,6 @@ namespace OF
         friend class HubBase<ControllerHub, ControllerHubState>;
         ControllerHub();
 
-        static void input_cb(input_event* evt, void* user_data);
     };
 } // namespace OF
 #endif // CONTROLLERHUB_HPP
