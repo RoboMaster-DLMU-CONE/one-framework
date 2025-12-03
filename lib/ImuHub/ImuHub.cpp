@@ -315,7 +315,6 @@ namespace OF
             return;
         }
 #endif
-        // =================================================================
 
         // 3. 应用 Bias 修正
         auto [ax, ay, az] = g_imu_data.accel;
@@ -335,9 +334,9 @@ namespace OF
             return;
         }
 
-        if (timestamp <= g_prev_timestamp)
+        if (timestamp <= g_prev_timestamp) // timestamp溢出后重置全局时间辍
         {
-            // 防止时间倒流或重复
+            g_prev_timestamp = timestamp;
             return;
         }
 
