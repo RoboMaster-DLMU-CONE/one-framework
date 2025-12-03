@@ -2,7 +2,8 @@ config INPUT_DBUS
 	bool "DBUS 驱动"
 	default n
 	depends on INPUT
-	depends on UART_INTERRUPT_DRIVEN
+	select UART_ASYNC_API
+	select UART_INTERRUPT_DRIVEN
 	select UART_USE_RUNTIME_CONFIGURE
 	help
 	  启用DBUS遥控驱动。

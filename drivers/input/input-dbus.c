@@ -9,8 +9,9 @@
 #include <zephyr/irq.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/sys/time_units.h>
 #include <zephyr/sys_clock.h>
+
+#include <OF/utils/CCM.h>
 
 LOG_MODULE_REGISTER(dji_dbus, CONFIG_INPUT_LOG_LEVEL);
 
@@ -23,18 +24,17 @@ struct dbus_input_channel
 };
 
 /* DBUS UART配置 - 100kbps波特率 奇偶校验 */
-const struct uart_config uart_cfg_dbus = {.baudrate = 100000,
-                                          .parity = UART_CFG_PARITY_EVEN,
-                                          .stop_bits = UART_CFG_STOP_BITS_2,
-                                          .data_bits = UART_CFG_DATA_BITS_8,
-                                          .flow_ctrl = UART_CFG_FLOW_CTRL_NONE};
+OF_CCM_ATTR const struct uart_config uart_cfg_dbus = {.baudrate = 100000,
+                                                      .parity = UART_CFG_PARITY_EVEN,
+                                                      .stop_bits = UART_CFG_STOP_BITS_2,
+                                                      .data_bits = UART_CFG_DATA_BITS_8,
+                                                      .flow_ctrl = UART_CFG_FLOW_CTRL_NONE};
 
 struct input_dbus_config
 {
     uint8_t num_channels;
     const struct dbus_input_channel* channel_info;
     const struct device* uart_dev;
-    uart_irq_callback_user_data_t cb;
 };
 
 #define DBUS_FRAME_LEN 18
@@ -42,7 +42,7 @@ struct input_dbus_config
 #define DBUS_INTERFRAME_SPACING_MS 20
 #define DBUS_CHANNEL_COUNT 28 /* 通道总数：5个摇杆+2个开关+4个鼠标+1个滚轮+16个键盘 */
 
-static const struct dbus_input_channel input_channels_full[DBUS_CHANNEL_COUNT] = {
+OF_CCM_ATTR static const struct dbus_input_channel input_channels_full[DBUS_CHANNEL_COUNT] = {
     {0, INPUT_EV_ABS, INPUT_ABS_RX}, /* right_stick_x */
     {1, INPUT_EV_ABS, INPUT_ABS_RY}, /* right_stick_y */
     {2, INPUT_EV_ABS, INPUT_ABS_X}, /* left_stick_x */
@@ -89,7 +89,9 @@ struct input_dbus_data
     uint8_t rd_data[DBUS_FRAME_LEN];
     uint8_t dbus_frame[DBUS_FRAME_LEN];
     bool in_sync;
-    uint32_t last_rx_time;
+
+    uint8_t async_rx_buf[2][DBUS_FRAME_LEN];
+    uint8_t next_async_buf;
 
     uint16_t last_reported_value[DBUS_CHANNEL_COUNT];
     int8_t channel_mapping[DBUS_CHANNEL_COUNT];
@@ -97,6 +99,32 @@ struct input_dbus_data
     K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_INPUT_DBUS_THREAD_STACK_SIZE);
 };
 
+static int dbus_enable_rx(const struct device* dev)
+{
+    struct input_dbus_data* const data = dev->data;
+    const struct input_dbus_config* const config = dev->config;
+
+    data->next_async_buf = 1;
+    return uart_rx_enable(config->uart_dev, data->async_rx_buf[0], DBUS_FRAME_LEN, SYS_FOREVER_US);
+}
+
+
+static void dbus_restart_rx(const struct device* dev)
+{
+    const struct input_dbus_config* const config = dev->config;
+    int ret = uart_rx_disable(config->uart_dev);
+
+    if (ret < 0 && ret != -ENOTSUP)
+    {
+        LOG_ERR("无法禁用UART RX: %d", ret);
+    }
+
+    ret = dbus_enable_rx(dev);
+    if (ret < 0)
+    {
+        LOG_ERR("无法启用UART异步接收: %d", ret);
+    }
+}
 
 static void input_dbus_report(const struct device* dev, unsigned int dbus_channel, unsigned int value)
 {
@@ -158,6 +186,8 @@ static void input_dbus_input_report_thread(const struct device* dev, void* dummy
                 data->in_sync = false;
                 data->xfer_bytes = 0;
                 irq_unlock(key);
+
+                dbus_restart_rx(dev);
 
                 connected_reported = false;
                 LOG_DBG("DBUS receiver connection lost");
@@ -221,61 +251,73 @@ static void input_dbus_input_report_thread(const struct device* dev, void* dummy
     }
 }
 
-static void dbus_uart_isr(const struct device* uart_dev, void* user_data)
+static void dbus_append_rx_bytes(const struct device* dev, const uint8_t* buf, size_t len)
 {
-    const struct device* dev = user_data;
     struct input_dbus_data* const data = dev->data;
-    uint8_t* rd_data = data->rd_data;
-    LOG_DBG("isr enter in_sync=%d xfer_bytes=%d", data->in_sync, data->xfer_bytes);
+    size_t offset = 0;
 
-    if (uart_dev == NULL)
+    while (offset < len)
     {
-        LOG_DBG("UART设备为NULL");
-        return;
-    }
+        size_t chunk = len - offset;
+        size_t remaining = DBUS_FRAME_LEN - data->xfer_bytes;
 
-    if (!uart_irq_update(uart_dev))
-    {
-        LOG_DBG("无法开始处理中断");
-        return;
-    }
-
-    while (uart_irq_rx_ready(uart_dev) && data->xfer_bytes < DBUS_FRAME_LEN)
-    {
-        if (data->in_sync)
+        if (chunk > remaining)
         {
-            if (data->xfer_bytes == 0)
-            {
-                data->last_rx_time = k_uptime_get_32();
-            }
-            data->xfer_bytes += uart_fifo_read(uart_dev, &rd_data[data->xfer_bytes], DBUS_FRAME_LEN - data->xfer_bytes);
+            chunk = remaining;
         }
-        else
+
+        memcpy(&data->rd_data[data->xfer_bytes], buf + offset, chunk);
+        data->xfer_bytes += chunk;
+        offset += chunk;
+
+        if (data->xfer_bytes != DBUS_FRAME_LEN)
         {
-            /* DBUS没有特定的帧头/帧尾，使用帧长度来同步 */
-            data->xfer_bytes += uart_fifo_read(uart_dev, &rd_data[data->xfer_bytes], DBUS_FRAME_LEN - data->xfer_bytes);
-
-            if (data->xfer_bytes == DBUS_FRAME_LEN)
-            {
-                data->in_sync = true;
-                k_sem_give(&data->report_lock);
-            }
+            continue;
         }
-    }
 
-    if (data->in_sync && (k_uptime_get_32() - data->last_rx_time > DBUS_INTERFRAME_SPACING_MS))
-    {
-        data->in_sync = false;
         data->xfer_bytes = 0;
-        uart_irq_rx_disable(uart_dev);
-        uart_irq_rx_enable(uart_dev);
+        if (!data->in_sync)
+        {
+            data->in_sync = true;
+        }
+
+        memcpy(data->dbus_frame, data->rd_data, DBUS_FRAME_LEN);
         k_sem_give(&data->report_lock);
     }
-    else if (data->in_sync && data->xfer_bytes == DBUS_FRAME_LEN)
+}
+
+static void dbus_supply_rx_buffer(const struct device* uart_dev, struct input_dbus_data* data)
+{
+    const int ret = uart_rx_buf_rsp(uart_dev, data->async_rx_buf[data->next_async_buf], DBUS_FRAME_LEN);
+    if (ret == 0)
     {
-        data->xfer_bytes = 0;
-        memcpy(data->dbus_frame, rd_data, DBUS_FRAME_LEN);
-        k_sem_give(&data->report_lock);
+        data->next_async_buf ^= 1;
+    }
+    else
+    {
+        LOG_ERR("无法提供UART RX缓冲区: %d", ret);
+    }
+}
+
+
+static void dbus_uart_event(const struct device* uart_dev, struct uart_event* evt, void* user_data)
+{
+    const struct device* const dev = (const struct device*)user_data;
+    struct input_dbus_data* const data = dev->data;
+
+    switch (evt->type)
+    {
+    case UART_RX_RDY:
+        dbus_append_rx_bytes(dev, evt->data.rx.buf + evt->data.rx.offset, evt->data.rx.len);
+        break;
+    case UART_RX_BUF_REQUEST:
+        dbus_supply_rx_buffer(uart_dev, data);
+        break;
+    case UART_RX_STOPPED:
+        LOG_WRN("UART RX stopped (%d)", evt->data.rx_stop.reason);
+        break;
+    default:
+        break;
     }
 }
 
@@ -285,8 +327,8 @@ static int input_dbus_init(const struct device* dev)
     struct input_dbus_data* const data = dev->data;
     int i, ret;
 
-    uart_irq_rx_disable(config->uart_dev);
-    uart_irq_tx_disable(config->uart_dev);
+    uart_rx_disable(config->uart_dev);
+    uart_tx_abort(config->uart_dev);
 
     LOG_DBG("初始化DBUS驱动");
 
@@ -298,7 +340,6 @@ static int input_dbus_init(const struct device* dev)
 
     data->xfer_bytes = 0;
     data->in_sync = false;
-    data->last_rx_time = 0;
 
     for (i = 0; i < config->num_channels; i++)
     {
@@ -312,16 +353,16 @@ static int input_dbus_init(const struct device* dev)
         return ret;
     }
 
-    ret = uart_irq_callback_user_data_set(config->uart_dev, config->cb, (void*)dev);
+    ret = uart_callback_set(config->uart_dev, dbus_uart_event, (void*)dev);
     if (ret < 0)
     {
         if (ret == -ENOTSUP)
         {
-            LOG_ERR("中断驱动的UART API支持未启用");
+            LOG_ERR("UART设备未启用异步API");
         }
         else if (ret == -ENOSYS)
         {
-            LOG_ERR("UART设备不支持中断驱动API");
+            LOG_ERR("UART设备不支持异步API");
         }
         else
         {
@@ -332,7 +373,12 @@ static int input_dbus_init(const struct device* dev)
 
     k_sem_init(&data->report_lock, 0, 1);
 
-    uart_irq_rx_enable(config->uart_dev);
+    ret = dbus_enable_rx(dev);
+    if (ret < 0)
+    {
+        LOG_ERR("Can't use UART Async rx: %d", ret);
+        return ret;
+    }
 
     k_thread_create(&data->thread, data->thread_stack, K_KERNEL_STACK_SIZEOF(data->thread_stack),
                     (k_thread_entry_t)input_dbus_input_report_thread, (void*)dev, NULL, NULL,
@@ -344,11 +390,11 @@ static int input_dbus_init(const struct device* dev)
 }
 
 static struct input_dbus_data dbus_data;
-static const struct input_dbus_config dbus_cfg = {
+
+OF_CCM_ATTR static const struct input_dbus_config dbus_cfg = {
     .channel_info = input_channels_full,
     .uart_dev = DEVICE_DT_GET(DT_BUS(DT_DRV_INST(0))),
     .num_channels = ARRAY_SIZE(input_channels_full),
-    .cb = dbus_uart_isr,
 };
 
 DEVICE_DT_INST_DEFINE(0, input_dbus_init, NULL, &dbus_data, &dbus_cfg, POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY, NULL);
