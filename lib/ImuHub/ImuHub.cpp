@@ -37,12 +37,6 @@ namespace OF
     OF_CCM_ATTR int64_t g_calib_start_time = -1;
     OF_CCM_ATTR bool g_is_calibrated = false;
 #endif
-
-#ifdef CONFIG_IMU_HUB_YAW_DRIFT_CORRECTION
-    OF_CCM_ATTR double g_gyro_z_accum{};
-    OF_CCM_ATTR float g_gyro_z_bias{};
-#endif
-
     namespace
     {
         struct AsyncSensorContext
@@ -55,22 +49,27 @@ namespace OF
             bool enabled = false;
         };
 
-        sensor_chan_spec accel_channels[] = {{SENSOR_CHAN_ACCEL_XYZ, 0},};
-        sensor_chan_spec gyro_channels[] = {{SENSOR_CHAN_GYRO_XYZ, 0},};
+        OF_CCM_ATTR sensor_chan_spec accel_channels[] = {{SENSOR_CHAN_ACCEL_XYZ, 0},};
+        OF_CCM_ATTR sensor_chan_spec gyro_channels[] = {{SENSOR_CHAN_GYRO_XYZ, 0},};
 
-        sensor_read_config accel_read_cfg = {.sensor = nullptr, .is_streaming = false, .channels = accel_channels,
-                                             .count = std::size(accel_channels), .max = std::size(accel_channels)};
-        sensor_read_config gyro_read_cfg = {.sensor = nullptr, .is_streaming = false, .channels = gyro_channels,
-                                            .count = std::size(gyro_channels), .max = std::size(gyro_channels)};
+        OF_CCM_ATTR sensor_read_config accel_read_cfg = {.sensor = nullptr, .is_streaming = false,
+                                                         .channels = accel_channels,
+                                                         .count = std::size(accel_channels),
+                                                         .max = std::size(accel_channels)};
+        OF_CCM_ATTR sensor_read_config gyro_read_cfg = {.sensor = nullptr, .is_streaming = false,
+                                                        .channels = gyro_channels,
+                                                        .count = std::size(gyro_channels),
+                                                        .max = std::size(gyro_channels)};
 
         RTIO_IODEV_DEFINE(imu_accel_iodev, &__sensor_iodev_api, &accel_read_cfg);
         RTIO_IODEV_DEFINE(imu_gyro_iodev, &__sensor_iodev_api, &gyro_read_cfg);
 
-        AsyncSensorContext accel_ctx = {.iodev = &imu_accel_iodev, .channels = accel_channels,
-                                        .channel_count = std::size(accel_channels),
-                                        .channel_type = SENSOR_CHAN_ACCEL_XYZ};
-        AsyncSensorContext gyro_ctx = {.iodev = &imu_gyro_iodev, .channels = gyro_channels,
-                                       .channel_count = std::size(gyro_channels), .channel_type = SENSOR_CHAN_GYRO_XYZ};
+        OF_CCM_ATTR AsyncSensorContext accel_ctx = {.iodev = &imu_accel_iodev, .channels = accel_channels,
+                                                    .channel_count = std::size(accel_channels),
+                                                    .channel_type = SENSOR_CHAN_ACCEL_XYZ};
+        OF_CCM_ATTR AsyncSensorContext gyro_ctx = {.iodev = &imu_gyro_iodev, .channels = gyro_channels,
+                                                   .channel_count = std::size(gyro_channels),
+                                                   .channel_type = SENSOR_CHAN_GYRO_XYZ};
 
         constexpr AsyncSensorContext* const contexts[] = {&accel_ctx, &gyro_ctx};
 

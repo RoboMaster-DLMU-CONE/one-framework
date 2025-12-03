@@ -8,6 +8,8 @@
 
 #include <algorithm>
 
+#include "OF/utils/CCM.h"
+
 namespace OF
 {
     // Forward declaration
@@ -24,14 +26,13 @@ namespace OF
         virtual ~IHub() = default;
     };
 
-    template <typename T, typename DataT>
+    template <typename T, typename DataT, bool PlaceInCcm = false>
     class HubBase : public IHub
     {
     public:
         static T& getInstance()
         {
-            static T instance;
-            return instance;
+            return Storage::instance;
         }
 
         void bindDevice(std::vector<const device*> devices)
@@ -63,15 +64,15 @@ namespace OF
             return m_data.read();
         }
 
+    protected:
+        HubBase() = default;
+        std::vector<const device*> m_devs;
+
         template <typename Func>
         void manipulateData(Func& func)
         {
             m_data.manipulate(func);
         }
-
-    protected:
-        HubBase() = default;
-        std::vector<const device*> m_devs;
 
         void updateData(const DataT& data)
         {
@@ -80,7 +81,26 @@ namespace OF
 
     private:
         SeqlockBuf<DataT> m_data;
+
+        struct StorageDefault
+        {
+            static T instance;
+        };
+
+        struct StorageCcm
+        {
+            static OF_CCM_ATTR T instance;
+        };
+
+        using Storage = std::conditional_t<PlaceInCcm, StorageCcm, StorageDefault>;
     };
+
+    template <typename T, typename DataT, bool PlaceInCcm>
+    T HubBase<T, DataT, PlaceInCcm>::StorageDefault::instance;
+
+    template <typename T, typename DataT, bool PlaceInCcm>
+    OF_CCM_ATTR T HubBase<T, DataT, PlaceInCcm>::StorageCcm::instance;
+
 };
 
 #endif //OF_LIB_HUBBASE_HPP

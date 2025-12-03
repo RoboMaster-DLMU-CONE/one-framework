@@ -38,7 +38,6 @@ namespace OF
 #endif
         Vector3 gyro; /**< Gyroscope readings (rad/s). */
         Vector3 accel; /**< Accelerometer readings (m/s^2). */
-        float temp; /**< Sensor temperature in degrees Celsius (if available). */
     };
 
     /**
@@ -56,7 +55,7 @@ namespace OF
      *
      * Note: This class is final and non-copyable.
      */
-    class ImuHub final : public HubBase<ImuHub, IMUData>
+    class ImuHub final : public HubBase<ImuHub, IMUData, true>
     {
     public:
         ImuHub(const ImuHub&) = delete;

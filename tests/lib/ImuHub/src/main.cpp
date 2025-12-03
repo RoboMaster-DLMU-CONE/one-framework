@@ -38,6 +38,6 @@ int main()
         LOG_INF("euler: %f, %f, %f;", p, r, y);
         uint32_t load = cpu_load_get(false);
         LOG_INF("cpu: %u.%u%%", load / 10, load % 10);
-        k_sleep(K_MSEC(100));
+        k_sleep(K_MSEC(500));
     }
 }
