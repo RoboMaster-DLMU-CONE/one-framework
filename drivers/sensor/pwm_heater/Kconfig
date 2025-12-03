@@ -2,6 +2,7 @@ menuconfig PWM_HEATER
     bool "PWM Heater"
     select PWM
     depends on SENSOR
+    select SENSOR_ASYNC_API
     help
         启用基于PID控制的PWM加热器驱动，用于控制传感器温度
 
@@ -74,6 +75,12 @@ config PWM_HEATER_PID_MAX_OUTPUT
     depends on !PWM_HEATER_PID_AUTO_MAX_OUTPUT
     help
         当未启用自动映射时使用，决定PID输出上限的刻度。
+
+config PWM_HEATER_AUTOSTART
+    bool "系统初始化时自动启动加热器"
+    default y
+    help
+        选中后，无需在应用中调用 pwm_heater_enable()，驱动会在 SYS_INIT 阶段自动启动。
 
 module = PWM_HEATER
 module-str = PWM_HEATER

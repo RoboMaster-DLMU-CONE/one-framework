@@ -214,6 +214,10 @@ static int pwm_heater_init(const struct device* dev)
     LOG_DBG("PWM heater initialized, target temperature: %d.%02d°C",
             data->target_temp / 100, data->target_temp % 100);
 
+#if IS_ENABLED(CONFIG_PWM_HEATER_AUTOSTART)
+    pwm_heater_enable(dev);
+#endif
+
     return 0;
 }
 

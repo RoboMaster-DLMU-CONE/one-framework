@@ -1,6 +1,7 @@
 config BOARD_DJI_BOARD_C
     bool
     select SOC_STM32F407XG
+if BOARD_DJI_BOARD_C
 
 config DT_HAS_ZEPHYR_SWDP_GPIO_ENABLED
         bool
@@ -78,3 +79,13 @@ if BOARD_DJI_BOARD_C_USB_COMM
     endchoice
 
 endif # BOARD_DJI_BOARD_C_USB_COMM
+
+config BOARD_DJI_BOARD_C_PWM_HEATER
+    bool "大疆开发板C型 使用PWM加热"
+    depends on SENSOR
+    select PWM_HEATER
+    default y
+    help
+        大疆开发板C型
+
+endif # BOARD_DJI_BOARD_C

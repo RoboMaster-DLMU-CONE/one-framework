@@ -39,12 +39,12 @@ int main()
         return -1;
     }
 
-    int ret = pwm_heater_enable(heater);
-    if (ret < 0)
-    {
-        LOG_ERR("Failed to enable heater: %d", ret);
-        return -1;
-    }
+    // int ret = pwm_heater_enable(heater);
+    // if (ret < 0)
+    // {
+    // LOG_ERR("Failed to enable heater: %d", ret);
+    // return -1;
+    // }
 
     LOG_INF("Program started, heater enabled");
 
@@ -53,7 +53,7 @@ int main()
     while (true)
     {
         // Read temperature (keep existing logic)
-        ret = pwm_heater_get_current_temp(heater, &current_temp);
+        int ret = pwm_heater_get_current_temp(heater, &current_temp);
         if (ret == 0)
         {
             if (current_temp < 0)
