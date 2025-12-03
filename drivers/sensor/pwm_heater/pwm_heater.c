@@ -8,9 +8,11 @@
 #include <zephyr/drivers/pwm.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/util.h>
 
-#include "OF/drivers/sensor/pwm_heater.h"
-#include <OneMotor/Control/pid_c_api.h"
+#include <OF/drivers/sensor/pwm_heater.h>
+#include <OF/utils/CCM.h>
+#include "heater_pid.h"
 
 LOG_MODULE_REGISTER(pwm_heater, CONFIG_PWM_HEATER_LOG_LEVEL);
 
@@ -25,23 +27,56 @@ struct pwm_heater_data
 {
     struct k_work_delayable work;
     const struct device* dev;
-    PID_Handle_t pid;
-    int32_t target_temp; /* 目标温度 (单位: 摄氏度x100) */
-    int32_t current_temp; /* 当前温度 (单位: 摄氏度x100) */
-    uint32_t pwm_period_us; /* PWM周期 (微秒) */
-    uint32_t duty_cycle_us; /* 当前占空比 (微秒) */
-    uint32_t max_duty_us; /* 最大占空比 (微秒) */
-    bool enabled; /* 加热器使能状态 */
+    PID_t pid; /* stack-allocated PID object */
+    int32_t target_temp; /* target temperature (centi-degrees C) */
+    int32_t current_temp; /* current temperature (centi-degrees C) */
+    uint32_t pwm_period_us; /* PWM period in microseconds */
+    uint32_t duty_cycle_us; /* current duty cycle in microseconds */
+    uint32_t max_duty_us; /* maximum duty cycle in microseconds */
+    bool enabled; /* heater enabled state */
 };
 
-const PID_Params_t params = {
+static int apply_pwm_setting(const struct pwm_heater_config* config,
+                             struct pwm_heater_data* data,
+                             uint32_t duty_cycle_us)
+{
+    int ret = pwm_set_dt(&config->pwm,
+                         PWM_USEC(data->pwm_period_us),
+                         PWM_USEC(duty_cycle_us));
+
+    if (ret == 0)
+    {
+        uint32_t percent = (data->pwm_period_us == 0)
+                               ? 0
+                               : (duty_cycle_us * 100U) / data->pwm_period_us;
+        LOG_DBG("PWM applied: period=%uus duty=%uus (%u%%)",
+                data->pwm_period_us, duty_cycle_us, percent);
+    }
+    else
+    {
+        LOG_ERR("pwm_set_dt failed (period=%uus duty=%uus, err=%d)",
+                data->pwm_period_us, duty_cycle_us, ret);
+    }
+
+    return ret;
+}
+
+static const PID_Params_t base_pid_params = {
     .Kp = CONFIG_PWM_HEATER_PID_KP / 1000.0f,
     .Ki = CONFIG_PWM_HEATER_PID_KI / 1000.0f,
     .Kd = CONFIG_PWM_HEATER_PID_KD / 1000.0f,
-    .IntegralLimit = 50.0f,
-    .MaxOutput = 1000.0f,
+    .IntegralLimit = 500.0f,
     .Deadband = CONFIG_PWM_HEATER_TEMP_TOLERANCE / 100.f,
 };
+
+static float pwm_heater_compute_max_output(void)
+{
+#if IS_ENABLED(CONFIG_PWM_HEATER_PID_AUTO_MAX_OUTPUT)
+    return MAX(1, CONFIG_PWM_HEATER_MAX_DUTY_CYCLE_PCT);
+#else
+    return MAX(1, CONFIG_PWM_HEATER_PID_MAX_OUTPUT);
+#endif
+}
 
 static void pwm_heater_work_handler(struct k_work* work)
 {
@@ -53,104 +88,79 @@ static void pwm_heater_work_handler(struct k_work* work)
     float pid_output;
     uint32_t new_duty;
 
-    /* 读取当前温度 */
-    if (sensor_channel_get(config->temp_sensor, config->temp_channel, &temp_val) < 0)
+    /* Refresh sensor sample before reading the channel */
+    if (sensor_sample_fetch(config->temp_sensor) < 0)
     {
-        LOG_ERR("无法读取温度传感器");
+        LOG_ERR("Failed to fetch temperature sample");
         goto reschedule;
     }
 
-    /* 打印原始传感器值 */
-    LOG_DBG("温度传感器原始值: val1=%d, val2=%d", temp_val.val1, temp_val.val2);
+    if (sensor_channel_get(config->temp_sensor, config->temp_channel, &temp_val) < 0)
+    {
+        LOG_ERR("Failed to read temperature sensor");
+        goto reschedule;
+    }
 
-    /* 尝试多种转换方法 */
+    LOG_DBG("Sensor raw value: val1=%d, val2=%d", temp_val.val1, temp_val.val2);
+
+    /* Convert to centi-degrees Celsius */
     const double temp_double = sensor_value_to_double(&temp_val);
-    LOG_DBG("sensor_value_to_double转换结果: %f", temp_double);
+    data->current_temp = (int32_t)(temp_double * 100.0);
 
-    /* 数据修正尝试
-     * 有些温度传感器需要偏移校正，特别是芯片内部温度传感器
-     * 尝试标准转换方法与常见的校正方法
-     */
-    int32_t temp_approach1 = temp_val.val1 * 100 + temp_val.val2 / 10000; // 常规方法
-    int32_t temp_approach2 = (int32_t)(temp_double * 100); // 浮点转换
-    int32_t temp_approach3 = (temp_val.val1 * 1000000 + temp_val.val2) / 10000; // 另一种缩放
-
-    /* 如果是MCU内部温度传感器，可能需要特定公式转换 */
-    int32_t temp_corrected;
-    if (temp_approach2 < -5000)
-    {
-        /* 一些内部温度传感器需要特殊转换，尝试校正 */
-        temp_corrected = temp_approach2 + 27315; // 尝试将开尔文转为摄氏度
-        LOG_DBG("尝试温度校正 (可能是开尔文): %d.%02d°C",
-                temp_corrected / 100, abs(temp_corrected % 100));
-
-        /* 如果这个看起来合理，使用校正值 */
-        if (temp_corrected > 1500 && temp_corrected < 4500)
-        {
-            /* 看起来是合理的室温范围，使用这个值 */
-            data->current_temp = temp_corrected;
-            goto temp_done;
-        }
-    }
-
-    /* 使用看起来最合理的温度值 */
-    LOG_DBG("温度计算方法1: %d.%02d°C", temp_approach1 / 100, abs(temp_approach1 % 100));
-    LOG_DBG("温度计算方法2: %d.%02d°C", temp_approach2 / 100, abs(temp_approach2 % 100));
-    LOG_DBG("温度计算方法3: %d.%02d°C", temp_approach3 / 100, abs(temp_approach3 % 100));
-
-    /* 选择一个看起来合理的值 */
-    if (temp_approach1 > -5000 && temp_approach1 < 15000)
-    {
-        data->current_temp = temp_approach1;
-    }
-    else if (temp_approach2 > -5000 && temp_approach2 < 15000)
-    {
-        data->current_temp = temp_approach2;
-    }
-    else if (temp_approach3 > -5000 && temp_approach3 < 15000)
-    {
-        data->current_temp = temp_approach3;
-    }
-    else
-    {
-        /* 所有值都不合理，使用默认值 */
-        LOG_WRN("所有温度计算方法都产生异常值，使用默认值25°C");
-        data->current_temp = 2500; // 默认25°C
-    }
-
-temp_done:
-    LOG_DBG("最终使用的温度值: %d.%02d°C",
+    LOG_DBG("Temperature: %d.%02d°C",
             data->current_temp / 100, abs(data->current_temp % 100));
 
     if (!data->enabled)
     {
-        /* 加热器禁用时，设置PWM为0 */
-        pwm_set_dt(&config->pwm, data->pwm_period_us, 0);
+        /* Heater disabled: ensure PWM is zero */
+        apply_pwm_setting(config, data, 0);
         goto reschedule;
     }
 
-    /* 使用PID控制器计算输出 */
-    pid_output = PID_Compute(data->pid,
-                             (float)(data->target_temp) / 100.0f,
-                             (float)(data->current_temp) / 100.0f);
+    const float target_c = (float)(data->target_temp) / 100.0f;
+    const float current_c = (float)(data->current_temp) / 100.0f;
 
-    /* 将PID输出转换为PWM占空比 */
-    if (pid_output < 0)
+    LOG_DBG("PID cfg: Kp=%.3f Ki=%.3f Kd=%.3f Max=%.1f Deadband=%.2f Integral=%.2f",
+            (double)data->pid.p.Kp,
+            (double)data->pid.p.Ki,
+            (double)data->pid.p.Kd,
+            (double)data->pid.p.MaxOutput,
+            (double)data->pid.p.Deadband,
+            (double)data->pid.integral);
+    LOG_DBG("PID inputs: target=%.2f°C current=%.2f°C error=%.2f°C",
+            (double)target_c,
+            (double)current_c,
+            (double)(target_c - current_c));
+
+    /* Compute PID output */
+    pid_output = PID_Compute(&data->pid, target_c, current_c);
+
+    /* Map PID output to PWM duty */
+    const float pid_span = (data->pid.p.MaxOutput > 0.0f) ? data->pid.p.MaxOutput : 1.0f;
+    float clamped_output = pid_output;
+    if (clamped_output < 0.0f)
     {
-        /* 温度过高，停止加热 */
-        new_duty = 0;
+        clamped_output = 0.0f;
     }
-    else
+    else if (clamped_output > pid_span)
     {
-        /* 将PID输出(0-1000)映射到PWM占空比(0-max_duty_us) */
-        new_duty = ((uint32_t)pid_output * data->max_duty_us) / 1000;
+        clamped_output = pid_span;
     }
+
+    new_duty = (uint32_t)((clamped_output / pid_span) * data->max_duty_us);
+
+    LOG_DBG("PID output %.2f -> duty %u/%u us (prev %u) (span %.2f)",
+            (double)pid_output, new_duty, data->pwm_period_us, data->duty_cycle_us,
+            (double)pid_span);
 
     if (new_duty != data->duty_cycle_us)
     {
-        LOG_DBG("调整PWM占空比: %u/%u us", new_duty, data->pwm_period_us);
         data->duty_cycle_us = new_duty;
-        pwm_set_dt(&config->pwm, data->pwm_period_us, new_duty);
+        apply_pwm_setting(config, data, new_duty);
+    }
+    else
+    {
+        LOG_DBG("PWM duty unchanged, keeping last setting");
     }
 
 reschedule:
@@ -166,48 +176,42 @@ static int pwm_heater_init(const struct device* dev)
 
     if (!device_is_ready(config->pwm.dev))
     {
-        LOG_ERR("PWM设备未就绪");
+        LOG_ERR("PWM device not ready");
         return -ENODEV;
     }
 
     if (!device_is_ready(config->temp_sensor))
     {
-        LOG_ERR("温度传感器未就绪");
+        LOG_ERR("Temperature sensor device not ready");
         return -ENODEV;
     }
 
-    /* 直接使用Kconfig设置所有参数 */
+    /* Set parameters from Kconfig */
     data->target_temp = CONFIG_PWM_HEATER_TARGET_TEMP;
     data->current_temp = 0;
     data->pwm_period_us = 20000;
     data->duty_cycle_us = 0;
     data->max_duty_us = (data->pwm_period_us * CONFIG_PWM_HEATER_MAX_DUTY_CYCLE_PCT) / 100;
-    data->enabled = false; // 默认初始状态为禁用
+    data->enabled = false; // default disabled
 
-    /* 创建PID控制器 */
-    data->pid = PID_Create(&params);
+    /* Initialize PID controller */
+    PID_Params_t pid_params = base_pid_params;
+    pid_params.MaxOutput = pwm_heater_compute_max_output();
+    PID_Init(&data->pid, &pid_params);
 
-    if (data->pid == NULL)
-    {
-        LOG_ERR("无法创建PID控制器");
-        return -ENOMEM;
-    }
-
-    /* 初始化工作队列 */
+    /* Initialize work item */
     k_work_init_delayable(&data->work, pwm_heater_work_handler);
 
-    /* 初始化PWM引脚 */
-    if (pwm_set_dt(&config->pwm, data->pwm_period_us, 0) < 0)
+    /* Initialize PWM output */
+    if (apply_pwm_setting(config, data, 0) < 0)
     {
-        LOG_ERR("无法设置PWM输出");
-        PID_Destroy(data->pid);
         return -EIO;
     }
 
-    /* 启动控制循环 */
+    /* Start control loop */
     k_work_schedule(&data->work, K_MSEC(CONFIG_PWM_HEATER_UPDATE_INTERVAL_MS));
 
-    LOG_INF("PWM加热器初始化完成，目标温度: %d.%02d°C",
+    LOG_DBG("PWM heater initialized, target temperature: %d.%02d°C",
             data->target_temp / 100, data->target_temp % 100);
 
     return 0;
@@ -231,7 +235,7 @@ int pwm_heater_enable(const struct device* dev)
 {
     struct pwm_heater_data* data = dev->data;
     data->enabled = true;
-    LOG_INF("加热器已启用，目标温度: %d.%02d°C",
+    LOG_DBG("Heater enabled, target temperature: %d.%02d°C",
             data->target_temp / 100, data->target_temp % 100);
     return 0;
 }
@@ -242,9 +246,9 @@ int pwm_heater_disable(const struct device* dev)
     const struct pwm_heater_config* config = dev->config;
 
     data->enabled = false;
-    /* 立即关闭加热 */
-    LOG_INF("加热器已禁用");
-    return pwm_set_dt(&config->pwm, data->pwm_period_us, 0);
+    /* Turn off heater immediately */
+    LOG_DBG("Heater disabled");
+    return apply_pwm_setting(config, data, 0);
 }
 
 #define PWM_HEATER_INIT(inst)                                    \

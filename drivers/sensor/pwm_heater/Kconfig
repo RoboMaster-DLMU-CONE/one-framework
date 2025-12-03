@@ -1,5 +1,5 @@
 menuconfig PWM_HEATER
-    bool "PWM加热器驱动"
+    bool "PWM Heater"
     select PWM
     depends on SENSOR
     help
@@ -19,15 +19,11 @@ config PWM_HEATER_INIT_PRIORITY
     help
         PWM加热器设备驱动初始化优先级
 
-module = PWM_HEATER
-module-str = PWM_HEATER
-source "subsys/logging/Kconfig.template.log_config"
-
 config PWM_HEATER_TARGET_TEMP
     int "目标温度(摄氏度x100)"
-    default 4000
+    default 5000
     help
-        目标温度值，单位为摄氏度x100(例如：4000表示40.00°C)
+        目标温度值，单位为摄氏度x100(例如：5000表示50.00°C)
 
 config PWM_HEATER_TEMP_TOLERANCE
     int "温度容差范围(摄氏度x100)"
@@ -37,33 +33,50 @@ config PWM_HEATER_TEMP_TOLERANCE
 
 config PWM_HEATER_UPDATE_INTERVAL_MS
     int "PID控制器更新间隔(毫秒)"
-    default 100
+    default 500
     help
         PID控制器更新间隔，单位为毫秒
 
 config PWM_HEATER_PID_KP
     int "PID比例系数(x1000)"
-    default 1000
+    default 5000
     help
         PID控制器比例系数，放大1000倍
 
 config PWM_HEATER_PID_KI
     int "PID积分系数(x1000)"
-    default 100
+    default 500
     help
         PID控制器积分系数，放大1000倍
 
 config PWM_HEATER_PID_KD
     int "PID微分系数(x1000)"
-    default 10
+    default 100
     help
         PID控制器微分系数，放大1000倍
 
 config PWM_HEATER_MAX_DUTY_CYCLE_PCT
     int "最大占空比(%)"
     range 0 100
-    default 70
+    default 100
     help
         PWM最大占空比限制，防止过热
+
+config PWM_HEATER_PID_AUTO_MAX_OUTPUT
+    bool "自动将PID最大输出映射到PWM占空比"
+    default y
+    help
+        选择后，PID输出最大值自动等于最大占空比百分比，无需手动换算。
+
+config PWM_HEATER_PID_MAX_OUTPUT
+    int "PID最大输出(手动模式)"
+    default 1000
+    depends on !PWM_HEATER_PID_AUTO_MAX_OUTPUT
+    help
+        当未启用自动映射时使用，决定PID输出上限的刻度。
+
+module = PWM_HEATER
+module-str = PWM_HEATER
+source "subsys/logging/Kconfig.template.log_config"
 
 endif # PWM_HEATER

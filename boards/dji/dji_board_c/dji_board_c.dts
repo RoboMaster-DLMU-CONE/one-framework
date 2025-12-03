@@ -222,7 +222,7 @@ zephyr_udc0: &usbotg_fs {
 
 &timers10 {
 	status = "okay";
-	st,prescaler = <84>;
+	st,prescaler = <167>;
 
 	pwm10: pwm {
 		status = "okay";
@@ -235,7 +235,7 @@ zephyr_udc0: &usbotg_fs {
 	pwm_heater: pwm-heater {
 		compatible = "pwm-heater";
 		pwms = <&pwm10 1 PWM_USEC(100) PWM_POLARITY_NORMAL>;
-		temp-sensor = <&die_temp>;
+		temp-sensor = <&bmi088_accel>;
 		temp-channel = <12>; /* SENSOR_CHAN_DIE_TEMP */
 		status = "okay";
 	};
