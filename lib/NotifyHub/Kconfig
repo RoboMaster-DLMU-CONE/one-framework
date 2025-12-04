@@ -1,0 +1,19 @@
+menuconfig NOTIFY_HUB
+    bool "Notify Hub"
+    select HUB_MANAGER
+    select STATUS_LEDS
+    select PWM_BUZZER
+
+    help
+        启用 OneFramework 通知中心
+
+if NOTIFY_HUB
+
+module = NOTIFY_HUB
+module-str = NotifyHub
+source "subsys/logging/Kconfig.template.log_config"
+
+endif
+
+
+

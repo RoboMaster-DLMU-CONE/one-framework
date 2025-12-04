@@ -2,61 +2,71 @@
 #define OF_LIB_HUBMANAGER_HPP
 
 #include "HubBase.hpp"
+#include <frozen/string.h>
+#include <frozen/unordered_map.h>
+#include <string_view>
 
 namespace OF
 {
-    template <typename T, typename... Args>
-    concept Configurable = requires(T t, Args... args)
+    template <typename HubT, const auto& ConfigObj>
+    struct HubEntry
     {
-        t.configure(args...);
+        using Type = HubT;
+        static constexpr const auto& config = ConfigObj;
     };
 
+    namespace GlobalCtx
+    {
+        template <typename T>
+        struct HubStorage
+        {
+            static inline T* instance = nullptr;
+        };
+    }
+
+    template <typename T>
+    static void registerHub(T* ptr)
+    {
+        GlobalCtx::HubStorage<T>::instance = ptr;
+    }
+
+    template <typename T>
+    static T* getHub()
+    {
+        return GlobalCtx::HubStorage<T>::instance;
+    }
+
+    template <typename... Entries>
     class HubManager
     {
     public:
-        class Builder
-        {
-        public:
-            template <typename HubT, typename... Args>
-            Builder& bind(std::vector<const device*> devs, Args&&... args)
-            {
-                LOG_MODULE_DECLARE(HubManager, CONFIG_HUB_MANAGER_LOG_LEVEL);
-                HubT::getInstance().bindDevice(std::move(devs));
-                if constexpr (sizeof...(Args) > 0)
-                {
-                    static_assert(Configurable<HubT, Args...>,
-                                  "Error: You passed config arguments, but the Hub class does not have a matching configure() method.")
-                        ;
-                    HubT::getInstance().configure(std::forward<Args>(args)...);
-                }
-                HubManager::registerHub(&HubT::getInstance());
-                return *this;
-            }
-        };
-
         static void startAll()
         {
-            LOG_MODULE_DECLARE(HubManager, CONFIG_HUB_MANAGER_LOG_LEVEL);
-
-            for (auto* hub : getHubs())
-            {
-                LOG_INF("Init Hub: %s", hub->getName());
-                hub->init();
-            }
+            (startOne<Entries>(), ...);
         }
 
-        static void registerHub(IHub* hub)
+        static auto* getHubByName(std::string_view name)
         {
-            getHubs().push_back(hub);
+
+            static constexpr auto map = frozen::make_unordered_map<frozen::string, IHub*>(
+                {{Entries::Type::name, getHub<typename Entries::Type>()}...});
+
+            auto it = map.find(name);
+            if (it != map.end())
+            {
+                return (it->second)();
+            }
+            return nullptr;
         }
 
     private:
-        static std::vector<IHub*>& getHubs()
+        template <typename Entry>
+        static void startOne()
         {
-            static std::vector<IHub*> hubs;
-            return hubs;
+            auto* hub = getHub<typename Entry::Type>();
+            hub->configure(Entry::config);
+            hub->init();
         }
     };
-}
-
-#endif //OF_LIB_HUBMANAGER_HPP
+} // namespace OF
+#endif
