@@ -73,7 +73,6 @@ namespace OF
     };
 
 #ifdef CONFIG_INPUT_DBUS
-    // Register input callback at compile time (must be at file scope)
     INPUT_CALLBACK_DEFINE(DEVICE_DT_GET_ANY(dji_dbus), input_cb, nullptr);
 #endif
 

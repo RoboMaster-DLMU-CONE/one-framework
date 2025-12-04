@@ -78,22 +78,12 @@
 	status = "okay";
 };
 
-&usart6 {
-	pinctrl-0 = <&usart6_tx_pg14 &usart6_rx_pg9>;
-	pinctrl-names = "default";
-	current-speed = <115200>;
-	dmas = <&dma2 6 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)>,
-		   <&dma2 2 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>;
-	dma-names = "tx", "rx";
-	status = "okay";
-};
-
 &usart1 {
 	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pb7>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
-	dmas = <&dma2 5 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)>,
-		   <&dma2 7 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>;
+	dmas = <&dma2 7 4 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH) STM32_DMA_FIFO_HALF>,
+		   <&dma2 5 4 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH) STM32_DMA_FIFO_HALF>;
 	dma-names = "tx", "rx";
 	status = "okay";
 };
@@ -102,8 +92,8 @@
 	pinctrl-0 = <&usart3_tx_pc10 &usart3_rx_pc11>;
 	pinctrl-names = "default";
 	current-speed = <100000>;
-	dmas = <&dma1 3 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)>,
-		   <&dma1 1 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>;
+	dmas = <&dma1 3 4 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH) STM32_DMA_FIFO_HALF>,
+		   <&dma1 1 4 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH) STM32_DMA_FIFO_HALF>;
 	dma-names = "tx", "rx";
 	status = "okay";
 
@@ -112,6 +102,17 @@
 		status = "okay";
 	};
 };
+
+&usart6 {
+	pinctrl-0 = <&usart6_tx_pg14 &usart6_rx_pg9>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	dmas = <&dma2 6 5 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH) STM32_DMA_FIFO_HALF>,
+		   <&dma2 2 5 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH) STM32_DMA_FIFO_HALF>;
+	dma-names = "tx", "rx";
+	status = "okay";
+};
+
 
 &rtc {
 	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,

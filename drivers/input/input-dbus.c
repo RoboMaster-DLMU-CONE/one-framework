@@ -327,6 +327,18 @@ static int input_dbus_init(const struct device* dev)
     struct input_dbus_data* const data = dev->data;
     int i, ret;
 
+    if (config->uart_dev == NULL)
+    {
+        LOG_ERR("UART device pointer is NULL in config");
+        return -ENODEV;
+    }
+    if (!device_is_ready(config->uart_dev))
+    {
+        LOG_ERR("UART device '%s' is not ready", config->uart_dev->name ? config->uart_dev->name : "<unknown>");
+        return -ENODEV;
+    }
+
+
     uart_rx_disable(config->uart_dev);
     uart_tx_abort(config->uart_dev);
 
