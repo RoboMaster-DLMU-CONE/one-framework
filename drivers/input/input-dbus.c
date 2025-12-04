@@ -89,12 +89,16 @@ struct input_dbus_data
     uint8_t rd_data[DBUS_FRAME_LEN];
     uint8_t dbus_frame[DBUS_FRAME_LEN];
     bool in_sync;
+    uint32_t last_rx_time;
 
+    /* async mode buffers */
     uint8_t async_rx_buf[2][DBUS_FRAME_LEN];
     uint8_t next_async_buf;
 
     uint16_t last_reported_value[DBUS_CHANNEL_COUNT];
     int8_t channel_mapping[DBUS_CHANNEL_COUNT];
+
+    bool using_async; /* true if async API is in use, false -> IRQ fallback */
 
     K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_INPUT_DBUS_THREAD_STACK_SIZE);
 };
@@ -104,25 +108,45 @@ static int dbus_enable_rx(const struct device* dev)
     struct input_dbus_data* const data = dev->data;
     const struct input_dbus_config* const config = dev->config;
 
-    data->next_async_buf = 1;
-    return uart_rx_enable(config->uart_dev, data->async_rx_buf[0], DBUS_FRAME_LEN, SYS_FOREVER_US);
+    if (data->using_async)
+    {
+        data->next_async_buf = 1;
+        return uart_rx_enable(config->uart_dev, data->async_rx_buf[0], DBUS_FRAME_LEN, SYS_FOREVER_US);
+    }
+    else
+    {
+        uart_irq_rx_enable(config->uart_dev);
+        return 0;
+    }
 }
 
 
 static void dbus_restart_rx(const struct device* dev)
 {
     const struct input_dbus_config* const config = dev->config;
-    int ret = uart_rx_disable(config->uart_dev);
+    struct input_dbus_data* const data = dev->data;
+    int ret = 0;
 
-    if (ret < 0 && ret != -ENOTSUP)
+    if (data->using_async)
     {
-        LOG_ERR("无法禁用UART RX: %d", ret);
+        ret = uart_rx_disable(config->uart_dev);
+
+        if (ret < 0 && ret != -ENOTSUP)
+        {
+            LOG_ERR("Failed to disable UART RX: %d", ret);
+        }
+
+        ret = dbus_enable_rx(dev);
+        if (ret < 0)
+        {
+            LOG_ERR("Failed to enable UART async receive: %d", ret);
+        }
     }
-
-    ret = dbus_enable_rx(dev);
-    if (ret < 0)
+    else
     {
-        LOG_ERR("无法启用UART异步接收: %d", ret);
+        /* IRQ mode */
+        uart_irq_rx_disable(config->uart_dev);
+        uart_irq_rx_enable(config->uart_dev);
     }
 }
 
@@ -295,7 +319,7 @@ static void dbus_supply_rx_buffer(const struct device* uart_dev, struct input_db
     }
     else
     {
-        LOG_ERR("无法提供UART RX缓冲区: %d", ret);
+        LOG_ERR("Failed to provide UART RX buffer: %d", ret);
     }
 }
 
@@ -321,6 +345,64 @@ static void dbus_uart_event(const struct device* uart_dev, struct uart_event* ev
     }
 }
 
+/* IRQ fallback handler (interrupt-driven UART API) */
+static void dbus_uart_isr(const struct device* uart_dev, void* user_data)
+{
+    const struct device* dev = user_data;
+    struct input_dbus_data* const data = dev->data;
+    uint8_t* rd_data = data->rd_data;
+
+    if (uart_dev == NULL)
+    {
+        LOG_DBG("UART device is NULL");
+        return;
+    }
+
+    if (!uart_irq_update(uart_dev))
+    {
+        LOG_DBG("uart_irq_update() failed, cannot handle interrupt");
+        return;
+    }
+
+    while (uart_irq_rx_ready(uart_dev) && data->xfer_bytes < DBUS_FRAME_LEN)
+    {
+        if (data->in_sync)
+        {
+            if (data->xfer_bytes == 0)
+            {
+                data->last_rx_time = k_uptime_get_32();
+            }
+            data->xfer_bytes += uart_fifo_read(uart_dev, &rd_data[data->xfer_bytes], DBUS_FRAME_LEN - data->xfer_bytes);
+        }
+        else
+        {
+            /* DBUS没有特定的帧头/帧尾，使用帧长度来同步 */
+            data->xfer_bytes += uart_fifo_read(uart_dev, &rd_data[data->xfer_bytes], DBUS_FRAME_LEN - data->xfer_bytes);
+
+            if (data->xfer_bytes == DBUS_FRAME_LEN)
+            {
+                data->in_sync = true;
+                k_sem_give(&data->report_lock);
+            }
+        }
+    }
+
+    if (data->in_sync && (k_uptime_get_32() - data->last_rx_time > DBUS_INTERFRAME_SPACING_MS))
+    {
+        data->in_sync = false;
+        data->xfer_bytes = 0;
+        uart_irq_rx_disable(uart_dev);
+        uart_irq_rx_enable(uart_dev);
+        k_sem_give(&data->report_lock);
+    }
+    else if (data->in_sync && data->xfer_bytes == DBUS_FRAME_LEN)
+    {
+        data->xfer_bytes = 0;
+        memcpy(data->dbus_frame, rd_data, DBUS_FRAME_LEN);
+        k_sem_give(&data->report_lock);
+    }
+}
+
 static int input_dbus_init(const struct device* dev)
 {
     const struct input_dbus_config* const config = dev->config;
@@ -338,11 +420,11 @@ static int input_dbus_init(const struct device* dev)
         return -ENODEV;
     }
 
-
+    /* Ensure any previous rx/tx are stopped */
     uart_rx_disable(config->uart_dev);
     uart_tx_abort(config->uart_dev);
 
-    LOG_DBG("初始化DBUS驱动");
+    LOG_DBG("Initializing DBUS driver");
 
     for (i = 0; i < DBUS_CHANNEL_COUNT; i++)
     {
@@ -352,6 +434,8 @@ static int input_dbus_init(const struct device* dev)
 
     data->xfer_bytes = 0;
     data->in_sync = false;
+    data->last_rx_time = 0;
+    data->using_async = false; /* will be set to true if async setup succeeds */
 
     for (i = 0; i < config->num_channels; i++)
     {
@@ -361,44 +445,86 @@ static int input_dbus_init(const struct device* dev)
     ret = uart_configure(config->uart_dev, &uart_cfg_dbus);
     if (ret < 0)
     {
-        LOG_ERR("无法配置UART端口: %d", ret);
+        LOG_ERR("Failed to configure UART port: %d", ret);
         return ret;
     }
 
+    /* Try async (newer) UART API first */
     ret = uart_callback_set(config->uart_dev, dbus_uart_event, (void*)dev);
-    if (ret < 0)
+    if (ret == 0)
     {
-        if (ret == -ENOTSUP)
+        data->using_async = true;
+        k_sem_init(&data->report_lock, 0, 1);
+
+        ret = dbus_enable_rx(dev);
+        if (ret < 0)
         {
-            LOG_ERR("UART设备未启用异步API");
+            LOG_ERR("Can't use UART Async rx: %d", ret);
+            return ret;
         }
-        else if (ret == -ENOSYS)
+
+        LOG_DBG("Using UART async API");
+    }
+    else
+    {
+        /* Async API not available -> try IRQ API */
+        if (ret == -ENOTSUP || ret == -ENOSYS)
         {
-            LOG_ERR("UART设备不支持异步API");
+            LOG_DBG("UART async API unavailable (%d), falling back to IRQ API", ret);
+
+            ret = uart_irq_callback_user_data_set(config->uart_dev, dbus_uart_isr, (void*)dev);
+            if (ret < 0)
+            {
+                if (ret == -ENOTSUP)
+                {
+                    LOG_ERR("Interrupt-driven UART API support not enabled");
+                }
+                else if (ret == -ENOSYS)
+                {
+                    LOG_ERR("UART device does not support interrupt-driven API");
+                }
+                else
+                {
+                    LOG_ERR("Error setting UART callback: %d", ret);
+                }
+                return ret;
+            }
+
+            data->using_async = false;
+            k_sem_init(&data->report_lock, 0, 1);
+
+            uart_irq_rx_disable(config->uart_dev);
+            uart_irq_rx_enable(config->uart_dev);
+
+            LOG_DBG("Using UART IRQ API (fallback)");
         }
         else
         {
-            LOG_ERR("设置UART回调错误: %d", ret);
+            /* Other errors from uart_callback_set -> treat as fatal */
+            if (ret == -ENOTSUP)
+            {
+                LOG_ERR("UART device did not enable async API");
+            }
+            else if (ret == -ENOSYS)
+            {
+                LOG_ERR("UART device does not support async API");
+            }
+            else
+            {
+                LOG_ERR("Error setting UART callback: %d", ret);
+            }
+            return ret;
         }
-        return ret;
     }
 
-    k_sem_init(&data->report_lock, 0, 1);
-
-    ret = dbus_enable_rx(dev);
-    if (ret < 0)
-    {
-        LOG_ERR("Can't use UART Async rx: %d", ret);
-        return ret;
-    }
-
+    /* Create reporting thread */
     k_thread_create(&data->thread, data->thread_stack, K_KERNEL_STACK_SIZEOF(data->thread_stack),
                     (k_thread_entry_t)input_dbus_input_report_thread, (void*)dev, NULL, NULL,
                     CONFIG_INPUT_DBUS_THREAD_PRIORITY, 0, K_NO_WAIT);
 
     k_thread_name_set(&data->thread, dev->name);
 
-    return ret;
+    return 0;
 }
 
 static struct input_dbus_data dbus_data;
