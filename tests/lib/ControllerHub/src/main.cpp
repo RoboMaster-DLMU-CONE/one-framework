@@ -1,6 +1,7 @@
 // Copyright (c) 2025. MoonFeather
 // SPDX-License-Identifier: BSD-3-Clause
 
+#include <OF/lib/HubManager/HubRegistry.hpp>
 #include <OF/lib/ControllerHub/ControllerHub.hpp>
 
 #include "zephyr/logging/log.h"
@@ -9,15 +10,22 @@
 
 LOG_MODULE_REGISTER(cc_test, CONFIG_LOG_DEFAULT_LEVEL);
 
-using enum OF::ControllerHub::Channel;
+
+using namespace OF;
+using enum ControllerHub::Channel;
+
+constexpr ControllerHubConfig controller_hub_config{
+    .input_device = DEVICE_DT_GET_ANY(dji_dbus)
+};
 
 int main()
 {
-    auto& inst = OF::ControllerHub::getInstance();
+    HubRegistry::startAll();
+    auto* hub = getHub<ControllerHub>();
+
     while (true)
     {
-        auto state = inst.getState();
-
+        auto state = hub->getData();
 
         const auto leftX = state[LEFT_X];
         const auto leftY = state[LEFT_Y];

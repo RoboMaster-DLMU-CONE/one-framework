@@ -12,6 +12,11 @@ LOG_MODULE_REGISTER(notify_test, CONFIG_LOG_DEFAULT_LEVEL);
 
 using namespace OF;
 
+constexpr NotifyHubConfig notify_hub_config{
+    .status_leds_dev = DEVICE_DT_GET(DT_NODELABEL(status_leds)),
+    .pwm_buzzer_dev = DEVICE_DT_GET(DT_NODELABEL(pwm_buzzer))
+};
+
 
 int main()
 {

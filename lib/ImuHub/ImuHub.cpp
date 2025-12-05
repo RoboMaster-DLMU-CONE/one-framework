@@ -1,4 +1,5 @@
 #include <OF/lib/ImuHub/ImuHub.hpp>
+#include <OF/lib/HubManager/HubManager.hpp>
 #include <OF/utils/Mahony.hpp>
 #include <OF/utils/CCM.h>
 
@@ -18,8 +19,22 @@ BUILD_ASSERT(CONFIG_IMU_HUB_PUBLISH_EVERY_N_FRAME != 0, "CONFIG_IMU_HUB_DATA_UPD
 
 namespace OF
 {
+    OF_CCM_ATTR ImuHub hub;
+
+    namespace
+    {
+        struct ImuHubRegistrar
+        {
+            ImuHubRegistrar()
+            {
+                registerHub<ImuHub>(&hub);
+            }
+        } ImuHubRegistrar;
+    }
+
     OF_CCM_ATTR Mahony g_mahony{1.5f, 0.0f};
     OF_CCM_ATTR IMUData g_imu_data{};
+    OF_CCM_ATTR SeqlockBuf<IMUData> g_imu_buf;
     OF_CCM_ATTR uint64_t g_prev_timestamp{};
     RTIO_DEFINE_WITH_MEMPOOL(imu_rtio_ctx, 16, 16, 16, 512, sizeof(void *));
 
@@ -163,13 +178,17 @@ namespace OF
         }
     } // namespace
 
+    void ImuHub::configure(const ImuHubConfig& config)
+    {
+        m_accel_dev = config.accel_dev;
+        m_gyro_dev = config.gyro_dev;
+    }
+
     void ImuHub::setup()
     {
         bool configured = false;
-        if (!m_devs.empty())
-            configured |= (configure_context(accel_ctx, m_devs[0]) == 0);
-        if (m_devs.size() > 1)
-            configured |= (configure_context(gyro_ctx, m_devs[1]) == 0);
+        configured |= (configure_context(accel_ctx, m_accel_dev) == 0);
+        configured |= (configure_context(gyro_ctx, m_gyro_dev) == 0);
 
         if (!configured)
         {
@@ -203,6 +222,11 @@ namespace OF
         }
     }
 
+    IMUData ImuHub::getData()
+    {
+        return g_imu_buf.read();
+    }
+
     void ImuHub::process_imu_data(int result, uint8_t* buf, uint32_t buf_len, void* userdata)
     {
         ARG_UNUSED(buf_len);
@@ -233,7 +257,7 @@ namespace OF
         }
 
         // 调用处理函数
-        getInstance().handle_axis_update(ctx->channel_type, decoded);
+        handle_axis_update(ctx->channel_type, decoded);
 
         submit_async_read(*ctx);
         k_sleep(K_TICKS(10));
@@ -375,8 +399,7 @@ namespace OF
         auto& [p, r, y] = g_imu_data.euler_angle;
         g_mahony.getEulerAngle(p, r, y);
 
-        updateData(g_imu_data);
+        g_imu_buf.write(g_imu_data);
     }
 
-    ImuHub::ImuHub() = default;
 } // namespace OF

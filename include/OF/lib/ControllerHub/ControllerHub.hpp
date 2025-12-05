@@ -12,8 +12,13 @@
 
 namespace OF
 {
+    struct ControllerHubConfig
+    {
+        const device* input_device;
+    };
+
     // Forward declare State class for ControllerHub
-    class ControllerHubState
+    class ControllerHubData
     {
     public:
         enum class Channel
@@ -41,11 +46,14 @@ namespace OF
         std::array<int16_t, 7> arr{};
     };
 
-    class ControllerHub : public HubBase<ControllerHub, ControllerHubState>
+    class ControllerHub : public HubBase<ControllerHub>
     {
     public:
-        using Channel = ControllerHubState::Channel;
-        using State = ControllerHubState;
+        ControllerHub() = default;
+        static constexpr auto name = "ControllerHub";
+
+        using Channel = ControllerHubData::Channel;
+        using State = ControllerHubData;
 
         enum class Switch
         {
@@ -57,21 +65,13 @@ namespace OF
 #endif
         };
 
-        [[nodiscard]] const char* getName() const override
-        {
-            return "ControllerHub";
-        }
-
-        State getState();
+        static State getData();
 
         void setup();
+        void configure(const ControllerHubConfig& config);
 
         ControllerHub(ControllerHub&) = delete;
         ControllerHub& operator=(const ControllerHub&) = delete;
-
-    private:
-        friend class HubBase<ControllerHub, ControllerHubState>;
-        ControllerHub();
 
     };
 } // namespace OF

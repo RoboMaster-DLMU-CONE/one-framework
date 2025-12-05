@@ -8,6 +8,12 @@
 
 namespace OF
 {
+    struct ImuHubConfig
+    {
+        const device* accel_dev;
+        const device* gyro_dev;
+    };
+
     /**
      * @brief Container for IMU sample data used by the hub.
      *
@@ -55,20 +61,16 @@ namespace OF
      *
      * Note: This class is final and non-copyable.
      */
-    class ImuHub final : public HubBase<ImuHub, IMUData, true>
+    class ImuHub final : public HubBase<ImuHub>
     {
     public:
+        ImuHub() = default;
         ImuHub(const ImuHub&) = delete;
         ImuHub operator=(const ImuHub&) = delete;
 
-        /**
-         * @brief Human readable hub name used by HubManager.
-         * @return Constant null-terminated string.
-         */
-        [[nodiscard]] const char* getName() const override
-        {
-            return "ImuHub";
-        }
+        static constexpr auto name = "ImuHub";
+
+        void configure(const ImuHubConfig& config);
 
         /**
          * @brief Configure and start the asynchronous IMU pipeline.
@@ -86,17 +88,9 @@ namespace OF
          */
         static void async_worker_thread(void* p1, void* p2, void* p3);
 
+        static IMUData getData();
+
     private:
-        friend class HubBase;
-        ImuHub();
-        ~ImuHub() = default;
-
-        /** Work handler invoked by the Zephyr workqueue (unused for RTIO path). */
-        static void workHandler(struct k_work* work);
-
-        /** Synchronous work loop (unused for RTIO path). */
-        void workLoop();
-
         /**
          * @brief RTIO completion callback invoked for each async sensor read.
          *
@@ -113,12 +107,10 @@ namespace OF
          * @param channel The sensor channel type (accel/gyro).
          * @param data Decoded fixed-point sensor_three_axis_data.
          */
-        void handle_axis_update(sensor_channel channel, const struct sensor_three_axis_data& data);
+        static void handle_axis_update(sensor_channel channel, const struct sensor_three_axis_data& data);
 
-        /** Process any pending completion entries queued by the RTIO context. */
-        static void process_completion_queue();
-
-        k_work_delayable m_work{}; /**< Work item used by HubBase when polling-based flow is used. */
+        const device* m_accel_dev;
+        const device* m_gyro_dev;
     };
 }
 

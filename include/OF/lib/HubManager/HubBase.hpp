@@ -20,7 +20,7 @@ namespace OF
     {
     public:
         virtual void init() = 0;
-        virtual char* getName() = 0;
+        virtual const char* getName() = 0;
 
     protected:
         virtual ~IHub() = default;
@@ -38,7 +38,7 @@ namespace OF
             static_cast<T*>(this)->setup();
         };
 
-        char* getName() override
+        const char* getName() override
         {
             return static_cast<T*>(this)->name;
         };
