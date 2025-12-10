@@ -19,15 +19,9 @@ namespace OF
     public:
         static constexpr auto name = "NotifyHub";
 
-        void configure(const NotifyHubConfig& config)
-        {
-            m_leds = config.status_leds_dev;
-            m_buzzer = config.pwm_buzzer_dev;
-        }
+        void configure(const NotifyHubConfig& config);
 
-        void setup()
-        {
-        }
+        void setup();
 
     private:
         const device* m_leds{nullptr};
