@@ -18,7 +18,8 @@ public:
     {
         while (true)
         {
-            k_msleep(10);
+            printk("hello!\n");
+            k_msleep(100);
         }
     }
 

@@ -3,9 +3,14 @@
 
 #include <zephyr/sys/iterable_sections.h>
 
+#include "Node.hpp"
 #include "Descriptor.hpp"
 
+
 #define ONE_NODE_REGISTER(UserClass) \
+    static_assert(NodeConcept<UserClass>, \
+        "Your Node must define a full Meta struct and implement init, run and cleanup function! See 'NodeConcept' for more detail. ' " \
+    ); \
     /* stack definition */ \
     K_THREAD_STACK_DEFINE(_stack_##UserClass, UserClass::Meta::stack_size); \
     /* thread data */ \

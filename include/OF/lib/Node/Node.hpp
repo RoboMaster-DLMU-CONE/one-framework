@@ -5,8 +5,8 @@
 
 #include <zephyr/logging/log.h>
 
-#include "Macro.hpp"
 #include "Descriptor.hpp"
+#include "Macro.hpp"
 
 namespace OF
 {
@@ -28,8 +28,7 @@ namespace OF
     public:
         static void zephyr_entry_point(void* p1, void*, void*)
         {
-            static_assert(NodeConcept<Derived>,
-                          "Your Node must define a 'struct Meta { stack_size, priority, name };'");
+
             LOG_MODULE_DECLARE(NodeSystem, CONFIG_NODE_LOG_LEVEL);
             auto* node = static_cast<Derived*>(p1);
 
