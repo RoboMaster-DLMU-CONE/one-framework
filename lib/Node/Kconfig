@@ -1,0 +1,12 @@
+menuconfig NODE
+    bool "OneFramework Node"
+    help
+        启用OneFramework Node
+
+if NODE
+
+module = NODE
+module-str = Node
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # NODE
