@@ -2,7 +2,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/debug/cpu_load.h>
 
-#include "OF/drivers/output/buzzer.h"
+#include <OF/lib/Node/NodeManager.hpp>
 
 
 LOG_MODULE_REGISTER(node_test, CONFIG_LOG_DEFAULT_LEVEL);
@@ -13,6 +13,7 @@ using namespace OF;
 int main()
 {
     LOG_INF("main");
+    start_all_nodes();
 
     while (true)
     {

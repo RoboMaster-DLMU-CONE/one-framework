@@ -22,11 +22,11 @@ int main()
 
     HubRegistry::startAll();
 
-    const auto* imu_hub = getHub<ImuHub>();
+
 
     while (true)
     {
-        auto [quat, euler_angle, gyro, accel] = imu_hub->getData();
+        auto [quat, euler_angle, gyro, accel] = ImuHub::getData();
         LOG_INF("----");
         auto& [ax, ay, az] = accel;
         LOG_INF("accel: %f, %f, %f;", ax, ay, az);

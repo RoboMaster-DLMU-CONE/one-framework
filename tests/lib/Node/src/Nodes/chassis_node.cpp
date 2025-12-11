@@ -1,0 +1,30 @@
+#include <OF/lib/Node/Node.hpp>
+
+using namespace OF;
+
+class ChassisNode : public Node<ChassisNode>
+{
+public:
+    struct Meta
+    {
+        static constexpr size_t stack_size = 2048;
+        static constexpr int priority = 5;
+        static constexpr const char* name = "chassis";
+    };
+
+    bool init() { return true; }
+
+    void run()
+    {
+        while (true)
+        {
+            k_msleep(10);
+        }
+    }
+
+    void cleanup()
+    {
+    }
+};
+
+ONE_NODE_REGISTER(ChassisNode);
