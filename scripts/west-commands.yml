@@ -1,6 +1,0 @@
-west-commands:
-  - file: scripts/west_command.py
-    commands:
-      - name: of-west-command
-        class: OFWestCommand
-        help: one-framework west extension command
