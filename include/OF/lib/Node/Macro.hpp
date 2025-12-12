@@ -2,9 +2,11 @@
 #define OF_LIB_NODE_MACRO_HPP
 
 #include <zephyr/sys/iterable_sections.h>
+#include <OF/utils/CCM.h>
 
 #include "Node.hpp"
 #include "Descriptor.hpp"
+#include "Topic.hpp"
 
 
 #define ONE_NODE_REGISTER(UserClass) \
@@ -25,5 +27,19 @@
         .thread_id_ptr = &UserClass::tid_storage, \
         .start_func = &_launcher_##UserClass \
         }
+
+#define ONE_TOPIC_REGISTER(Type, VarName, TopicNameStr) \
+    \
+    /* CCM Topic instance and reference */ \
+    OF_CCM_ATTR static OF::Topic<Type> _topic_instance_##VarName; \
+    OF::Topic<Type>& VarName = _topic_instance_##VarName;\
+    /* register it into global linker section */ \
+    STRUCT_SECTION_ITERABLE(topic_desc, _topic_desc_##VarName) = { \
+        .name = TopicNameStr, \
+        .topic_instance = &_topic_instance_##VarName, \
+        .type_size = sizeof(Type),\
+        .print_func = OF::Topic<Type>::print_stub \
+    };
+
 
 #endif //OF_LIB_NODE_MACRO_HPP

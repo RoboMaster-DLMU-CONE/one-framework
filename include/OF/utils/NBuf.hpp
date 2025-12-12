@@ -5,6 +5,8 @@
 #include <array>
 #include <zephyr/sys/atomic.h>
 
+#include <optional>
+
 using std::hardware_destructive_interference_size;
 
 namespace OF
@@ -53,8 +55,9 @@ namespace OF
             m_next_write_idx = next_slot;
         }
 
-        bool try_read(T& out_data) const noexcept
+        std::optional<T> try_read() const noexcept
         {
+            T out_data;
             auto& slot = m_slots[atomic_get(&m_latest_idx)];
 
             auto v1 = atomic_get(&slot.version);
@@ -64,7 +67,7 @@ namespace OF
             compiler_barrier();
 
             auto v2 = atomic_get(&slot.version);
-            return (v1 == v2);
+            return v1 == v2 ? out_data : std::nullopt;
 
         }
 
@@ -72,10 +75,10 @@ namespace OF
         {
             T copy;
             auto& slot = m_slots[atomic_get(&m_latest_idx)];
-            atomic_val_t v1, v2;
+            atomic_val_t v1, v2{};
             do
             {
-                v1 = atomic_get(slot.version);
+                v1 = atomic_get(&slot.version);
 
                 if (v1 & 1)
                 {
@@ -87,7 +90,7 @@ namespace OF
                 copy = slot.data;
                 compiler_barrier();
 
-                v2 = atomic_get(slot.version);
+                v2 = atomic_get(&slot.version);
             }
             while (v1 != v2);
             return copy;

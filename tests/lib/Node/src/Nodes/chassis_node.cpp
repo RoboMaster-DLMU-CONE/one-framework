@@ -2,6 +2,12 @@
 
 using namespace OF;
 
+struct ChassisData
+{
+    int x;
+    float y;
+};
+
 class ChassisNode : public Node<ChassisNode>
 {
 public:
@@ -29,3 +35,4 @@ public:
 };
 
 ONE_NODE_REGISTER(ChassisNode);
+ONE_TOPIC_REGISTER(ChassisData, topic_chassis, "chassis_data");

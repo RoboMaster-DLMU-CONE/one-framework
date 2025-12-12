@@ -5,6 +5,13 @@ menuconfig NODE
 
 if NODE
 
+config TOPIC_BUFFER_N
+    int "Topic 缓冲区数量"
+    default 10
+    help
+        N >= 2
+        设定Topic消息缓冲区数量。数量越大，消费者读取的延迟越低，Topic占用的内存越大。
+
 module = NODE
 module-str = Node
 source "subsys/logging/Kconfig.template.log_config"
