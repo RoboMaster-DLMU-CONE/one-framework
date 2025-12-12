@@ -17,6 +17,13 @@ public:
         static constexpr const char* name = "chassis";
     };
 
+    struct Config
+    {
+        const struct device* can_dev;
+    };
+
+    inline static Config config = {nullptr};
+
     bool init() { return true; }
 
     void run()

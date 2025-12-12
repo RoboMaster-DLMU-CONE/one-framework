@@ -71,9 +71,10 @@ namespace OF
 
         }
 
+
         T read() const noexcept
         {
-            T copy;
+            T copy{};
             auto& slot = m_slots[atomic_get(&m_latest_idx)];
             atomic_val_t v1, v2{};
             do
@@ -97,11 +98,18 @@ namespace OF
         }
 
     private:
+#ifdef __GNUC__
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Winterference-size"
+#endif
         struct alignas (hardware_destructive_interference_size) Slot
         {
             atomic_t version = ATOMIC_INIT(0);
             T data;
         };
+#ifdef __GNUC__
+#  pragma GCC diagnostic pop
+#endif
 
         std::array<Slot, N> m_slots;
 

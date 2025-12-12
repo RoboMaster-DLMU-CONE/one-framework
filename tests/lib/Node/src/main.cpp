@@ -13,6 +13,7 @@ using namespace OF;
 int main()
 {
     LOG_INF("main");
+
     start_all_nodes();
 
     while (true)

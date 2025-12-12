@@ -24,7 +24,7 @@ public:
         float yaw{};
         while (true)
         {
-            yaw += 0.1;
+            yaw += 0.1f;
             topic_gimbal.write({yaw});
 
             const auto [x, y] = topic_chassis.read();

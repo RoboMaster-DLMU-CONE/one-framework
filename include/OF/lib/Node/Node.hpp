@@ -53,6 +53,12 @@ namespace OF
             Derived::tid_storage = tid;
         }
 
+        template <typename ConfigType>
+        static void bind(const ConfigType& cfg)
+        {
+            Derived::config = cfg;
+        }
+
         static Derived& instance()
         {
             static Derived instance;
