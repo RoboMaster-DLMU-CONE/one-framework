@@ -1,3 +1,0 @@
-config HEAP_MEM_POOL_ADD_SIZE_UNIT_TEST
-    int "Unit Test heap size"
-    default 20000
