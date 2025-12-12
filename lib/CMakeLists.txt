@@ -1,6 +1,4 @@
-add_subdirectory_ifdef(CONFIG_UNIT Unit)
 add_subdirectory_ifdef(CONFIG_NODE Node)
-add_subdirectory_ifdef(CONFIG_PRTS PRTS)
 add_subdirectory_ifdef(CONFIG_HUB_MANAGER HubManager)
 add_subdirectory_ifdef(CONFIG_CONTROLLER_HUB ControllerHub)
 add_subdirectory_ifdef(CONFIG_IMU_HUB ImuHub)

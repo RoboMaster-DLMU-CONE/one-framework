@@ -1,7 +1,5 @@
 menu "OneFramework Libraries"
 
-rsource "Unit/Kconfig"
-rsource "PRTS/Kconfig"
 rsource "HubManager/Kconfig"
 rsource "ControllerHub/Kconfig"
 rsource "ImuHub/Kconfig"
