@@ -28,11 +28,11 @@ namespace OF
         {
             auto next_slot = (m_next_write_idx + 1) % N;
             auto& slot = m_slots[next_slot];
-            atomic_inc(slot.version);
+            atomic_inc(&slot.version);
             compiler_barrier();
             slot.data = data;
             compiler_barrier();
-            atomic_inc(slot.version);
+            atomic_inc(&slot.version);
 
             atomic_set(&m_latest_idx, next_slot);
             m_next_write_idx = next_slot;
@@ -44,11 +44,11 @@ namespace OF
             auto next_slot = (m_next_write_idx + 1) % N;
             auto& slot = m_slots[next_slot];
 
-            atomic_inc(slot.version);
+            atomic_inc(&slot.version);
             compiler_barrier();
             func(slot.data);
             compiler_barrier();
-            atomic_inc(slot.version);
+            atomic_inc(&slot.version);
 
 
             atomic_set(&m_latest_idx, next_slot);

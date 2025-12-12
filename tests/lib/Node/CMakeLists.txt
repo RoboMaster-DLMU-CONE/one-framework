@@ -1,4 +1,4 @@
 cmake_minimum_required(VERSION 3.20.0)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(OF_lib_node_test)
-target_sources(app PRIVATE src/main.cpp src/Nodes/chassis_node.cpp)
+target_sources(app PRIVATE src/main.cpp src/Nodes/chassis_node.cpp src/Nodes/gimbal_node.cpp)
