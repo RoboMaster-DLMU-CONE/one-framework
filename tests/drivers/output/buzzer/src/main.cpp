@@ -6,21 +6,11 @@
 #include <zephyr/kernel.h>
 
 #include "OF/drivers/output/buzzer.h"
-#include "OF/drivers/output/status_leds.h"
 
 LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
 
 int main()
 {
-    const device* status_led_dev = DEVICE_DT_GET(DT_NODELABEL(status_leds));
-    if (!device_is_ready(status_led_dev))
-    {
-        LOG_ERR("状态LED设备未就绪");
-        return -1;
-    }
-    const auto led_api = static_cast<const status_leds_api*>(status_led_dev->api);
-    led_api->set_heartbeat(status_led_dev);
-
     // 初始化PWM蜂鸣器
     const device* buzzer = DEVICE_DT_GET(DT_NODELABEL(pwm_buzzer));
     if (!device_is_ready(buzzer))

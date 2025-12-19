@@ -31,14 +31,13 @@ namespace OF
 
     void NotifyHub::configure(const NotifyHubConfig& config)
     {
-        m_leds = config.status_leds_dev;
         m_buzzer = config.pwm_buzzer_dev;
     }
 
     void NotifyHub::setup()
     {
         k_thread_create(&m_thread, g_notify_hub_stack, K_THREAD_STACK_SIZEOF(g_notify_hub_stack), m_thread_entry,
-                        const_cast<device*>(m_leds), const_cast<device*>(m_buzzer), nullptr,
+                        const_cast<device*>(m_buzzer), nullptr, nullptr,
                         CONFIG_NUM_PREEMPT_PRIORITIES - 1, 0, K_NO_WAIT);
     }
 
@@ -48,18 +47,16 @@ namespace OF
         g_notifications[unique_name] = notification;
     }
 
-    void NotifyHub::m_thread_entry(void* p1, void* p2, void*)
+    void NotifyHub::m_thread_entry(void* p1, void* p2, void* p3)
     {
-        auto leds = static_cast<device*>(p1);
-        auto buzzer = static_cast<device*>(p2);
+        (void)p1;
+        (void)p2;
+        (void)p3;
 
         constexpr int DELAY_TIME = 100;
 
         for (auto& [_, noti] : g_notifications)
         {
-            if (noti.led_status)
-            {
-            }
             if (noti.buzzer_status)
             {
             }

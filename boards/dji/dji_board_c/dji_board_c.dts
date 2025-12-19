@@ -42,13 +42,6 @@
 		volt-sensor1 = &vbat;
 	};
 
-	status_leds: status-leds {
-		compatible = "status-leds";
-		leds = <&leds>;
-		heartbeat-led-index = <0>;
-		error-led-index = <1>;
-	};
-
 };
 
 &clk_lsi {

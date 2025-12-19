@@ -1,4 +1,3 @@
-#include <OF/drivers/output/status_leds.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/kernel.h>
@@ -12,18 +11,7 @@ LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
 
 int main()
 {
-    const device* status_led_dev = DEVICE_DT_GET(DT_NODELABEL(status_leds));
     const device* uart_dev = DEVICE_DT_GET(DT_NODELABEL(cdc_acm_uart0));
-
-    if (!device_is_ready(status_led_dev))
-    {
-        LOG_ERR("LED not ready\n");
-        return -1;
-    }
-
-    const auto led_api = static_cast<const status_leds_api*>(status_led_dev->api);
-    led_api->set_heartbeat(status_led_dev);
-
     if (!device_is_ready(uart_dev))
     {
         LOG_ERR("USB CDC ACM not ready\n");
