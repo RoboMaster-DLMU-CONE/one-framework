@@ -15,4 +15,5 @@ if (CONFIG_ONE_FRAMEWORK)
 
     zephyr_link_libraries(tl::expected)
     zephyr_link_libraries(frozen::frozen)
+    zephyr_link_libraries(unordered_dense::unordered_dense)
 endif ()

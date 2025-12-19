@@ -2,10 +2,10 @@
 #define OF_LIB_NOTIFY_HPP
 
 #include <OF/lib/HubManager/HubManager.hpp>
-#include <ems_parser.hpp>
 
 namespace OF
 {
+    void registerSound();
     void playSound();
 };
 
