@@ -18,6 +18,7 @@ LOG_MODULE_REGISTER(notify_test, CONFIG_LOG_DEFAULT_LEVEL);
 using namespace OF;
 
 constexpr NotifyHubConfig notify_hub_config{
+    .led_pixel_dev = DEVICE_DT_GET(DT_NODELABEL(pixel_led)),
     .pwm_buzzer_dev = DEVICE_DT_GET(DT_NODELABEL(pwm_buzzer))
 };
 
@@ -49,11 +50,28 @@ int main()
     }
 
     constexpr led_color c = COLOR_HEX("#d81159");
-    led_pixel_set(led_dev, c);
+    int state = 0;
+
+
     while (true)
     {
         // uint32_t load = cpu_load_get(false);
         // LOG_INF("cpu: %u.%u%%", load / 10, load % 10);
-        k_sleep(K_MSEC(10));
+        if (state++ == 0)
+        {
+            int ret = led_pixel_set(led_dev, c);
+            if (ret < 0)
+                LOG_ERR("failed to set pixel: %d", ret);
+        }
+        else
+        {
+            int ret = led_pixel_off(led_dev);
+            if (ret < 0)
+                LOG_ERR("failed to close led: %d", ret);
+        }
+
+        if (state == 2) state = 0;
+
+        k_sleep(K_MSEC(500));
     }
 }

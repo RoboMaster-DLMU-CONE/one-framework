@@ -32,7 +32,7 @@ int pwm_buzzer_play_tone(const struct device* dev, uint32_t frequency_hz, uint8_
 
     if (volume > 100)
     {
-        LOG_ERR("音量超出范围: %d", volume);
+        LOG_ERR("Volume out of range: %d", volume);
         return -EINVAL;
     }
 
@@ -50,7 +50,7 @@ int pwm_buzzer_play_tone(const struct device* dev, uint32_t frequency_hz, uint8_
     int ret = pwm_set_dt(&config->pwm, period_ns, pulse_ns);
     if (ret < 0)
     {
-        LOG_ERR("设置PWM失败: %d", ret);
+        LOG_ERR("Failed to set PWM: %d", ret);
         return ret;
     }
 
@@ -58,7 +58,7 @@ int pwm_buzzer_play_tone(const struct device* dev, uint32_t frequency_hz, uint8_
     data->current_volume = volume;
     data->is_playing = true;
 
-    LOG_DBG("播放音调: %u Hz, 音量: %u%%", frequency_hz, volume);
+    LOG_DBG("Playing tone: %u Hz, volume: %u%%", frequency_hz, volume);
     return 0;
 }
 
@@ -73,7 +73,7 @@ int pwm_buzzer_set_volume(const struct device* dev, uint8_t volume)
 
     if (volume > 100)
     {
-        LOG_ERR("音量超出范围: %d", volume);
+        LOG_ERR("Volume out of range: %d", volume);
         return -EINVAL;
     }
 
@@ -107,7 +107,7 @@ int pwm_buzzer_play_note(const struct device* dev, float note_multiplier, uint8_
 
     if (note_multiplier <= 0)
     {
-        LOG_ERR("音符倍数必须为正数: %f", (double)note_multiplier);
+        LOG_ERR("Note multiplier must be positive: %f", (double)note_multiplier);
         return -EINVAL;
     }
 
@@ -122,7 +122,7 @@ static int pwm_buzzer_init(const struct device* dev)
 
     if (!device_is_ready(config->pwm.dev))
     {
-        LOG_ERR("PWM设备未就绪");
+        LOG_ERR("PWM device not ready");
         return -ENODEV;
     }
 
@@ -134,7 +134,7 @@ static int pwm_buzzer_init(const struct device* dev)
     /* 确保初始状态为停止 */
     pwm_set_dt(&config->pwm, 0, 0);
 
-    LOG_INF("PWM蜂鸣器初始化完成，基础频率: %u Hz", config->base_frequency_hz);
+    LOG_INF("PWM buzzer initialized, base frequency: %u Hz", config->base_frequency_hz);
     return 0;
 }
 
@@ -152,4 +152,4 @@ static int pwm_buzzer_init(const struct device* dev)
                           POST_KERNEL, CONFIG_PWM_BUZZER_INIT_PRIORITY,        \
                           NULL);
 
-DT_INST_FOREACH_STATUS_OKAY (PWM_BUZZER_INIT)
+DT_INST_FOREACH_STATUS_OKAY(PWM_BUZZER_INIT)

@@ -40,10 +40,14 @@ struct led_color
 };
 
 typedef int (*led_set_pixel_t)(const struct device* dev, struct led_color color);
+typedef int (*led_pixel_off_t)(const struct device* dev);
+typedef int (*led_pixel_on_t)(const struct device* dev);
 
 __subsystem struct led_pixel_api
 {
-    led_set_pixel_t set_pixel;
+    led_set_pixel_t set_led_pixel;
+    led_pixel_off_t close_led;
+    led_pixel_on_t open_led;
 };
 
 /**
@@ -53,11 +57,23 @@ __subsystem struct led_pixel_api
  * @param color RGB 颜色
  * @return 0 成功, 负数 失败
  */
-static int led_pixel_set(const struct device* dev, const struct led_color color)
+static inline int led_pixel_set(const struct device* dev, const struct led_color color)
 {
     const struct led_pixel_api* api =
         (const struct led_pixel_api*)dev->api;
-    return api->set_pixel(dev, color);
+    return api->set_led_pixel(dev, color);
+}
+
+static inline int led_pixel_off(const struct device* dev)
+{
+    const struct led_pixel_api* api = (const struct led_pixel_api*)dev->api;
+    return api->close_led(dev);
+}
+
+static inline int led_pixel_on(const struct device* dev)
+{
+    const struct led_pixel_api* api = (const struct led_pixel_api*)dev->api;
+    return api->open_led(dev);
 }
 
 #endif //OF_LED_PIXEL_H

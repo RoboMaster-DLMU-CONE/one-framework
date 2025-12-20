@@ -20,6 +20,7 @@ namespace OF
 
     struct NotifyHubConfig
     {
+        const device* led_pixel_dev;
         const device* pwm_buzzer_dev;
     };
 
