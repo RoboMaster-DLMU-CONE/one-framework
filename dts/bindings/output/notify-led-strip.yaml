@@ -1,0 +1,12 @@
+description: Proxy driver for a single pixel on an LED strip
+compatible: "notify-led-strip"
+
+properties:
+  chain:
+    type: phandle
+    required: true
+    description: Reference to the led-strip device node
+  pixel-index:
+    type: int
+    required: true
+    description: Index of the pixel on the strip (0, 1, 2...)

@@ -1,3 +1,3 @@
-if OUTPUT
 rsource "buzzer/Kconfig"
-endif # OUTPUT
+rsource "notify-led/Kconfig"
+

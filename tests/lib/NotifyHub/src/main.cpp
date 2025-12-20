@@ -1,12 +1,14 @@
 // Copyright (c) 2025. MoonFeather
 // SPDX-License-Identifier: BSD-3-Clause
 
+#include <autoconf.h>
 #include <OF/lib/NotifyHub/Notify.hpp>
 #include <OF/lib/NotifyHub/NotifyHub.hpp>
 #include <zephyr/logging/log.h>
 #include <zephyr/kernel.h>
 #include <zephyr/debug/cpu_load.h>
 #include <OF/lib/HubManager/HubRegistry.hpp>
+#include <zephyr/drivers/led.h>
 
 #include "OF/drivers/output/buzzer.h"
 
@@ -36,29 +38,44 @@ constexpr auto melody =
 int main()
 {
     LOG_INF("main");
-    HubRegistry::startAll();
+    // HubRegistry::startAll();
 
-    const device* buzzer = DEVICE_DT_GET(DT_NODELABEL(pwm_buzzer));
-    if (!device_is_ready(buzzer))
-    {
-        LOG_ERR("PWM蜂鸣器设备未就绪");
-        return -1;
-    }
+    const device* led_dev = DEVICE_DT_GET(DT_NODELABEL(pwmleds));
 
-    for (const auto& [ratio, dur] : melody)
+    if (!device_is_ready(led_dev))
     {
-        pwm_buzzer_play_note(buzzer, ratio, 1);
-        k_sleep(K_MSEC(dur));
-        pwm_buzzer_stop(buzzer);
-        k_sleep(K_MSEC(10));
+        LOG_ERR("PWM_LED not ready");
+        return 1;
     }
-    pwm_buzzer_stop(buzzer);
 
 
     while (true)
     {
-        uint32_t load = cpu_load_get(false);
-        LOG_INF("cpu: %u.%u%%", load / 10, load % 10);
-        k_sleep(K_MSEC(500));
+        // uint32_t load = cpu_load_get(false);
+        // LOG_INF("cpu: %u.%u%%", load / 10, load % 10);
+
+        for (int ch = 0; ch < 3; ++ch)
+        {
+            LOG_INF("ch: %d", ch);
+            for (int i = 0; i < 100; ++i)
+            {
+                const int ret = led_set_brightness(led_dev, ch, i);
+                if (ret < 0)
+                {
+                    LOG_ERR("ch %d failed. %d", ch, ret);
+                    goto next_ch;
+                }
+                k_sleep(K_MSEC(10));
+            }
+            k_sleep(K_MSEC(200));
+
+            for (int i = 100; i > 0; --i)
+            {
+                led_set_brightness(led_dev, ch, i);
+                k_sleep(K_MSEC(10));
+            }
+            k_sleep(K_MSEC(500));
+        next_ch:;
+        }
     }
 }

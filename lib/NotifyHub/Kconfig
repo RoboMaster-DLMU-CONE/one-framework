@@ -1,7 +1,7 @@
 menuconfig NOTIFY_HUB
     bool "Notify Hub"
     select HUB_MANAGER
-    select STATUS_LEDS
+    select NOTIFY_LED
     select PWM_BUZZER
 
     help

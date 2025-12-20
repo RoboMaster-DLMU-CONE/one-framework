@@ -1,0 +1,14 @@
+description: Proxy driver for RGB LEDs composed of individual PWM/GPIO LEDs
+compatible: "notify-led-pwm"
+
+properties:
+  red-led:
+    type: phandle
+    required: true
+    description: Reference to the Red LED node (in pwm-leds or gpio-leds)
+  green-led:
+    type: phandle
+    required: true
+  blue-led:
+    type: phandle
+    required: true

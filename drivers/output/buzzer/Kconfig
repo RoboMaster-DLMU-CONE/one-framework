@@ -1,7 +1,6 @@
 menuconfig PWM_BUZZER
     bool "PWM蜂鸣器驱动"
     select PWM
-    depends on OUTPUT
     help
         启用基于PWM的蜂鸣器驱动，用于产生不同音高和响度的声音
 
