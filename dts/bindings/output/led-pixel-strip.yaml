@@ -1,5 +1,5 @@
 description: Proxy driver for a single pixel on an LED strip
-compatible: "notify-led-strip"
+compatible: "led-pixel-strip"
 
 properties:
   chain:

@@ -1,0 +1,13 @@
+menuconfig LED_PIXEL
+    bool "像素LED"
+    help
+        启用像素LED
+
+if LED_PIXEL
+
+
+module = LED_PIXEL
+module-str = LEDPixel
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # LED_PIXEL

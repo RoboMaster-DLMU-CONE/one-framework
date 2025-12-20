@@ -8,7 +8,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/debug/cpu_load.h>
 #include <OF/lib/HubManager/HubRegistry.hpp>
-#include <zephyr/drivers/led.h>
+#include <OF/drivers/output/led_pixel.h>
 
 #include "OF/drivers/output/buzzer.h"
 
@@ -40,42 +40,20 @@ int main()
     LOG_INF("main");
     // HubRegistry::startAll();
 
-    const device* led_dev = DEVICE_DT_GET(DT_NODELABEL(pwmleds));
+    const device* led_dev = DEVICE_DT_GET(DT_NODELABEL(pixel_led));
 
     if (!device_is_ready(led_dev))
     {
-        LOG_ERR("PWM_LED not ready");
+        LOG_ERR("LED not ready");
         return 1;
     }
 
-
+    constexpr led_color c = COLOR_HEX("#d81159");
+    led_pixel_set(led_dev, c);
     while (true)
     {
         // uint32_t load = cpu_load_get(false);
         // LOG_INF("cpu: %u.%u%%", load / 10, load % 10);
-
-        for (int ch = 0; ch < 3; ++ch)
-        {
-            LOG_INF("ch: %d", ch);
-            for (int i = 0; i < 100; ++i)
-            {
-                const int ret = led_set_brightness(led_dev, ch, i);
-                if (ret < 0)
-                {
-                    LOG_ERR("ch %d failed. %d", ch, ret);
-                    goto next_ch;
-                }
-                k_sleep(K_MSEC(10));
-            }
-            k_sleep(K_MSEC(200));
-
-            for (int i = 100; i > 0; --i)
-            {
-                led_set_brightness(led_dev, ch, i);
-                k_sleep(K_MSEC(10));
-            }
-            k_sleep(K_MSEC(500));
-        next_ch:;
-        }
+        k_sleep(K_MSEC(10));
     }
 }

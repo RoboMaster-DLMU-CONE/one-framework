@@ -1,2 +1,2 @@
 add_subdirectory_ifdef(CONFIG_PWM_BUZZER buzzer)
-add_subdirectory_ifdef(CONFIG_NOTIFY_LED notify-led)
+add_subdirectory_ifdef(CONFIG_LED_PIXEL led_pixel)

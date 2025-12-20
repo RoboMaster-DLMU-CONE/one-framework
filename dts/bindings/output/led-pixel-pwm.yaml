@@ -1,5 +1,5 @@
 description: Proxy driver for RGB LEDs composed of individual PWM/GPIO LEDs
-compatible: "notify-led-pwm"
+compatible: "led-pixel-pwm"
 
 properties:
   red-led:

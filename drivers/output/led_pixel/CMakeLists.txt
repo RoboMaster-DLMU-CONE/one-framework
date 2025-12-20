@@ -1,0 +1,2 @@
+zephyr_library()
+zephyr_library_sources_ifdef(CONFIG_LED_PIXEL led_pixel.c)
