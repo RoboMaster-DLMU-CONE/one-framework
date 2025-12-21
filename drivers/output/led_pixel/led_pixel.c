@@ -5,10 +5,10 @@
 
 #include <zephyr/drivers/led.h>
 
-static inline uint8_t led_scale_int(const uint16_t v)
+static inline uint8_t led_scale_int(const uint16_t v, const uint8_t p)
 {
     /* (v * 100 + 256) >> 9    等价于 round((v*100)/512) */
-    return (uint8_t)(((uint32_t)v * 100U + 256U) >> 9);
+    return (uint8_t)(((uint32_t)v * p + 256U) >> 9);
 }
 
 struct led_pixel_pwm_config
@@ -17,7 +17,7 @@ struct led_pixel_pwm_config
     uint32_t ch_r, ch_g, ch_b;
 };
 
-static int led_pixel_pwm_set(const struct device* dev, const struct led_color color)
+static int led_pixel_pwm_set(const struct device* dev, const struct led_color color, const uint8_t bright_percent)
 {
     const struct led_pixel_pwm_config* cfg = dev->config;
     const struct
@@ -26,9 +26,9 @@ static int led_pixel_pwm_set(const struct device* dev, const struct led_color co
         uint32_t ch;
         uint8_t bright;
     } leds[] = {
-        {cfg->dev_r, cfg->ch_r, led_scale_int(color.r)},
-        {cfg->dev_g, cfg->ch_g, led_scale_int(color.g)},
-        {cfg->dev_b, cfg->ch_b, led_scale_int(color.b)},
+        {cfg->dev_r, cfg->ch_r, led_scale_int(color.r, bright_percent)},
+        {cfg->dev_g, cfg->ch_g, led_scale_int(color.g, bright_percent)},
+        {cfg->dev_b, cfg->ch_b, led_scale_int(color.b, bright_percent)},
     };
 
     for (size_t i = 0; i < sizeof(leds) / sizeof(leds[0]); ++i)

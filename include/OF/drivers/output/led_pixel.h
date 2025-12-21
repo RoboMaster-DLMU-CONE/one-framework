@@ -39,7 +39,7 @@ struct led_color
     uint8_t b;
 };
 
-typedef int (*led_set_pixel_t)(const struct device* dev, struct led_color color);
+typedef int (*led_set_pixel_t)(const struct device* dev, struct led_color color, const uint8_t bright_percent);
 typedef int (*led_pixel_off_t)(const struct device* dev);
 typedef int (*led_pixel_on_t)(const struct device* dev);
 
@@ -55,13 +55,14 @@ __subsystem struct led_pixel_api
  *
  * @param dev 设备指针 (指向你的虚拟设备)
  * @param color RGB 颜色
+ * @param bright_percent 亮度百分比 (0 ~ 100)
  * @return 0 成功, 负数 失败
  */
-static inline int led_pixel_set(const struct device* dev, const struct led_color color)
+static inline int led_pixel_set(const struct device* dev, const struct led_color color, const uint8_t bright_percent)
 {
     const struct led_pixel_api* api =
         (const struct led_pixel_api*)dev->api;
-    return api->set_led_pixel(dev, color);
+    return api->set_led_pixel(dev, color, bright_percent);
 }
 
 static inline int led_pixel_off(const struct device* dev)

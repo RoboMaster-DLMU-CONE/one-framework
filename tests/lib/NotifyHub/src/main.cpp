@@ -8,7 +8,6 @@
 #include <zephyr/kernel.h>
 #include <zephyr/debug/cpu_load.h>
 #include <OF/lib/HubManager/HubRegistry.hpp>
-#include <OF/drivers/output/led_pixel.h>
 
 #include "OF/drivers/output/buzzer.h"
 
@@ -24,53 +23,29 @@ constexpr NotifyHubConfig notify_hub_config{
 
 using namespace ems::literals;
 constexpr auto melody =
-    R"((200)
-        2s`,,1s`,7,,1s`,2s`-,3`-2s`,1s`,,,
-        2s`,,1s`,7,,1s`,2s`-,3`-2s`,1s`,,,
-        2s`,,1s`,7,,1s`,2s`-,3`-2s`,1s`,,,
-        2s`,,1s`,7,,1s`,2s`-,3`-2s`,1s`,,7-1s`-
-        2s`,2s`,1s`,3`,2s`,1s`,1s`,1s`,7,3`,2s`,1s`,
-        1s`,,7-1s`-2s`,,,,,,7,4s`,7`,
-        6s`,,7`,6s`,,7`,6s`-5s`-4s`,,4s`,1s`,3`,
-        3`,2s`,2s`,2s`,,,3`,2s`,1s`,2s`,,4s`,
-        7,,,0
+    R"((200)1,2,3,4,5,
 )"_ems;
 
 int main()
 {
     LOG_INF("main");
-    // HubRegistry::startAll();
+    HubRegistry::startAll();
+    constexpr led_color c1 = COLOR_HEX("#d81159");
+    constexpr led_color c2 = COLOR_HEX("#118ab2");
+    NotifyHub::setBuzzerStatus("buzzer1", {std::span(melody), 10, true});
 
-    const device* led_dev = DEVICE_DT_GET(DT_NODELABEL(pixel_led));
-
-    if (!device_is_ready(led_dev))
-    {
-        LOG_ERR("LED not ready");
-        return 1;
-    }
-
-    constexpr led_color c = COLOR_HEX("#d81159");
-    int state = 0;
-
+    NotifyHub::setLEDStatus("test1", {c1, LEDMode::Blink, 3, 300});
+    k_sleep(K_MSEC(2000));
+    NotifyHub::setLEDStatus("test1", {c1, LEDMode::Blink, 3, 100});
+    k_sleep(K_MSEC(2000));
+    NotifyHub::setLEDStatus("test2", {c2, LEDMode::Breathing, 1, 300});
+    k_sleep(K_MSEC(2000));
+    NotifyHub::removeLEDStatus("test1");
 
     while (true)
     {
-        // uint32_t load = cpu_load_get(false);
-        // LOG_INF("cpu: %u.%u%%", load / 10, load % 10);
-        if (state++ == 0)
-        {
-            int ret = led_pixel_set(led_dev, c);
-            if (ret < 0)
-                LOG_ERR("failed to set pixel: %d", ret);
-        }
-        else
-        {
-            int ret = led_pixel_off(led_dev);
-            if (ret < 0)
-                LOG_ERR("failed to close led: %d", ret);
-        }
-
-        if (state == 2) state = 0;
+        uint32_t load = cpu_load_get(false);
+        LOG_INF("cpu: %u.%u%%", load / 10, load % 10);
 
         k_sleep(K_MSEC(500));
     }
