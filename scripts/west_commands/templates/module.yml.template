@@ -1,0 +1,6 @@
+name: {MODULE_NAME}
+dependencies:
+  - one_framework
+build:
+  cmake: .
+  kconfig: zephyr/Kconfig

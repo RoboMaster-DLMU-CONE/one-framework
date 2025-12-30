@@ -1,0 +1,6 @@
+west-commands:
+  - file: scripts/west_commands/one.py
+    commands:
+      - name: one
+        class: One
+        help: OneFramework development tools

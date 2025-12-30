@@ -1,0 +1,43 @@
+#include <OF/lib/Node/Node.hpp>
+#include <{DataClass}.hpp>
+
+using namespace OF;
+
+// Register Topic for data communication
+ONE_TOPIC_REGISTER({DataClass}, {TOPIC_VAR}, "{TOPIC_STRING}");
+
+class {NodeClass} : public Node<{NodeClass}> {
+public:
+    struct Meta {
+        static constexpr size_t stack_size = {STACK_SIZE};
+        static constexpr int priority = {PRIORITY};
+        static constexpr const char *name = "{META_NAME}";
+    };
+
+    struct Config {};
+    inline static Config config = {};
+
+    bool init() {
+        // TODO: Initialize your node here
+        return true;
+    }
+
+    void run() {
+        // TODO: Implement your node's main loop
+        int counter = 0;
+        while (true) {
+            // Example: publish data to topic
+            {TOPIC_VAR}.write({ counter });
+
+            k_msleep(100);
+            counter++;
+        }
+    }
+
+    void cleanup() {
+        // TODO: Clean up resources
+    }
+};
+
+// Register the Node with OneFramework
+ONE_NODE_REGISTER({NodeClass});

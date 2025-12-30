@@ -1,0 +1,6 @@
+if(CONFIG_{CONFIG_NAME})
+    zephyr_library()
+    zephyr_library_sources(src/{NodeClass}.cpp)
+    zephyr_include_directories(include)
+    zephyr_library_link_libraries(one_framework)
+endif()

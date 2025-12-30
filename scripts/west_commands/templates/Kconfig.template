@@ -1,0 +1,13 @@
+config {CONFIG_NAME}
+    bool "{DESCRIPTION}"
+    depends on ONE_FRAMEWORK
+    help
+      Enable {MODULE_NAME} node.
+
+if {CONFIG_NAME}
+
+module = {CONFIG_NAME}
+module-str = {CONFIG_NAME}
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # {CONFIG_NAME}

@@ -1,0 +1,13 @@
+#ifndef {HEADER_GUARD}_
+#define {HEADER_GUARD}_
+
+struct {DataClass} {
+    int value;
+
+    // Optional: implement format() for debugging
+    // std::string format() const {
+    //     return std::format("value: {}", value);
+    // }
+};
+
+#endif // {HEADER_GUARD}_
