@@ -3,7 +3,9 @@
 
 #include <zephyr/kernel.h>
 
-#if DT_HAS_CHOSEN(zephyr_ccm)
+#if DT_HAS_CHOSEN(zephyr_dtcm)
+#define OF_CCM_ATTR __dtcm_data_section
+#elif DT_HAS_CHOSEN(zephyr_ccm)
 #define OF_CCM_ATTR __ccm_data_section
 #else
 // 如果没有 CCM，定义为空（即使用默认的 RAM）

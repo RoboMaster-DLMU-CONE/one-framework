@@ -1,7 +1,6 @@
 // Copyright (c) 2025. MoonFeather
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <autoconf.h>
 #include <OF/lib/NotifyHub/Notify.hpp>
 #include <OF/lib/NotifyHub/NotifyHub.hpp>
 #include <zephyr/logging/log.h>
