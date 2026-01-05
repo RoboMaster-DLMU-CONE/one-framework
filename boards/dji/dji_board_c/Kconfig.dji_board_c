@@ -3,6 +3,10 @@ config BOARD_DJI_BOARD_C
     select SOC_STM32F407XG
 if BOARD_DJI_BOARD_C
 
+config DT_HAS_ARM_DTCM_ENABLED
+        bool
+        default y
+
 config DT_HAS_PWM_LEDS_ENABLED
         bool
         default y

@@ -7,6 +7,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/debug/cpu_load.h>
 #include <OF/lib/HubManager/HubRegistry.hpp>
+#include <OF/lib/algo/Mecanum.hpp>
 
 #include "OF/drivers/output/buzzer.h"
 
