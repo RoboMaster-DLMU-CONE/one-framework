@@ -168,19 +168,50 @@ def parse_local_module(cmd, module_path: Path, args) -> dict:
             'dependencies': module_yml.get('dependencies', []),
         }
     else:
-        # 本地模块（非git）- 使用相对路径
+        # 本地模块 - 只处理有west.yml的情况（即带git信息的node）
         workspace_root = WorkspaceHelper.find_root(cmd.manifest)
-        try:
-            rel_path = module_path.relative_to(workspace_root)
-        except ValueError:
-            rel_path = module_path
-
-        return {
+        
+        # 默认 path 为 modules/lib/nodes/<name>
+        default_path = f'modules/lib/nodes/{module_name}'
+        
+        result = {
             'name': module_name,
-            'path': str(rel_path),
+            'path': default_path,
             'is_local': True,
             'dependencies': module_yml.get('dependencies', []),
         }
+
+        # 检查模块根目录是否有west.yml，其中包含git信息
+        module_west_yml = module_path / 'west.yml'
+        if module_west_yml.exists():
+            try:
+                module_manifest = YamlHandler.load(module_west_yml)
+                # 从west.yml的manifest.remotes中提取origin的url-base
+                remotes = module_manifest.get('manifest', {}).get('remotes', [])
+                origin_url_base = None
+                for remote in remotes:
+                    if remote.get('name') == 'origin':
+                        origin_url_base = remote.get('url-base')
+                        break
+                
+                # 从west.yml的manifest.projects中提取revision
+                projects = module_manifest.get('manifest', {}).get('projects', [])
+                if projects and len(projects) > 0:
+                    project = projects[0]
+                    if project.get('revision'):
+                        result['revision'] = args.revision or project.get('revision', 'main')
+                    
+                    # 如果找到了origin的url-base，构建完整的git URL
+                    if origin_url_base:
+                        git_url = f"{origin_url_base}/{module_name}.git"
+                        result['url'] = git_url
+                        cmd.inf(f"Found git URL: {git_url}")
+            except Exception as e:
+                cmd.dbg(f"Could not parse west.yml: {e}")
+        else:
+            cmd.wrn(f"No west.yml found in {module_path}. Only nodes created with --git-url can be added.")
+
+        return result
 
 
 def parse_git_info(cmd, args) -> dict:
@@ -250,27 +281,18 @@ def add_module_to_manifest(cmd, manifest_data: dict, module_info: dict):
         manifest_data['manifest']['projects'] = []
 
     # 构建project条目
-    if module_info.get('is_local'):
-        # 本地模块：只需要name和path
-        project = {
-            'name': module_info['name'],
-            'path': module_info['path'],
-        }
-    else:
-        # Git模块
-        project = {
-            'name': module_info['name'],
-            'path': module_info['path'],
-        }
+    project = {
+        'name': module_info['name'],
+        'path': module_info['path'],
+    }
 
-        if module_info.get('remote'):
-            project['remote'] = module_info['remote']
+    # 如果有git URL，添加url字段
+    if module_info.get('url'):
+        project['url'] = module_info['url']
 
-        if module_info.get('revision'):
-            project['revision'] = module_info['revision']
-
-        if module_info.get('repo-path'):
-            project['repo-path'] = module_info['repo-path']
+    # 添加revision
+    if module_info.get('revision'):
+        project['revision'] = module_info['revision']
 
     # 添加到projects列表
     manifest_data['manifest']['projects'].append(project)

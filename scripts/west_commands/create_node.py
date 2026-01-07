@@ -105,6 +105,18 @@ def add_create_node_parser(subparsers, parent_command):
         help='automatically add module to nearest west.yml manifest'
     )
 
+    # Git/Remote相关参数
+    parser.add_argument(
+        '--git-url',
+        help='git repository URL (will be stored in module.yml for later use with add-node)'
+    )
+
+    parser.add_argument(
+        '--init-git',
+        action='store_true',
+        help='initialize git repository in module directory for version control'
+    )
+
     return parser
 
 
@@ -152,19 +164,45 @@ def run_create_node(cmd, args):
     # 6. 生成所有文件
     generate_files(cmd, output_dir, config)
 
-    # 7. 可选：添加到manifest
+    # 7. 初始化git仓库（如果请求或提供了git-url）
+    git_remote_added = False
+    if args.init_git or args.git_url:
+        git_remote_added = init_git_repo(cmd, output_dir, args.git_url)
+
+    # 8. 可选：添加到manifest
     if args.add_to_manifest:
         add_to_west_manifest(cmd, output_dir, module_name_kebab)
 
-    # 8. 显示成功信息
+    # 9. 显示成功信息
     cmd.banner(f"Successfully created Node module: {module_name_kebab}")
     cmd.inf(f"Location: {output_dir}")
     cmd.inf("\nNext steps:")
-    cmd.inf(f"  1. Implement your node logic in: {output_dir}/src/{module_name_pascal}Node.cpp")
-    cmd.inf(f"  2. Define data structure in: {output_dir}/include/{config['DataClass']}.hpp")
-    if not args.add_to_manifest:
-        cmd.inf(f"  3. Add module to west.yml or use: west one add-node {output_dir}")
-    cmd.inf(f"  4. Enable in Kconfig: CONFIG_{module_name_upper}=y")
+    cmd.inf(f"  1. Implement your node logic:")
+    cmd.inf(f"     - src/{module_name_pascal}Node.cpp")
+    cmd.inf(f"     - include/{config['DataClass']}.hpp")
+    
+    if args.git_url:
+        cmd.inf(f"\n  2. Make further changes and push to remote:")
+        cmd.inf(f"     cd {output_dir}")
+        cmd.inf(f"     git add .")
+        cmd.inf(f"     git commit -m '<your commit message>'")
+        cmd.inf(f"     git push origin main")
+        cmd.inf(f"\n  3. Add module to workspace manifest:")
+        cmd.inf(f"     west one add-node {output_dir}")
+        cmd.inf(f"\n  4. Enable in Kconfig: CONFIG_{module_name_upper}=y")
+    else:
+        cmd.inf(f"\n  2. Add module to west.yml:")
+        if not args.add_to_manifest:
+            cmd.inf(f"     west one add-node {output_dir}")
+        cmd.inf(f"\n  3. Enable in Kconfig: CONFIG_{module_name_upper}=y")
+
+    if args.git_url:
+        cmd.inf(f"\nGit information:")
+        cmd.inf(f"  - Repository: {args.git_url}")
+        if git_remote_added:
+            cmd.inf(f"  - Remote 'origin' configured ✓")
+            cmd.inf(f"  - Initial commit pushed ✓")
+            cmd.inf(f"  - Module west.yml created with git configuration ✓")
 
 
 def create_directory_structure(cmd, base_dir: Path):
@@ -189,6 +227,22 @@ def build_template_config(args, names: dict) -> dict:
     module_name_snake = names['module_name_snake']
     module_name_upper = names['module_name_upper']
 
+    # 构建git相关配置（用于west.yml）
+    remote_base_url = ""
+    self_project = ""
+    
+    if args.git_url:
+        # 从git_url中解析 base URL
+        # https://github.com/your-org/my-node.git -> https://github.com/your-org
+        parts = args.git_url.rstrip('/').rsplit('/', 1)
+        remote_base_url = parts[0] if len(parts) > 1 else args.git_url
+        
+        # 生成self project条目（不包含repo-path）
+        self_project = f"\n    - name: {module_name_kebab}\n      remote: origin\n      path: modules/lib/nodes/{module_name_kebab}\n      revision: main"
+    else:
+        remote_base_url = "https://github.com"
+        self_project = ""
+
     # 构建配置字典
     config = {
         'MODULE_NAME': module_name_kebab,
@@ -208,6 +262,10 @@ def build_template_config(args, names: dict) -> dict:
 
         # 头文件保护宏
         'HEADER_GUARD': (args.data_type or (module_name_pascal + 'Data')).upper() + '_HPP',
+        
+        # Git配置（用于west.yml）
+        'REMOTE_BASE_URL': remote_base_url,
+        'SELF_PROJECT': self_project,
     }
 
     return config
@@ -225,6 +283,7 @@ def generate_files(cmd, output_dir: Path, config: dict):
         ('node.cpp.template', output_dir / 'src' / f"{config['NodeClass']}.cpp"),
         ('data.hpp.template', output_dir / 'include' / f"{config['DataClass']}.hpp"),
         ('gitignore.template', output_dir / '.gitignore'),
+        ('west.yml.template', output_dir / 'west.yml'),
     ]
 
     for template_name, output_path in file_mappings:
@@ -271,7 +330,7 @@ def add_to_west_manifest(cmd, module_path: Path, module_name: str):
                 cmd.wrn(f"Module '{module_name}' already exists in manifest")
                 return
 
-        # 添加新项目
+        # 添加新项目（仅本地路径，无git信息）
         project = {
             'name': module_name,
             'path': str(rel_path),
@@ -284,3 +343,101 @@ def add_to_west_manifest(cmd, module_path: Path, module_name: str):
 
     except Exception as e:
         cmd.wrn(f"Failed to add module to manifest: {e}")
+
+
+def init_git_repo(cmd, module_path: Path, git_url: str = None) -> bool:
+    """初始化本地git仓库并配置remote，返回是否成功添加remote"""
+    try:
+        import subprocess
+        
+        # 初始化git仓库
+        subprocess.run(
+            ['git', 'init'],
+            cwd=module_path,
+            capture_output=True,
+            check=True
+        )
+        cmd.dbg(f"Initialized git repository in {module_path}")
+        
+        remote_added = False
+        
+        # 如果提供了git URL，添加为remote
+        if git_url:
+            try:
+                subprocess.run(
+                    ['git', 'remote', 'add', 'origin', git_url],
+                    cwd=module_path,
+                    capture_output=True,
+                    check=True
+                )
+                cmd.dbg(f"Added remote 'origin': {git_url}")
+                remote_added = True
+                
+                # 尝试进行初始提交和推送
+                try:
+                    # 设置用户信息（如果还未设置）
+                    subprocess.run(
+                        ['git', 'config', 'user.name', 'OneFramework Setup'],
+                        cwd=module_path,
+                        capture_output=True,
+                    )
+                    subprocess.run(
+                        ['git', 'config', 'user.email', 'setup@oneframework.local'],
+                        cwd=module_path,
+                        capture_output=True,
+                    )
+                    
+                    # 添加所有文件
+                    subprocess.run(
+                        ['git', 'add', '.'],
+                        cwd=module_path,
+                        capture_output=True,
+                        check=True
+                    )
+                    
+                    # 初始提交
+                    subprocess.run(
+                        ['git', 'commit', '-m', 'init commit'],
+                        cwd=module_path,
+                        capture_output=True,
+                        check=True
+                    )
+                    cmd.dbg("Initial commit created")
+                    
+                    # 尝试推送到 origin/main
+                    result = subprocess.run(
+                        ['git', 'push', '-u', 'origin', 'main'],
+                        cwd=module_path,
+                        capture_output=True,
+                        text=True
+                    )
+                    
+                    if result.returncode == 0:
+                        cmd.inf("✓ Successfully pushed to remote")
+                    else:
+                        # 如果 main 分支不存在，尝试 master
+                        result = subprocess.run(
+                            ['git', 'push', '-u', 'origin', 'master'],
+                            cwd=module_path,
+                            capture_output=True,
+                            text=True
+                        )
+                        if result.returncode == 0:
+                            cmd.inf("✓ Successfully pushed to remote (master branch)")
+                        else:
+                            cmd.wrn(f"Could not push to remote: {result.stderr}")
+                            
+                except subprocess.CalledProcessError as e:
+                    cmd.dbg(f"Git operation failed: {e}")
+                    
+            except subprocess.CalledProcessError as e:
+                cmd.wrn(f"Failed to add remote: {e}")
+        
+        return remote_added
+        
+    except subprocess.CalledProcessError as e:
+        cmd.wrn(f"Failed to initialize git repository: {e}")
+        return False
+    except Exception as e:
+        cmd.wrn(f"Error initializing git: {e}")
+        return False
