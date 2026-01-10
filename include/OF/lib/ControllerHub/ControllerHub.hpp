@@ -135,6 +135,7 @@ namespace OF
             int8_t channel_mapping[DBUS_CHANNEL_COUNT];
 
             bool using_async; /* true if async API is in use, false -> IRQ fallback */
+            uint8_t invalid_frames;
 
             K_KERNEL_STACK_MEMBER(thread_stack, 1024);
         };
@@ -147,6 +148,7 @@ namespace OF
         static void dbus_restart_rx();
         static void dbus_append_rx_bytes(const uint8_t* buf, size_t len);
         static void dbus_supply_rx_buffer();
+        static bool dbus_frame_valid(const uint8_t* buf);
         static void dbus_uart_event_handler(struct uart_event* evt);
         static void dbus_uart_isr_handler();
         static void input_dbus_input_report_thread();

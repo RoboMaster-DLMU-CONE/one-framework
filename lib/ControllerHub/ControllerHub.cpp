@@ -81,7 +81,9 @@ namespace OF
         {
             return g_controller_buf.read();
         }
-        return tl::make_unexpected(ControllerHubError{ControllerHubError::Code::DISCONNECTED, "Controller is disconnected"});
+        return tl::make_unexpected(ControllerHubError{
+            ControllerHubError::Code::DISCONNECTED, "Controller is disconnected"
+        });
     }
 
     void ControllerHub::configure(const ControllerHubConfig& config)
@@ -245,6 +247,14 @@ namespace OF
 
     void ControllerHub::dbus_append_rx_bytes(const uint8_t* buf, size_t len)
     {
+        const uint32_t now = k_uptime_get_32();
+        if (s_data.in_sync && s_data.last_rx_time != 0 &&
+            now - s_data.last_rx_time > DBUS_INTERFRAME_SPACING_MS)
+        {
+            s_data.in_sync = false;
+            s_data.xfer_bytes = 0;
+        }
+
         size_t offset = 0;
 
         while (offset < len)
@@ -255,6 +265,11 @@ namespace OF
             if (chunk > remaining)
             {
                 chunk = remaining;
+            }
+
+            if (s_data.xfer_bytes == 0)
+            {
+                s_data.last_rx_time = now;
             }
 
             memcpy(&s_data.rd_data[s_data.xfer_bytes], buf + offset, chunk);
@@ -273,6 +288,7 @@ namespace OF
             }
 
             memcpy(s_data.dbus_frame, s_data.rd_data, DBUS_FRAME_LEN);
+            s_data.last_rx_time = now;
             k_sem_give(&s_data.report_lock);
         }
     }
@@ -290,6 +306,48 @@ namespace OF
         }
     }
 
+    bool ControllerHub::dbus_frame_valid(const uint8_t* dbus_buf)
+    {
+        constexpr int16_t STICK_MIN = 364;
+        constexpr int16_t STICK_MAX = 1684;
+
+        const auto ch0 =
+            static_cast<int16_t>((static_cast<uint16_t>(dbus_buf[0]) | (static_cast<uint16_t>(dbus_buf[1]) << 8)) &
+                0x07FF);
+        const auto ch1 =
+            static_cast<int16_t>((((static_cast<uint16_t>(dbus_buf[1]) >> 3) | (static_cast<uint16_t>(dbus_buf[2]) <<
+                5)) & 0x07FF));
+        const auto ch2 =
+            static_cast<int16_t>((((static_cast<uint16_t>(dbus_buf[2]) >> 6) | (static_cast<uint16_t>(dbus_buf[3]) << 2)
+                |
+                (static_cast<uint16_t>(dbus_buf[4]) << 10)) & 0x07FF));
+        const auto ch3 =
+                static_cast<int16_t>((((static_cast<uint16_t>(dbus_buf[4]) >> 1) |
+                                      (static_cast<uint16_t>(dbus_buf[5]) << 7)) &
+                    0x07FF));
+
+
+        const uint8_t sw_l = (dbus_buf[5] >> 4) & 0x03;
+        const uint8_t sw_r = (dbus_buf[5] >> 6) & 0x03;
+
+        const auto stick_in_range = [](int16_t v)
+        {
+            return v >= STICK_MIN && v <= STICK_MAX;
+        };
+
+        if (!stick_in_range(ch0) || !stick_in_range(ch1) || !stick_in_range(ch2) || !stick_in_range(ch3))
+        {
+            return false;
+        }
+
+        if (sw_l == 0 || sw_l > 3 || sw_r == 0 || sw_r > 3)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
     void ControllerHub::dbus_uart_event_handler(uart_event* evt)
     {
         switch (evt->type)
@@ -302,6 +360,9 @@ namespace OF
             break;
         case UART_RX_STOPPED:
             LOG_WRN("UART RX stopped (%d)", evt->data.rx_stop.reason);
+            s_data.in_sync = false;
+            s_data.xfer_bytes = 0;
+            dbus_restart_rx();
             break;
         default:
             break;
@@ -381,6 +442,8 @@ namespace OF
                 {
                     // 之前是同步状态，现在没有数据，可能已断开
                     s_data.in_sync = false;
+                    s_data.xfer_bytes = 0;
+                    dbus_restart_rx();
                     LOG_DBG("DBUS receiver connection lost due to timeout");
                 }
                 continue;
@@ -424,6 +487,15 @@ namespace OF
 
             // 解析DBUS数据并更新全局控制器数据
             const uint8_t* dbus_buf = s_data.dbus_frame;
+
+            if (!dbus_frame_valid(dbus_buf))
+            {
+                s_data.in_sync = false;
+                s_data.xfer_bytes = 0;
+                dbus_restart_rx();
+                LOG_DBG("Invalid DBUS frame, resync");
+                continue;
+            }
 
             ControllerHubData state;
             // 报告通道1-4（遥控器摇杆）
@@ -508,4 +580,3 @@ namespace OF
         }
     }
 }
-
