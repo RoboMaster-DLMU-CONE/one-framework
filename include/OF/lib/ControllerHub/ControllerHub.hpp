@@ -8,6 +8,8 @@
 
 #include <OF/lib/HubManager/HubBase.hpp>
 
+#include <OF/utils/Remap.hpp>
+
 #include <zephyr/input/input.h>
 
 namespace OF
@@ -34,16 +36,24 @@ namespace OF
 
         int16_t& operator[](Channel ch)
         {
-            return arr[static_cast<size_t>(ch)];
+            return m_arr[static_cast<size_t>(ch)];
         }
 
         int16_t operator[](Channel ch) const
         {
-            return arr[static_cast<size_t>(ch)];
+            return m_arr[static_cast<size_t>(ch)];
+        }
+
+        [[nodiscard]] float percent(const Channel ch) const
+        {
+            const float value = m_arr[static_cast<size_t>(ch)];
+#ifdef CONFIG_INPUT_DBUS
+            return remap < 364.0f, 1684.0f, -1.0f, 1.0f > (value);
+#endif
         }
 
     private:
-        std::array<int16_t, 7> arr{};
+        std::array<int16_t, 7> m_arr{};
     };
 
     class ControllerHub : public HubBase<ControllerHub>
@@ -58,9 +68,9 @@ namespace OF
         enum class Switch
         {
 #ifdef CONFIG_INPUT_DBUS
-            UP = 1,
-            MID = 3,
-            DOWN = 2,
+            UP=1,
+            MID=3,
+            DOWN=2,
 #else
 #endif
         };
@@ -72,7 +82,6 @@ namespace OF
 
         ControllerHub(ControllerHub&) = delete;
         ControllerHub& operator=(const ControllerHub&) = delete;
-
     };
 } // namespace OF
 #endif // CONTROLLERHUB_HPP

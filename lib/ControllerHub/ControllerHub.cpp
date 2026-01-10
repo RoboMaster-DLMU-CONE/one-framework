@@ -34,7 +34,7 @@ namespace OF
         return (static_cast<uint32_t>(type) << 16) | code;
     }
 
-    static constexpr frozen::unordered_map<uint32_t, ControllerHub::Channel, 7> MAP{
+    static constexpr frozen::unordered_map<uint32_t, ControllerHub::Channel, 7> g_map{
         {make_key(INPUT_EV_ABS, INPUT_ABS_X), LEFT_X},
         {make_key(INPUT_EV_ABS, INPUT_ABS_Y), LEFT_Y},
         {make_key(INPUT_EV_ABS, INPUT_ABS_RX), RIGHT_X},
@@ -64,7 +64,7 @@ namespace OF
         }
     }
 
-    static std::function<void(ControllerHubData&)> func;
+    static std::function<void(ControllerHubData &)> func;
 
 
     static void input_cb(input_event* evt, void* user_data)
@@ -78,7 +78,7 @@ namespace OF
 
         const auto key = make_key(evt->type, evt->code);
         // Get the reflected channel enum
-        if (const auto it = MAP.find(key); it != MAP.end())
+        if (const auto it = g_map.find(key); it != g_map.end())
         {
             // how about more optimization, maybe compare new and old value to optionally
             // tigger the data push, but that need another update and find()...
@@ -95,6 +95,4 @@ namespace OF
     };
 
     INPUT_CALLBACK_DEFINE(g_input_dev, input_cb, nullptr);
-
-
 } // namespace OF
