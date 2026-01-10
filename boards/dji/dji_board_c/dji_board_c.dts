@@ -96,11 +96,6 @@
 		   <&dma1 1 4 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH) STM32_DMA_FIFO_HALF>;
 	dma-names = "tx", "rx";
 	status = "okay";
-
-	dbus {
-		compatible = "dji,dbus";
-		status = "okay";
-	};
 };
 
 &usart6 {

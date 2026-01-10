@@ -1,9 +1,5 @@
 menu "OneFramework Drivers"
 
-if INPUT
-rsource "input/Kconfig"
-endif # INPUT
-
 rsource "output/Kconfig"
 
 if SENSOR
