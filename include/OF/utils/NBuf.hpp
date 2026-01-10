@@ -4,6 +4,7 @@
 #include <new>
 #include <array>
 #include <zephyr/sys/atomic.h>
+#include <zephyr/kernel.h>
 
 #include <optional>
 

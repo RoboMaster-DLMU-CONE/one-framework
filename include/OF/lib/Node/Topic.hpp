@@ -4,6 +4,7 @@
 #include <string>
 
 #include <OF/utils/NBuf.hpp>
+#include <OF/lib/Node/Descriptor.hpp>
 
 
 namespace OF
@@ -46,7 +47,7 @@ namespace OF
             printk("Topic: %-15s | Size: %d | ", desc->name, sizeof(T));
             if constexpr (Printable<T>)
             {
-                printk("%s", val.format());
+                printk("%s", val.format().c_str());
             }
             printk("\n");
         }
@@ -54,7 +55,6 @@ namespace OF
     private:
         NBuf<T, CONFIG_TOPIC_BUFFER_N> m_buf;
     };
-
 }
 
 #endif //OF_LIB_NODE_TOPIC_HPP

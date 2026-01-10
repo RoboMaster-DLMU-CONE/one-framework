@@ -19,6 +19,11 @@ namespace OF
         for (const node_desc* desc = _node_desc_list_start; desc < _node_desc_list_end; ++desc)
         {
             LOG_INF("Starting Node: %s", desc->name);
+            if (!desc->start_func)
+            {
+                LOG_ERR("Node %s has null start_func", desc->name);
+                continue;
+            }
             desc->start_func();
         }
     }

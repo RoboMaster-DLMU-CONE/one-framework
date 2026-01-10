@@ -29,7 +29,7 @@ namespace OF
             {
                 registerHub<ImuHub>(&hub);
             }
-        } ImuHubRegistrar;
+        } __used ImuHubRegistrar;
     }
 
     OF_CCM_ATTR Mahony g_mahony{1.5f, 0.0f};

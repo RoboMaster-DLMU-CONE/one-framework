@@ -22,31 +22,26 @@ def add_add_node_parser(subparsers, parent_command):
         description=textwrap.dedent('''\
             Add an existing Node module to the west manifest (west.yml).
 
-            This command will:
-            - Detect module.yml to get module name and dependencies
-            - Add the module to the nearest west.yml projects list
-            - Support both local paths and git repositories
+            This command only supports adding modules from remote git repositories.
+            The repository will be added to the manifest projects list with a
+            default path of modules/lib/nodes/{name} unless --target-path is given.
 
             Examples:
-                # Add local module
-                west one add-node /path/to/my-motor
-                west one add-node modules/lib/my-motor
-
                 # Add git repository
                 west one add-node https://github.com/user/my-motor.git
                 west one add-node --name my-motor --remote origin --revision main
             '''))
 
-    # 位置参数：模块路径或URL
+    # 位置参数：模块git URL
     parser.add_argument(
         'path',
-        help='path to Node module directory or git repository URL'
+        help='git repository URL for the Node module'
     )
 
     # Git相关参数
     parser.add_argument(
         '--name',
-        help='module name (default: auto-detect from module.yml or directory name)'
+        help='module name (default: auto-detect from repository URL)'
     )
 
     parser.add_argument(
@@ -67,7 +62,7 @@ def add_add_node_parser(subparsers, parent_command):
 
     parser.add_argument(
         '--target-path',
-        help='target path in workspace (default: modules/lib/<name>)'
+        help='target path in workspace (default: modules/lib/nodes/<name>)'
     )
 
     # 可选参数：manifest位置
@@ -80,26 +75,21 @@ def add_add_node_parser(subparsers, parent_command):
 
 
 def run_add_node(cmd, args):
-    """执行add-node命令"""
+    """执行add-node命令 -- only accept git URLs"""
 
-    # 1. 解析路径/URL
+    # 1. 解析路径/URL - 仅支持git URL
     is_git_url = GitHelper.is_git_url(args.path)
 
-    if is_git_url:
-        # Git仓库模式
-        module_info = parse_git_info(cmd, args)
-    else:
-        # 本地路径模式
-        module_path = Path(args.path).resolve()
-        if not module_path.exists():
-            cmd.die(f"Module path does not exist: {module_path}")
+    if not is_git_url:
+        cmd.die("Only git repository URLs are supported. Provide a git URL (e.g. https://github.com/org/repo.git)")
 
-        module_info = parse_local_module(cmd, module_path, args)
+    module_info = parse_git_info(cmd, args)
 
     # 2. 验证模块
     validate_module(cmd, module_info)
 
     # 3. 查找west.yml
+    manifest_path = None
     if args.manifest:
         manifest_path = Path(args.manifest)
     else:
@@ -107,6 +97,7 @@ def run_add_node(cmd, args):
             manifest_path = WorkspaceHelper.find_manifest()
         except FileNotFoundError:
             cmd.die("Could not find west.yml manifest")
+            return
 
     if not manifest_path.exists():
         cmd.die(f"Manifest file does not exist: {manifest_path}")
@@ -139,81 +130,6 @@ def run_add_node(cmd, args):
         cmd.inf(f"  2. Enable in Kconfig: CONFIG_{module_info['config_name']}=y")
 
 
-def parse_local_module(cmd, module_path: Path, args) -> dict:
-    """解析本地模块信息"""
-    # 读取module.yml
-    module_yml_path = module_path / 'zephyr' / 'module.yml'
-    if not module_yml_path.exists():
-        cmd.die(f"Not a valid Zephyr module: missing {module_yml_path}")
-
-    module_yml = YamlHandler.load(module_yml_path)
-
-    # 提取模块名称
-    module_name = args.name or module_yml.get('name') or module_path.name
-
-    # 检查是否是git仓库
-    is_git = (module_path / '.git').exists()
-
-    if is_git:
-        # 获取git信息
-        git_info = GitHelper.get_remote_info(module_path)
-
-        return {
-            'name': module_name,
-            'path': args.target_path or f'modules/lib/{module_name}',
-            'remote': args.remote or git_info.get('remote', 'origin'),
-            'repo-path': args.repo_path or git_info.get('repo_path'),
-            'revision': args.revision,
-            'url': git_info.get('url'),
-            'dependencies': module_yml.get('dependencies', []),
-        }
-    else:
-        # 本地模块 - 只处理有west.yml的情况（即带git信息的node）
-        workspace_root = WorkspaceHelper.find_root(cmd.manifest)
-        
-        # 默认 path 为 modules/lib/nodes/<name>
-        default_path = f'modules/lib/nodes/{module_name}'
-        
-        result = {
-            'name': module_name,
-            'path': default_path,
-            'is_local': True,
-            'dependencies': module_yml.get('dependencies', []),
-        }
-
-        # 检查模块根目录是否有west.yml，其中包含git信息
-        module_west_yml = module_path / 'west.yml'
-        if module_west_yml.exists():
-            try:
-                module_manifest = YamlHandler.load(module_west_yml)
-                # 从west.yml的manifest.remotes中提取origin的url-base
-                remotes = module_manifest.get('manifest', {}).get('remotes', [])
-                origin_url_base = None
-                for remote in remotes:
-                    if remote.get('name') == 'origin':
-                        origin_url_base = remote.get('url-base')
-                        break
-                
-                # 从west.yml的manifest.projects中提取revision
-                projects = module_manifest.get('manifest', {}).get('projects', [])
-                if projects and len(projects) > 0:
-                    project = projects[0]
-                    if project.get('revision'):
-                        result['revision'] = args.revision or project.get('revision', 'main')
-                    
-                    # 如果找到了origin的url-base，构建完整的git URL
-                    if origin_url_base:
-                        git_url = f"{origin_url_base}/{module_name}.git"
-                        result['url'] = git_url
-                        cmd.inf(f"Found git URL: {git_url}")
-            except Exception as e:
-                cmd.dbg(f"Could not parse west.yml: {e}")
-        else:
-            cmd.wrn(f"No west.yml found in {module_path}. Only nodes created with --git-url can be added.")
-
-        return result
-
-
 def parse_git_info(cmd, args) -> dict:
     """解析Git仓库信息"""
     url = args.path
@@ -231,7 +147,8 @@ def parse_git_info(cmd, args) -> dict:
 
     return {
         'name': args.name or default_name,
-        'path': args.target_path or f'modules/lib/{args.name or default_name}',
+        # 默认 path 更改为 modules/lib/nodes/{name}
+        'path': args.target_path or f'modules/lib/nodes/{args.name or default_name}',
         'remote': args.remote or 'origin',
         'repo-path': args.repo_path or default_repo_path,
         'revision': args.revision,

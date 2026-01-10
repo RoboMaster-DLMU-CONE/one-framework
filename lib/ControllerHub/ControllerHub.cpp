@@ -11,7 +11,7 @@ LOG_MODULE_REGISTER(ControllerHub, CONFIG_CONTROLLER_HUB_LOG_LEVEL);
 
 namespace OF
 {
-    const device* g_input_dev;
+    const device* g_input_dev = DEVICE_DT_GET_OR_NULL(DT_NODELABEL(dji_dbus));
     OF_CCM_ATTR ControllerHub hub;
 
     namespace
@@ -22,7 +22,8 @@ namespace OF
             {
                 registerHub<ControllerHub>(&hub);
             }
-        } controller_hub_registrar;
+        }
+            __used controller_hub_registrar;
     }
 
     OF_CCM_ATTR SeqlockBuf<ControllerHubData> g_controller_buf;
@@ -52,7 +53,10 @@ namespace OF
 
     void ControllerHub::configure(const ControllerHubConfig& config)
     {
-        g_input_dev = config.input_device;
+        if (config.input_device)
+        {
+            g_input_dev = config.input_device;
+        }
     }
 
 
@@ -63,9 +67,6 @@ namespace OF
             LOG_ERR("invalid input device");
         }
     }
-
-    static std::function<void(ControllerHubData &)> func;
-
 
     static void input_cb(input_event* evt, void* user_data)
     {
@@ -80,17 +81,11 @@ namespace OF
         // Get the reflected channel enum
         if (const auto it = g_map.find(key); it != g_map.end())
         {
-            // how about more optimization, maybe compare new and old value to optionally
-            // tigger the data push, but that need another update and find()...
-
-            func = [&](ControllerHubData& state)
+            auto updater = [&](ControllerHubData& state)
             {
-                // only set the channel we want
                 state[it->second] = static_cast<int16_t>(evt->value);
             };
-
-            // push the new value into seqlock buffer using HubBase's manipulation
-            g_controller_buf.manipulate(func);
+            g_controller_buf.manipulate(updater);
         }
     };
 

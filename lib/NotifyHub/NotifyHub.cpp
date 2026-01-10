@@ -18,7 +18,7 @@ namespace OF
             {
                 registerHub<NotifyHub>(&hub);
             }
-        } notifyHubRegistrar;
+        } __used notifyHubRegistrar;
     }
 
     LOG_MODULE_REGISTER(NotifyHub, CONFIG_NOTIFY_HUB_LOG_LEVEL);

@@ -54,6 +54,7 @@ namespace OF::Units
         using mp_units::angular::unit_symbols::rev;
         using mp_units::si::unit_symbols::deg_C;
         using mp_units::si::unit_symbols::m;
+        using mp_units::si::unit_symbols::mm;
         using mp_units::si::unit_symbols::mA;
         using mp_units::si::unit_symbols::N;
         using mp_units::si::unit_symbols::s;

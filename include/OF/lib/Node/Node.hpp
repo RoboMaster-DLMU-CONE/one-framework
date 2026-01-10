@@ -5,7 +5,6 @@
 
 #include <zephyr/logging/log.h>
 
-#include "Descriptor.hpp"
 #include "Macro.hpp"
 
 namespace OF
@@ -28,7 +27,6 @@ namespace OF
     public:
         static void zephyr_entry_point(void* p1, void*, void*)
         {
-
             LOG_MODULE_DECLARE(NodeSystem, CONFIG_NODE_LOG_LEVEL);
             auto* node = static_cast<Derived*>(p1);
 
@@ -41,7 +39,6 @@ namespace OF
             node->run();
 
             node->cleanup();
-
         }
 
         static void start_impl(k_thread* thread_data, k_thread_stack_t* stack_area)
@@ -66,7 +63,6 @@ namespace OF
         }
 
         inline static k_tid_t tid_storage = nullptr;
-
     };
 }
 

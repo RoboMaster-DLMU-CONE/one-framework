@@ -23,7 +23,7 @@ namespace OF
     class ControllerHubData
     {
     public:
-        enum class Channel
+        enum class Channel: uint16_t
         {
             LEFT_X,
             LEFT_Y,
@@ -48,7 +48,7 @@ namespace OF
         {
             const float value = m_arr[static_cast<size_t>(ch)];
 #ifdef CONFIG_INPUT_DBUS
-            return remap < 364.0f, 1684.0f, -1.0f, 1.0f > (value);
+            return remap<364.0f, 1684.0f, -1.0f, 1.0f>(value);
 #endif
         }
 
@@ -65,12 +65,12 @@ namespace OF
         using Channel = ControllerHubData::Channel;
         using State = ControllerHubData;
 
-        enum class Switch
+        enum class Switch: uint16_t
         {
 #ifdef CONFIG_INPUT_DBUS
-            UP=1,
-            MID=3,
-            DOWN=2,
+            UP = 1,
+            MID = 3,
+            DOWN = 2,
 #else
 #endif
         };
