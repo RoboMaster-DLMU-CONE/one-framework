@@ -28,16 +28,19 @@ extern const OF::ControllerHubConfig controller_hub_config;
 
 namespace OF
 {
-
     using HubRegistry = HubManager<
 #ifdef CONFIG_NOTIFY_HUB
         HubEntry<NotifyHub, notify_hub_config>
 #endif
-
+#if defined(CONFIG_NOTIFY_HUB) && defined(CONFIG_IMU_HUB)
+        ,
+#endif
 #ifdef CONFIG_IMU_HUB
         HubEntry<ImuHub, imu_hub_config>
 #endif
-
+#if (defined(CONFIG_NOTIFY_HUB) || defined(CONFIG_IMU_HUB)) && defined(CONFIG_CONTROLLER_HUB)
+        ,
+#endif
 #ifdef CONFIG_CONTROLLER_HUB
         HubEntry<ControllerHub, controller_hub_config>
 #endif

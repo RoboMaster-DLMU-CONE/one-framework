@@ -114,4 +114,9 @@ namespace OF
     };
 }
 
+static OF::IMUData getImuData()
+{
+    return OF::ImuHub::getData();
+}
+
 #endif //OF_LIB_IMU_HUB_HPP

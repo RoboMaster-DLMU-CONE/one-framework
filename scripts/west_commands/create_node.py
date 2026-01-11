@@ -8,6 +8,8 @@ import textwrap
 import sys
 import os
 from pathlib import Path
+from urllib.parse import urlparse
+import subprocess
 
 # Add current directory to path to support both relative and absolute imports
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -15,32 +17,28 @@ from node_utils import NameConverter, WorkspaceHelper, TemplateEngine
 
 
 def add_create_node_parser(subparsers, parent_command):
-    """添加create-node子命令的参数解析器"""
+    """添加create-node子命令的参数解析器
+
+    改动：移除 `name` 位置参数，改为将 git url 作为位置参数；移除可选 `--git-url`。
+    """
     parser = subparsers.add_parser(
         'create-node',
-        help='create a new Node module with complete project structure',
+        help='create a new Node module from a git repository URL',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description=textwrap.dedent('''\
-            Create a new OneFramework Node module with standard structure.
+            Create a new OneFramework Node module by specifying a git repository URL.
 
-            The module will include:
-            - CMakeLists.txt with Zephyr integration
-            - Kconfig configuration
-            - module.yml for Zephyr module system
-            - Source code template with Node class
-            - Data structure header
-            - .gitignore
+            The repository name will be used as the module name.
 
             Example:
-                west one create-node my-motor
-                west one create-node led-controller --output custom/path
-                west one create-node sensor --stack-size 4096 --priority 3
+                west one create-node https://github.com/your-org/my-node.git
+                west one create-node https://github.com/your-org/my-node --output custom/path
             '''))
 
-    # 位置参数：模块名称
+    # 位置参数：git 仓库 URL（必填）
     parser.add_argument(
-        'name',
-        help='module name in kebab-case (e.g., my-motor, led-controller)'
+        'git_url',
+        help='git repository URL (e.g., https://github.com/org/repo.git)'
     )
 
     # 可选参数：输出路径
@@ -107,11 +105,6 @@ def add_create_node_parser(subparsers, parent_command):
 
     # Git/Remote相关参数
     parser.add_argument(
-        '--git-url',
-        help='git repository URL (will be stored in module.yml for later use with add-node)'
-    )
-
-    parser.add_argument(
         '--init-git',
         action='store_true',
         help='initialize git repository in module directory for version control'
@@ -120,20 +113,42 @@ def add_create_node_parser(subparsers, parent_command):
     return parser
 
 
+def extract_repo_name_from_url(git_url: str) -> str:
+    """从 git url 中提取仓库名（不带 .git 后缀）"""
+    try:
+        parsed = urlparse(git_url)
+        path = parsed.path
+        name = Path(path).name
+    except Exception:
+        # 兜底解析
+        name = git_url.rstrip('/').rsplit('/', 1)[-1]
+
+    if name.endswith('.git'):
+        name = name[:-4]
+    return name
+
+
 def run_create_node(cmd, args):
     """执行create-node命令"""
 
-    # 1. 验证和标准化名称
-    valid, error = NameConverter.validate_name(args.name)
+    # 1. git url 必填，解析并从中生成 module name
+    git_url = args.git_url
+    if not git_url:
+        cmd.die('git repository URL is required as the positional argument')
+
+    repo_name = extract_repo_name_from_url(git_url)
+    module_name_kebab = NameConverter.to_kebab_case(repo_name)
+
+    # 验证并规范化名称
+    valid, error = NameConverter.validate_name(module_name_kebab)
     if not valid:
-        cmd.die(f"Invalid module name: {error}")
+        cmd.die(f"Invalid module name derived from URL '{repo_name}': {error}")
 
-    module_name_kebab = NameConverter.to_kebab_case(args.name)
-    module_name_pascal = NameConverter.to_pascal_case(args.name)
-    module_name_snake = NameConverter.to_snake_case(args.name)
-    module_name_upper = NameConverter.to_upper_snake_case(args.name)
+    module_name_pascal = NameConverter.to_pascal_case(module_name_kebab)
+    module_name_snake = NameConverter.to_snake_case(module_name_kebab)
+    module_name_upper = NameConverter.to_upper_snake_case(module_name_kebab)
 
-    # 2. 确定输出路径
+    # 2. 确定输出路径（总是默认 modules/lib/nodes/<name>，除非用户通过 -o/--output 覆盖）
     if args.output:
         output_dir = Path(args.output).resolve()
     else:
@@ -153,25 +168,27 @@ def run_create_node(cmd, args):
     cmd.inf(f"Creating Node module: {module_name_kebab}")
     create_directory_structure(cmd, output_dir)
 
-    # 5. 生成配置参数
+    # 5. 生成配置参数（基于 git_url）
     config = build_template_config(args, {
         'module_name_kebab': module_name_kebab,
         'module_name_pascal': module_name_pascal,
         'module_name_snake': module_name_snake,
         'module_name_upper': module_name_upper,
+        'git_url': git_url,
     })
 
     # 6. 生成所有文件
     generate_files(cmd, output_dir, config)
 
-    # 7. 初始化git仓库（如果请求或提供了git-url）
+    # 7. 初始化git仓库（如果请求或者提供了 git_url）
     git_remote_added = False
-    if args.init_git or args.git_url:
-        git_remote_added = init_git_repo(cmd, output_dir, args.git_url)
+    # 如果用户要求初始化本地仓库，则执行 git init，并配置 origin 为传入的 git_url
+    if args.init_git:
+        git_remote_added = init_git_repo(cmd, output_dir, git_url)
 
-    # 8. 可选：添加到manifest
+    # 8. 可选：添加到manifest（使用 git url）
     if args.add_to_manifest:
-        add_to_west_manifest(cmd, output_dir, module_name_kebab)
+        add_to_west_manifest(cmd, output_dir, module_name_kebab, git_url)
 
     # 9. 显示成功信息
     cmd.banner(f"Successfully created Node module: {module_name_kebab}")
@@ -180,29 +197,23 @@ def run_create_node(cmd, args):
     cmd.inf(f"  1. Implement your node logic:")
     cmd.inf(f"     - src/{module_name_pascal}Node.cpp")
     cmd.inf(f"     - include/{config['DataClass']}.hpp")
-    
-    if args.git_url:
-        cmd.inf(f"\n  2. Make further changes and push to remote:")
-        cmd.inf(f"     cd {output_dir}")
-        cmd.inf(f"     git add .")
-        cmd.inf(f"     git commit -m '<your commit message>'")
-        cmd.inf(f"     git push origin main")
-        cmd.inf(f"\n  3. Add module to workspace manifest:")
-        cmd.inf(f"     west one add-node {output_dir}")
-        cmd.inf(f"\n  4. Enable in Kconfig: CONFIG_{module_name_upper}=y")
-    else:
-        cmd.inf(f"\n  2. Add module to west.yml:")
-        if not args.add_to_manifest:
-            cmd.inf(f"     west one add-node {output_dir}")
-        cmd.inf(f"\n  3. Enable in Kconfig: CONFIG_{module_name_upper}=y")
 
-    if args.git_url:
-        cmd.inf(f"\nGit information:")
-        cmd.inf(f"  - Repository: {args.git_url}")
-        if git_remote_added:
-            cmd.inf(f"  - Remote 'origin' configured ✓")
-            cmd.inf(f"  - Initial commit pushed ✓")
-            cmd.inf(f"  - Module west.yml created with git configuration ✓")
+    cmd.inf(f"\n  2. Make further changes and push to remote:")
+    cmd.inf(f"     cd {output_dir}")
+    cmd.inf(f"     git add .")
+    cmd.inf(f"     git commit -m '<your commit message>'")
+    cmd.inf(f"     git push origin main")
+    cmd.inf(f"\n  3. Add module to workspace manifest:")
+    if not args.add_to_manifest:
+        cmd.inf(f"     west one add-node {output_dir}")
+    cmd.inf(f"\n  4. Enable in Kconfig: CONFIG_{module_name_upper}=y")
+
+    cmd.inf(f"\nGit information:")
+    cmd.inf(f"  - Repository: {git_url}")
+    if git_remote_added:
+        cmd.inf(f"  - Remote 'origin' configured ✓")
+        cmd.inf(f"  - Initial commit pushed ✓")
+        cmd.inf(f"  - Module west.yml created with git configuration ✓")
 
 
 def create_directory_structure(cmd, base_dir: Path):
@@ -220,28 +231,27 @@ def create_directory_structure(cmd, base_dir: Path):
 
 
 def build_template_config(args, names: dict) -> dict:
-    """构建模板替换配置"""
+    """构建模板替换配置
+
+    现在假定总是有 git_url，并从中解析 remote 基础 URL 和仓库信息。
+    """
     # 提取基础名称
     module_name_kebab = names['module_name_kebab']
     module_name_pascal = names['module_name_pascal']
     module_name_snake = names['module_name_snake']
     module_name_upper = names['module_name_upper']
+    git_url = names.get('git_url', '')
 
-    # 构建git相关配置（用于west.yml）
-    remote_base_url = ""
-    self_project = ""
-    
-    if args.git_url:
-        # 从git_url中解析 base URL
-        # https://github.com/your-org/my-node.git -> https://github.com/your-org
-        parts = args.git_url.rstrip('/').rsplit('/', 1)
-        remote_base_url = parts[0] if len(parts) > 1 else args.git_url
-        
-        # 生成self project条目（不包含repo-path）
-        self_project = f"\n    - name: {module_name_kebab}\n      remote: origin\n      path: modules/lib/nodes/{module_name_kebab}\n      revision: main"
-    else:
-        remote_base_url = "https://github.com"
-        self_project = ""
+    # 从 git_url 中解析 base url（例如 https://github.com/org/repo.git -> https://github.com/org）
+    remote_base_url = ''
+    try:
+        parts = git_url.rstrip('/').rsplit('/', 1)
+        remote_base_url = parts[0] if len(parts) > 1 else git_url
+    except Exception:
+        remote_base_url = git_url
+
+    # 生成 self project 条目（用于模板），包含 path 到 modules/lib/nodes/<name>
+    self_project = f"\n    - name: {module_name_kebab}\n      url: {git_url}\n      path: modules/lib/nodes/{module_name_kebab}\n      revision: main"
 
     # 构建配置字典
     config = {
@@ -262,10 +272,11 @@ def build_template_config(args, names: dict) -> dict:
 
         # 头文件保护宏
         'HEADER_GUARD': (args.data_type or (module_name_pascal + 'Data')).upper() + '_HPP',
-        
-        # Git配置（用于west.yml）
+
+        # Git配置（用于模板）
         'REMOTE_BASE_URL': remote_base_url,
         'SELF_PROJECT': self_project,
+        'GIT_URL': git_url,
     }
 
     return config
@@ -296,8 +307,8 @@ def generate_files(cmd, output_dir: Path, config: dict):
         cmd.dbg(f"Generated: {output_path}")
 
 
-def add_to_west_manifest(cmd, module_path: Path, module_name: str):
-    """将模块添加到west.yml manifest"""
+def add_to_west_manifest(cmd, module_path: Path, module_name: str, git_url: str):
+    """将模块添加到west.yml manifest（使用 git url，而不是仅本地子模块路径）"""
     try:
         from node_utils import WorkspaceHelper, YamlHandler
 
@@ -317,7 +328,7 @@ def add_to_west_manifest(cmd, module_path: Path, module_name: str):
         if 'projects' not in manifest_data['manifest']:
             manifest_data['manifest']['projects'] = []
 
-        # 计算相对路径
+        # 计算相对路径（默认放到 modules/lib/nodes/<name>）
         workspace_root = WorkspaceHelper.find_root(cmd.manifest)
         try:
             rel_path = module_path.relative_to(workspace_root)
@@ -330,10 +341,12 @@ def add_to_west_manifest(cmd, module_path: Path, module_name: str):
                 cmd.wrn(f"Module '{module_name}' already exists in manifest")
                 return
 
-        # 添加新项目（仅本地路径，无git信息）
+        # 添加新项目（使用 git url）
         project = {
             'name': module_name,
+            'url': git_url,
             'path': str(rel_path),
+            'revision': 'main',
         }
         manifest_data['manifest']['projects'].append(project)
 
@@ -348,8 +361,7 @@ def add_to_west_manifest(cmd, module_path: Path, module_name: str):
 def init_git_repo(cmd, module_path: Path, git_url: str = None) -> bool:
     """初始化本地git仓库并配置remote，返回是否成功添加remote"""
     try:
-        import subprocess
-        
+
         # 初始化git仓库
         subprocess.run(
             ['git', 'init'],
@@ -358,9 +370,9 @@ def init_git_repo(cmd, module_path: Path, git_url: str = None) -> bool:
             check=True
         )
         cmd.dbg(f"Initialized git repository in {module_path}")
-        
+
         remote_added = False
-        
+
         # 如果提供了git URL，添加为remote
         if git_url:
             try:
@@ -372,7 +384,7 @@ def init_git_repo(cmd, module_path: Path, git_url: str = None) -> bool:
                 )
                 cmd.dbg(f"Added remote 'origin': {git_url}")
                 remote_added = True
-                
+
                 # 尝试进行初始提交和推送
                 try:
                     # 设置用户信息（如果还未设置）
@@ -386,7 +398,7 @@ def init_git_repo(cmd, module_path: Path, git_url: str = None) -> bool:
                         cwd=module_path,
                         capture_output=True,
                     )
-                    
+
                     # 添加所有文件
                     subprocess.run(
                         ['git', 'add', '.'],
@@ -394,7 +406,7 @@ def init_git_repo(cmd, module_path: Path, git_url: str = None) -> bool:
                         capture_output=True,
                         check=True
                     )
-                    
+
                     # 初始提交
                     subprocess.run(
                         ['git', 'commit', '-m', 'init commit'],
@@ -403,7 +415,7 @@ def init_git_repo(cmd, module_path: Path, git_url: str = None) -> bool:
                         check=True
                     )
                     cmd.dbg("Initial commit created")
-                    
+
                     # 尝试推送到 origin/main
                     result = subprocess.run(
                         ['git', 'push', '-u', 'origin', 'main'],
@@ -411,7 +423,7 @@ def init_git_repo(cmd, module_path: Path, git_url: str = None) -> bool:
                         capture_output=True,
                         text=True
                     )
-                    
+
                     if result.returncode == 0:
                         cmd.inf("✓ Successfully pushed to remote")
                     else:
@@ -426,15 +438,15 @@ def init_git_repo(cmd, module_path: Path, git_url: str = None) -> bool:
                             cmd.inf("✓ Successfully pushed to remote (master branch)")
                         else:
                             cmd.wrn(f"Could not push to remote: {result.stderr}")
-                            
+
                 except subprocess.CalledProcessError as e:
                     cmd.dbg(f"Git operation failed: {e}")
-                    
+
             except subprocess.CalledProcessError as e:
                 cmd.wrn(f"Failed to add remote: {e}")
-        
+
         return remote_added
-        
+
     except subprocess.CalledProcessError as e:
         cmd.wrn(f"Failed to initialize git repository: {e}")
         return False

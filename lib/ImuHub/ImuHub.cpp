@@ -19,7 +19,7 @@ BUILD_ASSERT(CONFIG_IMU_HUB_PUBLISH_EVERY_N_FRAME != 0, "CONFIG_IMU_HUB_DATA_UPD
 
 namespace OF
 {
-    OF_CCM_ATTR ImuHub hub;
+    OF_CCM_ATTR ImuHub imu_hub;
 
     namespace
     {
@@ -27,7 +27,7 @@ namespace OF
         {
             ImuHubRegistrar()
             {
-                registerHub<ImuHub>(&hub);
+                registerHub<ImuHub>(&imu_hub);
             }
         } __used ImuHubRegistrar;
     }

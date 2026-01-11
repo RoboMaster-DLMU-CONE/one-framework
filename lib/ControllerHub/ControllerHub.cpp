@@ -12,7 +12,7 @@ namespace OF
 {
     // 定义全局变量
     const device* g_input_dev = nullptr;
-    OF_CCM_ATTR ControllerHub hub;
+    OF_CCM_ATTR ControllerHub controller_hub;
 
     // 全局控制器数据缓冲区
     OF_CCM_ATTR SeqlockBuf<ControllerHubData> g_controller_buf;
@@ -23,7 +23,7 @@ namespace OF
         {
             ControllerHubRegistrar()
             {
-                registerHub<ControllerHub>(&hub);
+                registerHub<ControllerHub>(&controller_hub);
             }
         }
             __used controller_hub_registrar;
@@ -230,12 +230,6 @@ namespace OF
             {
                 LOG_ERR("Failed to disable UART RX: %d", ret);
             }
-
-            ret = dbus_enable_rx();
-            if (ret < 0)
-            {
-                LOG_ERR("Failed to enable UART async receive: %d", ret);
-            }
         }
         else
         {
@@ -322,15 +316,15 @@ namespace OF
                 |
                 (static_cast<uint16_t>(dbus_buf[4]) << 10)) & 0x07FF));
         const auto ch3 =
-                static_cast<int16_t>((((static_cast<uint16_t>(dbus_buf[4]) >> 1) |
-                                      (static_cast<uint16_t>(dbus_buf[5]) << 7)) &
-                    0x07FF));
+            static_cast<int16_t>((((static_cast<uint16_t>(dbus_buf[4]) >> 1) |
+                    (static_cast<uint16_t>(dbus_buf[5]) << 7)) &
+                0x07FF));
 
 
         const uint8_t sw_l = (dbus_buf[5] >> 4) & 0x03;
         const uint8_t sw_r = (dbus_buf[5] >> 6) & 0x03;
 
-        const auto stick_in_range = [](int16_t v)
+        const auto stick_in_range = [](const int16_t v)
         {
             return v >= STICK_MIN && v <= STICK_MAX;
         };
@@ -364,6 +358,11 @@ namespace OF
             s_data.xfer_bytes = 0;
             dbus_restart_rx();
             break;
+        case UART_RX_DISABLED:
+            LOG_DBG("UART RX Disabled");
+            memset(s_data.dbus_frame, 0, sizeof(s_data.dbus_frame));
+            memset(s_data.rd_data, 0, sizeof(s_data.rd_data));
+            dbus_enable_rx();
         default:
             break;
         }
@@ -465,7 +464,7 @@ namespace OF
                 continue;
             }
             // 如果成功获取信号量，说明收到了数据，检查同步状态
-            else if (!s_data.in_sync)
+            if (!s_data.in_sync)
             {
                 // 之前没有同步，现在收到数据，说明已连接
                 LOG_DBG("DBUS receiver connected");
@@ -514,9 +513,9 @@ namespace OF
                     << 7)) & 0x07FF));
 
             // 报告开关位置 - 通道5-6
-            state[Channel::SW_L] =
-                static_cast<int16_t>((dbus_buf[5] >> 4) & 0x0003);
             state[Channel::SW_R] =
+                static_cast<int16_t>((dbus_buf[5] >> 4) & 0x0003);
+            state[Channel::SW_L] =
                 static_cast<int16_t>((dbus_buf[5] >> 6) & 0x0003);
 
             // 鼠标数据 - 通道7-10
