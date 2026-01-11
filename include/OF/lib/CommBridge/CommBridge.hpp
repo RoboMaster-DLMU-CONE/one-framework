@@ -13,6 +13,19 @@
 #include <zephyr/logging/log.h>
 #include <memory>
 
+// 空包类型，用于表示不需要发送或接收任何包的情况
+struct EmptyPacket
+{
+};
+
+
+template <>
+struct RPL::Meta::PacketTraits<EmptyPacket> : PacketTraitsBase<PacketTraits<EmptyPacket>>
+{
+    static constexpr uint16_t cmd = 0xF0FF;
+    static constexpr size_t size = sizeof(EmptyPacket);
+};
+
 namespace OF
 {
     template <typename TxPackets, typename RxPackets>
@@ -80,10 +93,16 @@ namespace OF
          * @brief 发送数据包
          */
         template <typename... Packets>
-            requires(RPL::Serializable<Packets, TxPackets...> && ...)
+            requires(sizeof...(Packets) == 0 || (RPL::Serializable<Packets, TxPackets...> && ...))
         void send(const Packets&... packets)
         {
             LOG_MODULE_DECLARE(CommBridge, CONFIG_COMM_BRIDGE_LOG_LEVEL);
+
+            // 如果没有发送包，则直接返回
+            if constexpr (sizeof...(Packets) == 0)
+            {
+                return;
+            }
 
             k_sem_take(&m_TxDoneSem, K_FOREVER);
 
@@ -109,8 +128,8 @@ namespace OF
          * @brief 获取接收到的数据包
          */
         template <typename T>
-            requires RPL::Deserializable<T, RxPackets...>
-        T get() const noexcept
+            requires(sizeof...(RxPackets) == 0 ? false : RPL::Deserializable<T, RxPackets...>)
+        T get() noexcept
         {
             return m_Deserializer.template get<T>();
         }
@@ -134,13 +153,26 @@ namespace OF
             LOG_INF("CommBridge initialized, UART device: %s", m_UartDev->name);
         }
 
-        static constexpr size_t TxBufferSize = (RPL::Serializer<TxPackets...>::template frame_size<TxPackets>() + ...);
+        // 如果 TxPackets 为空，则 TxBufferSize 为 0，否则计算实际大小
+        static constexpr size_t calculateTxBufferSize()
+        {
+            if constexpr (sizeof...(TxPackets) == 0)
+            {
+                return 0; // 没有发送包时，不需要发送缓冲区
+            }
+            else
+            {
+                return (RPL::Serializer<TxPackets...>::template frame_size<TxPackets>() + ...);
+            }
+        }
+
+        static constexpr size_t TxBufferSize = calculateTxBufferSize();
         static constexpr size_t RxBufferSize = CONFIG_COMM_BRIDGE_MAX_RX_SIZE;
 
         const device* m_UartDev;
 
         RPL::Serializer<TxPackets...> m_Serializer{};
-        uint8_t m_TxBuffer[TxBufferSize]{};
+        uint8_t m_TxBuffer[TxBufferSize > 0 ? TxBufferSize : 1]{}; // 至少1个字节以避免零长度数组
         k_sem m_TxDoneSem{};
         size_t m_TxSize{0};
 
@@ -155,6 +187,7 @@ namespace OF
          */
         static void uart_rx_callback(const device* dev, void* user_data)
         {
+            LOG_MODULE_DECLARE(CommBridge, CONFIG_COMM_BRIDGE_LOG_LEVEL);
             auto* bridge = static_cast<CommBridge*>(user_data);
 
             if (!uart_irq_update(dev))
@@ -173,6 +206,14 @@ namespace OF
             }
         }
     };
+
+    // 便捷别名，用于创建只接收不发送的 CommBridge
+    template <typename... RxPackets>
+    using RxOnlyCommBridge = CommBridge<std::tuple<EmptyPacket>, std::tuple<RxPackets...>>;
+
+    // 便捷别名，用于创建只发送不接收的 CommBridge
+    template <typename... TxPackets>
+    using TxOnlyCommBridge = CommBridge<std::tuple<TxPackets...>, std::tuple<EmptyPacket>>;
 }
 
 #endif //OF_LIB_COMMBRIDGE_MANAGER_HPP
