@@ -9,13 +9,14 @@ config ONE_FRAMEWORK
     select SERIAL
     select CONSOLE
     select LOG
-#     select CBPRINTF_FP_SUPPORT
     select UART_CONSOLE
     select LOG_BACKEND_UART_OUTPUT
     select CPP
     select REQUIRES_FULL_LIBCPP
     select INPUT
     select OUTPUT
+    select ISR_TABLES_LOCAL_DECLARATION
+    select LTO
     help
         启用One Framework框架。
         包含了One Framework框架的默认、常用Kconfig选项。

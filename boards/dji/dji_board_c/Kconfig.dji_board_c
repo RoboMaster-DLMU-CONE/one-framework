@@ -15,6 +15,10 @@ config DT_HAS_ZEPHYR_SWDP_GPIO_ENABLED
         bool
         default y
 
+config ISR_TABLES_LOCAL_DECLARATION_SUPPORTED
+        bool
+        default y
+
 config DT_HAS_BOSCH_BMI08X_ACCEL_ENABLED
         bool
         default y

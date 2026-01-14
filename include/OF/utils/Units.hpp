@@ -47,6 +47,8 @@ namespace OF::Units
     using Temperature =
     quantity_point<degree_Celsius, mp_units::si::absolute_zero, float>;
 
+    using Time = quantity<milli<second>, float>;
+
     namespace literals
     {
         using mp_units::angular::unit_symbols::deg;
@@ -58,6 +60,7 @@ namespace OF::Units
         using mp_units::si::unit_symbols::mA;
         using mp_units::si::unit_symbols::N;
         using mp_units::si::unit_symbols::s;
+        using mp_units::si::unit_symbols::ms;
     } // namespace literals
 }
 
