@@ -1,0 +1,6 @@
+board:
+  name: dm_mc02
+  full_name: DaMiao MC02
+  vendor: dmBot
+  socs:
+    - name: stm32h723xx

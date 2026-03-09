@@ -1,0 +1,16 @@
+identifier: dm_mc02
+name: DaMiao MC02
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 564
+flash: 1024
+supported:
+  - can
+  - pwm
+  - counter
+  - gpio
+  - usart
+vendor: dmBot

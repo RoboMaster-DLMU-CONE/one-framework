@@ -1,7 +1,6 @@
 /dts-v1/;
 #include <st/f4/stm32f407Xg.dtsi>
 #include <st/f4/stm32f407i(e-g)hx-pinctrl.dtsi>
-#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "DJI RoboMaster Development Board C";
