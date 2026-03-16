@@ -1,5 +1,4 @@
 #include <OF/lib/ImuHub/ImuHub.hpp>
-#include <OF/lib/HubManager/HubManager.hpp>
 #include <OF/utils/Mahony.hpp>
 #include <OF/utils/CCM.h>
 
@@ -10,6 +9,11 @@
 #include <zephyr/rtio/rtio.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/kernel.h>
+#include <zephyr/init.h>
+
+#include <OF/utils/SeqlockBuf.hpp>
+
+#define DT_DRV_COMPAT one_framework_imu_hub
 
 LOG_MODULE_REGISTER(ImuHub, CONFIG_IMU_HUB_LOG_LEVEL);
 
@@ -20,17 +24,6 @@ BUILD_ASSERT(CONFIG_IMU_HUB_PUBLISH_EVERY_N_FRAME != 0, "CONFIG_IMU_HUB_DATA_UPD
 namespace OF
 {
     OF_CCM_ATTR ImuHub imu_hub;
-
-    namespace
-    {
-        struct ImuHubRegistrar
-        {
-            ImuHubRegistrar()
-            {
-                registerHub<ImuHub>(&imu_hub);
-            }
-        } __used ImuHubRegistrar;
-    }
 
     OF_CCM_ATTR Mahony g_mahony{1.5f, 0.0f};
     OF_CCM_ATTR IMUData g_imu_data{};
@@ -178,14 +171,12 @@ namespace OF
         }
     } // namespace
 
-    void ImuHub::configure(const ImuHubConfig& config)
-    {
-        m_accel_dev = config.accel_dev;
-        m_gyro_dev = config.gyro_dev;
-    }
-
     void ImuHub::setup()
     {
+#if DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT)
+        m_accel_dev = DEVICE_DT_GET(DT_INST_PHANDLE(0, accel_device));
+        m_gyro_dev = DEVICE_DT_GET(DT_INST_PHANDLE(0, gyro_device));
+
         bool configured = false;
         configured |= (configure_context(accel_ctx, m_accel_dev) == 0);
         configured |= (configure_context(gyro_ctx, m_gyro_dev) == 0);
@@ -208,6 +199,9 @@ namespace OF
 #ifdef CONFIG_IMU_HUB_INITIAL_CALIBRATION
         LOG_INF("Starting IMU calibration (%d ms). Please keep stationary.",
                 CONFIG_IMU_HUB_INIT_CALIBRATION_DURATION_MS);
+#endif
+#else
+        LOG_WRN("ImuHub not enabled in Device Tree");
 #endif
     }
 
@@ -403,3 +397,11 @@ namespace OF
     }
 
 } // namespace OF
+
+static int imu_hub_init()
+{
+    OF::imu_hub.setup();
+    return 0;
+}
+
+SYS_INIT(imu_hub_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);

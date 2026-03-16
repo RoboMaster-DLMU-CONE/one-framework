@@ -1,7 +1,6 @@
 // Copyright (c) 2025. MoonFeather
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <OF/lib/HubManager/HubRegistry.hpp>
 #include <OF/lib/ImuHub/ImuHub.hpp>
 #include <zephyr/logging/log.h>
 #include <zephyr/kernel.h>
@@ -11,18 +10,11 @@ LOG_MODULE_REGISTER(imu_test, CONFIG_LOG_DEFAULT_LEVEL);
 
 using namespace OF;
 
-constexpr ImuHubConfig imu_hub_config{
-    .accel_dev = DEVICE_DT_GET(DT_NODELABEL(bmi088_accel)),
-    .gyro_dev = DEVICE_DT_GET(DT_NODELABEL(bmi088_gyro))
-};
-
 int main()
 {
     LOG_INF("main");
 
-    HubRegistry::startAll();
-
-
+    // HubRegistry::startAll(); is no longer needed, initialization is handled by SYS_INIT
 
     while (true)
     {

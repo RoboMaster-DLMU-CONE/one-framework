@@ -6,20 +6,12 @@
 #include <OF/lib/NotifyHub/NotifyHub.hpp>
 #endif
 
-#ifdef CONFIG_IMU_HUB
-#include <OF/lib/ImuHub/ImuHub.hpp>
-#endif
-
 #ifdef CONFIG_CONTROLLER_HUB
 #include <OF/lib/ControllerHub/ControllerHub.hpp>
 #endif
 
 #ifdef CONFIG_NOTIFY_HUB
 extern const OF::NotifyHubConfig notify_hub_config;
-#endif
-
-#ifdef CONFIG_IMU_HUB
-extern const OF::ImuHubConfig imu_hub_config;
 #endif
 
 #ifdef CONFIG_CONTROLLER_HUB
@@ -32,13 +24,7 @@ namespace OF
 #ifdef CONFIG_NOTIFY_HUB
         HubEntry<NotifyHub, notify_hub_config>
 #endif
-#if defined(CONFIG_NOTIFY_HUB) && defined(CONFIG_IMU_HUB)
-        ,
-#endif
-#ifdef CONFIG_IMU_HUB
-        HubEntry<ImuHub, imu_hub_config>
-#endif
-#if (defined(CONFIG_NOTIFY_HUB) || defined(CONFIG_IMU_HUB)) && defined(CONFIG_CONTROLLER_HUB)
+#if defined(CONFIG_NOTIFY_HUB) && defined(CONFIG_CONTROLLER_HUB)
         ,
 #endif
 #ifdef CONFIG_CONTROLLER_HUB

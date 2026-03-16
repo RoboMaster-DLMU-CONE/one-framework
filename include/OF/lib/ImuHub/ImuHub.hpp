@@ -1,19 +1,11 @@
 #ifndef OF_LIB_IMU_HUB_HPP
 #define OF_LIB_IMU_HUB_HPP
 
-#include <OF/lib/HubManager/HubBase.hpp>
-
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/kernel.h>
 
 namespace OF
 {
-    struct ImuHubConfig
-    {
-        const device* accel_dev;
-        const device* gyro_dev;
-    };
-
     /**
      * @brief Container for IMU sample data used by the hub.
      *
@@ -61,7 +53,7 @@ namespace OF
      *
      * Note: This class is final and non-copyable.
      */
-    class ImuHub final : public HubBase<ImuHub>
+    class ImuHub final
     {
     public:
         ImuHub() = default;
@@ -69,8 +61,6 @@ namespace OF
         ImuHub operator=(const ImuHub&) = delete;
 
         static constexpr auto name = "ImuHub";
-
-        void configure(const ImuHubConfig& config);
 
         /**
          * @brief Configure and start the asynchronous IMU pipeline.
