@@ -1,0 +1,14 @@
+description: IMU Hub for One Framework
+
+compatible: "one-framework,imu-hub"
+
+properties:
+  accel-device:
+    type: phandle
+    required: true
+    description: Accelerometer device
+
+  gyro-device:
+    type: phandle
+    required: true
+    description: Gyroscope device

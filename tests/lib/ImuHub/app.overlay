@@ -1,0 +1,7 @@
+/ {
+    imu_hub: imu_hub {
+        compatible = "one-framework,imu-hub";
+        accel-device = <&bmi088_accel>;
+        gyro-device = <&bmi088_gyro>;
+    };
+};
