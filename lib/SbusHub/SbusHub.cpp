@@ -1,37 +1,25 @@
-// Copyright (c) 2025. MoonFeather
-// SPDX-License-Identifier: BSD-3-Clause
-
-#include <OF/lib/HubManager/HubManager.hpp>
-#include <OF/lib/ControllerHub/ControllerHub.hpp>
+#include <OF/lib/SbusHub/SbusHub.hpp>
 #include "zephyr/logging/log.h"
 #include <OF/utils/CCM.h>
+#include <OF/utils/SeqlockBuf.hpp>
+#include <zephyr/init.h>
 
-LOG_MODULE_REGISTER(ControllerHub, CONFIG_CONTROLLER_HUB_LOG_LEVEL);
+#define DT_DRV_COMPAT one_framework_sbus_hub
+
+LOG_MODULE_REGISTER(SbusHub, CONFIG_SBUS_HUB_LOG_LEVEL);
 
 namespace OF
 {
     // 定义全局变量
     const device* g_input_dev = nullptr;
-    OF_CCM_ATTR ControllerHub controller_hub;
+    OF_CCM_ATTR SbusHub sbus_hub;
 
     // 全局控制器数据缓冲区
-    OF_CCM_ATTR SeqlockBuf<ControllerHubData> g_controller_buf;
-
-    namespace
-    {
-        struct ControllerHubRegistrar
-        {
-            ControllerHubRegistrar()
-            {
-                registerHub<ControllerHub>(&controller_hub);
-            }
-        }
-            __used controller_hub_registrar;
-    }
+    OF_CCM_ATTR SeqlockBuf<SbusHubData> g_sbus_buf;
 
     // 实现静态成员变量
-    ControllerHub::ControllerHubDataInternal ControllerHub::s_data{};
-    const device* ControllerHub::s_uart_dev = nullptr;
+    SbusHub::SbusHubDataInternal SbusHub::s_data{};
+    const device* SbusHub::s_uart_dev = nullptr;
 
     // DBUS UART配置 - 100kbps波特率 奇偶校验
     constexpr uart_config uart_cfg_dbus = {
@@ -43,7 +31,7 @@ namespace OF
     };
 
     // 定义通道映射表 - 存储DBUS通道号
-    const uint32_t ControllerHub::input_channels_full[DBUS_CHANNEL_COUNT] = {
+    const uint32_t SbusHub::input_channels_full[DBUS_CHANNEL_COUNT] = {
         0, /* right_stick_x */
         1, /* right_stick_y */
         2, /* left_stick_x */
@@ -75,29 +63,22 @@ namespace OF
         27,
     };
 
-    tl::expected<ControllerHub::State, ControllerHubError> ControllerHub::getData()
+    tl::expected<SbusHub::State, SbusHubError> SbusHub::getData()
     {
         if (s_data.in_sync)
         {
-            return g_controller_buf.read();
+            return g_sbus_buf.read();
         }
-        return tl::make_unexpected(ControllerHubError{
-            ControllerHubError::Code::DISCONNECTED, "Controller is disconnected"
+        return tl::make_unexpected(SbusHubError{
+            SbusHubError::Code::DISCONNECTED, "Controller is disconnected"
         });
     }
 
-    void ControllerHub::configure(const ControllerHubConfig& config)
+    void SbusHub::setup()
     {
-        if (config.input_device)
-        {
-            g_input_dev = config.input_device;
-        }
-    }
-
-    void ControllerHub::setup()
-    {
+#if DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT)
         // 获取UART设备
-        s_uart_dev = g_input_dev;
+        s_uart_dev = DEVICE_DT_GET(DT_INST_PHANDLE(0, input_device));
 
         if (!s_uart_dev || !device_is_ready(s_uart_dev))
         {
@@ -109,7 +90,7 @@ namespace OF
         uart_rx_disable(s_uart_dev);
         uart_tx_abort(s_uart_dev);
 
-        LOG_DBG("Initializing DBUS driver in ControllerHub");
+        LOG_DBG("Initializing DBUS driver in SbusHub");
 
         // 初始化内部数据结构
         for (int i = 0; i < static_cast<int>(DBUS_CHANNEL_COUNT); i++)
@@ -204,10 +185,13 @@ namespace OF
                         K_PRIO_COOP(7), 0, K_NO_WAIT);
 
         k_thread_name_set(&s_data.thread, "dbus_proc");
+#else
+        LOG_WRN("SbusHub not enabled in Device Tree");
+#endif
     }
 
     // 实现内部方法
-    int ControllerHub::dbus_enable_rx()
+    int SbusHub::dbus_enable_rx()
     {
         if (s_data.using_async)
         {
@@ -218,7 +202,7 @@ namespace OF
         return 0;
     }
 
-    void ControllerHub::dbus_restart_rx()
+    void SbusHub::dbus_restart_rx()
     {
         int ret = 0;
 
@@ -239,7 +223,7 @@ namespace OF
         }
     }
 
-    void ControllerHub::dbus_append_rx_bytes(const uint8_t* buf, size_t len)
+    void SbusHub::dbus_append_rx_bytes(const uint8_t* buf, size_t len)
     {
         const uint32_t now = k_uptime_get_32();
         if (s_data.in_sync && s_data.last_rx_time != 0 &&
@@ -287,7 +271,7 @@ namespace OF
         }
     }
 
-    void ControllerHub::dbus_supply_rx_buffer()
+    void SbusHub::dbus_supply_rx_buffer()
     {
         const int ret = uart_rx_buf_rsp(s_uart_dev, s_data.async_rx_buf[s_data.next_async_buf], DBUS_FRAME_LEN);
         if (ret == 0)
@@ -300,7 +284,7 @@ namespace OF
         }
     }
 
-    bool ControllerHub::dbus_frame_valid(const uint8_t* dbus_buf)
+    bool SbusHub::dbus_frame_valid(const uint8_t* dbus_buf)
     {
         constexpr int16_t STICK_MIN = 364;
         constexpr int16_t STICK_MAX = 1684;
@@ -342,7 +326,7 @@ namespace OF
         return true;
     }
 
-    void ControllerHub::dbus_uart_event_handler(uart_event* evt)
+    void SbusHub::dbus_uart_event_handler(uart_event* evt)
     {
         switch (evt->type)
         {
@@ -369,7 +353,7 @@ namespace OF
     }
 
     /* IRQ fallback handler (interrupt-driven UART API) */
-    void ControllerHub::dbus_uart_isr_handler()
+    void SbusHub::dbus_uart_isr_handler()
     {
         uint8_t* rd_data = s_data.rd_data;
 
@@ -426,7 +410,7 @@ namespace OF
         }
     }
 
-    void ControllerHub::input_dbus_input_report_thread()
+    void SbusHub::input_dbus_input_report_thread()
     {
         uint16_t last_keyboard = 0;
         bool prev_connected = false;
@@ -496,7 +480,7 @@ namespace OF
                 continue;
             }
 
-            ControllerHubData state;
+            SbusHubData state;
             // 报告通道1-4（遥控器摇杆）
             state[Channel::RIGHT_X] =
                 static_cast<int16_t>((static_cast<uint16_t>(dbus_buf[0]) | (static_cast<uint16_t>(dbus_buf[1]) << 8)) &
@@ -575,7 +559,15 @@ namespace OF
                 last_keyboard = keyboard;
             }
 
-            g_controller_buf.write(state);
+            g_sbus_buf.write(state);
         }
     }
+} // namespace OF
+
+static int sbus_hub_init()
+{
+    OF::sbus_hub.setup();
+    return 0;
 }
+
+SYS_INIT(sbus_hub_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);

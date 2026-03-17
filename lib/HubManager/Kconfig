@@ -1,9 +1,0 @@
-menuconfig HUB_MANAGER
-    depends on ONE_FRAMEWORK
-    bool "Hub Manager"
-    help
-        启用 OneFramework Hub 管理器
-
-module = HUB_MANAGER
-module-str = HUB_MANAGER
-source "subsys/logging/Kconfig.template.log_config"

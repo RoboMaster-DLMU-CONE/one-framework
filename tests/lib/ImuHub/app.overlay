@@ -1,3 +1,24 @@
+&spi1 {
+    status = "okay";
+    cs-gpios = <&gpiob 12 GPIO_ACTIVE_LOW>, <&gpiob 13 GPIO_ACTIVE_LOW>;
+
+    bmi088_accel: bmi088_accel@0 {
+        compatible = "bosch,bmi08x-accel";
+        reg = <0>;
+        spi-max-frequency = <10000000>;
+        accel-hz = "800";
+        accel-fs = <24>;
+    };
+
+    bmi088_gyro: bmi088_gyro@1 {
+        compatible = "bosch,bmi08x-gyro";
+        reg = <1>;
+        spi-max-frequency = <10000000>;
+        gyro-hz = "1000_116";
+        gyro-fs = <2000>;
+    };
+};
+
 / {
     imu_hub: imu_hub {
         compatible = "one-framework,imu-hub";

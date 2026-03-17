@@ -1,0 +1,14 @@
+&usart2 {
+    status = "okay";
+    /* Use PA2/PA3 which are usually available on F401 mini boards */
+    pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
+    pinctrl-names = "default";
+    current-speed = <100000>;
+};
+
+/ {
+    sbus_hub: sbus_hub {
+        compatible = "one-framework,sbus-hub";
+        input-device = <&usart2>;
+    };
+};

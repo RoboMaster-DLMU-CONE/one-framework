@@ -1,12 +1,10 @@
 // Copyright (c) 2025. MoonFeather
 // SPDX-License-Identifier: BSD-3-Clause
 
-#ifndef CONTROLLERHUB_HPP
-#define CONTROLLERHUB_HPP
+#ifndef SBUSHUB_HPP
+#define SBUSHUB_HPP
 
 #include <array>
-
-#include <OF/lib/HubManager/HubBase.hpp>
 
 #include <OF/utils/Remap.hpp>
 
@@ -17,13 +15,8 @@
 
 namespace OF
 {
-    struct ControllerHubConfig
-    {
-        const device* input_device;
-    };
-
-    // ControllerHub 错误类型定义
-    struct ControllerHubError
+    // SbusHub 错误类型定义
+    struct SbusHubError
     {
         enum class Code
         {
@@ -33,8 +26,8 @@ namespace OF
         const char* message;
     };
 
-    // Forward declare State class for ControllerHub
-    class ControllerHubData
+    // Forward declare State class for SbusHub
+    class SbusHubData
     {
     public:
         enum class Channel: uint16_t
@@ -67,6 +60,7 @@ namespace OF
             KEY_C,
             KEY_V,
             KEY_B,
+            KEY_B_ALT // Reserved
         };
 
         int16_t& operator[](Channel ch)
@@ -89,22 +83,21 @@ namespace OF
         std::array<int16_t, 32> m_arr{}; // 扩展数组大小以容纳新通道
     };
 
-    class ControllerHub : public HubBase<ControllerHub>
+    class SbusHub
     {
     public:
-        ControllerHub() = default;
-        static constexpr auto name = "ControllerHub";
+        SbusHub() = default;
+        static constexpr auto name = "SbusHub";
 
-        using Channel = ControllerHubData::Channel;
-        using State = ControllerHubData;
+        using Channel = SbusHubData::Channel;
+        using State = SbusHubData;
 
-        static tl::expected<State, ControllerHubError> getData();
+        static tl::expected<State, SbusHubError> getData();
 
         void setup();
-        void configure(const ControllerHubConfig& config);
 
-        ControllerHub(ControllerHub&) = delete;
-        ControllerHub& operator=(const ControllerHub&) = delete;
+        SbusHub(SbusHub&) = delete;
+        SbusHub& operator=(const SbusHub&) = delete;
 
     private:
         // DBUS相关数据结构
@@ -116,7 +109,7 @@ namespace OF
         static const uint32_t input_channels_full[DBUS_CHANNEL_COUNT];
 
         // 内部数据结构
-        struct ControllerHubDataInternal
+        struct SbusHubDataInternal
         {
             k_thread thread;
             k_sem report_lock;
@@ -140,7 +133,7 @@ namespace OF
             K_KERNEL_STACK_MEMBER(thread_stack, 1024);
         };
 
-        static ControllerHubDataInternal s_data;
+        static SbusHubDataInternal s_data;
         static const device* s_uart_dev;
 
         // 内部方法
@@ -154,8 +147,4 @@ namespace OF
         static void input_dbus_input_report_thread();
     };
 } // namespace OF
-static tl::expected<OF::ControllerHubData, OF::ControllerHubError> getControllerData()
-{
-    return OF::ControllerHub::getData();
-}
-#endif // CONTROLLERHUB_HPP
+#endif // SBUSHUB_HPP

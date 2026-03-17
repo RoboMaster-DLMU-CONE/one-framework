@@ -1,0 +1,14 @@
+description: Notify Hub for One Framework
+
+compatible: "one-framework,notify-hub"
+
+properties:
+  led-pixel-device:
+    type: phandle
+    required: true
+    description: LED Pixel device (e.g. WS2812)
+
+  pwm-buzzer-device:
+    type: phandle
+    required: true
+    description: PWM Buzzer device

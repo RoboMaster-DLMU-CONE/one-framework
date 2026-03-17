@@ -1,0 +1,9 @@
+description: SBUS Hub for One Framework (e.g. DJI DT7)
+
+compatible: "one-framework,sbus-hub"
+
+properties:
+  input-device:
+    type: phandle
+    required: true
+    description: UART device connected to the SBUS receiver

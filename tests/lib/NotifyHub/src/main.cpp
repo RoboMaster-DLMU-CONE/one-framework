@@ -6,7 +6,6 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/kernel.h>
 #include <zephyr/debug/cpu_load.h>
-#include <OF/lib/HubManager/HubRegistry.hpp>
 #include <OF/lib/algo/Mecanum.hpp>
 
 #include "OF/drivers/output/buzzer.h"
@@ -16,11 +15,6 @@ LOG_MODULE_REGISTER(notify_test, CONFIG_LOG_DEFAULT_LEVEL);
 
 using namespace OF;
 
-constexpr NotifyHubConfig notify_hub_config{
-    .led_pixel_dev = DEVICE_DT_GET(DT_NODELABEL(pixel_led)),
-    .pwm_buzzer_dev = DEVICE_DT_GET(DT_NODELABEL(pwm_buzzer))
-};
-
 using namespace ems::literals;
 constexpr auto melody =
     R"((200)1,2,3,4,5,
@@ -29,7 +23,7 @@ constexpr auto melody =
 int main()
 {
     LOG_INF("main");
-    HubRegistry::startAll();
+    // NotifyHub is initialized via SYS_INIT
     constexpr led_color c1 = COLOR_HEX("#d81159");
     constexpr led_color c2 = COLOR_HEX("#118ab2");
     NotifyHub::setBuzzerStatus("buzzer1", {std::span(melody), 10, true});

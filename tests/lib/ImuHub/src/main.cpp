@@ -14,8 +14,6 @@ int main()
 {
     LOG_INF("main");
 
-    // HubRegistry::startAll(); is no longer needed, initialization is handled by SYS_INIT
-
     while (true)
     {
         auto [quat, euler_angle, gyro, accel] = ImuHub::getData();

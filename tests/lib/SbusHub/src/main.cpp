@@ -1,8 +1,7 @@
 // Copyright (c) 2025. MoonFeather
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <OF/lib/HubManager/HubRegistry.hpp>
-#include <OF/lib/ControllerHub/ControllerHub.hpp>
+#include <OF/lib/SbusHub/SbusHub.hpp>
 
 #include "zephyr/logging/log.h"
 #include <zephyr/kernel.h>
@@ -12,20 +11,14 @@ LOG_MODULE_REGISTER(cc_test, CONFIG_LOG_DEFAULT_LEVEL);
 
 
 using namespace OF;
-using enum ControllerHub::Channel;
-
-constexpr ControllerHubConfig controller_hub_config{
-    .input_device = DEVICE_DT_GET(DT_NODELABEL(usart3)),
-};
+using enum SbusHub::Channel;
 
 int main()
 {
-    HubRegistry::startAll();
-
     while (true)
     {
         k_sleep(K_MSEC(200));
-        auto state = ControllerHub::getData();
+        auto state = SbusHub::getData();
         if (!state)
         {
             LOG_INF("The controller has disconnected.");

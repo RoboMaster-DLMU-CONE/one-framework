@@ -1,6 +1,5 @@
 add_subdirectory_ifdef(CONFIG_NODE Node)
-add_subdirectory_ifdef(CONFIG_HUB_MANAGER HubManager)
-add_subdirectory_ifdef(CONFIG_CONTROLLER_HUB ControllerHub)
+add_subdirectory_ifdef(CONFIG_SBUS_HUB SbusHub)
 add_subdirectory_ifdef(CONFIG_IMU_HUB ImuHub)
 add_subdirectory_ifdef(CONFIG_NOTIFY_HUB NotifyHub)
 add_subdirectory_ifdef(CONFIG_COMM_BRIDGE CommBridge)

@@ -1,0 +1,51 @@
+/ {
+	notify_hub_pixel_led: pixel_led {
+		compatible = "led-pixel-pwm";
+		red-led = <&pwm_red_led>;
+		green-led = <&pwm_green_led>;
+		blue-led = <&pwm_blue_led>;
+	};
+
+	notify_hub_pwm_buzzer: pwm_buzzer {
+		compatible = "pwm-buzzer";
+		pwms = <&pwm4 1 1000 PWM_POLARITY_NORMAL>;
+		base-frequency-hz = <1000>;
+	};
+
+	notify_hub {
+		compatible = "one-framework,notify-hub";
+		led-pixel-device = <&notify_hub_pixel_led>;
+		pwm-buzzer-device = <&notify_hub_pwm_buzzer>;
+	};
+
+	pwmleds {
+		status = "okay";
+		compatible = "pwm-leds";
+
+		pwm_red_led: pwm_red_led {
+			pwms = <&pwm5 3 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+			label = "Red LED";
+		};
+		
+		pwm_green_led: pwm_green_led {
+			pwms = <&pwm5 2 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+			label = "Green LED";
+		};
+		
+		pwm_blue_led: pwm_blue_led {
+			pwms = <&pwm5 1 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+			label = "Blue LED";
+		};
+	};
+};
+
+&timers5 {
+    status = "okay";
+    pwm5: pwm {
+        status = "okay";
+        pinctrl-0 = <&tim5_ch1_pa0 &tim5_ch2_pa1 &tim5_ch3_pa2>;
+        pinctrl-names = "default";
+    };
+};
+
+

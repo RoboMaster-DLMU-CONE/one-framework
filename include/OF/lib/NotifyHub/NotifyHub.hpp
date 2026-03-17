@@ -3,7 +3,7 @@
 
 #include <OF/drivers/output/led_pixel.h>
 
-#include <OF/lib/HubManager/HubBase.hpp>
+#include <zephyr/kernel.h>
 #include <OF/utils/FixedString.hpp>
 #include <ems_parser.hpp>
 #include <optional>
@@ -55,18 +55,10 @@ namespace OF
         LEDStatus status;
     };
 
-    struct NotifyHubConfig
-    {
-        const device* led_pixel_dev;
-        const device* pwm_buzzer_dev;
-    };
-
-    class NotifyHub final : public HubBase<NotifyHub>
+    class NotifyHub final
     {
     public:
         static constexpr auto name = "NotifyHub";
-
-        void configure(const NotifyHubConfig& config);
 
         void setup();
 

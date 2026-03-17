@@ -1,7 +1,6 @@
 menu "OneFramework Libraries"
 
-rsource "HubManager/Kconfig"
-rsource "ControllerHub/Kconfig"
+rsource "SbusHub/Kconfig"
 rsource "ImuHub/Kconfig"
 rsource "NotifyHub/Kconfig"
 rsource "CommBridge/Kconfig"

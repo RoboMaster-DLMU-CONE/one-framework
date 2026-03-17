@@ -1,30 +1,91 @@
 #include <OF/lib/NotifyHub/NotifyHub.hpp>
-#include <OF/lib/HubManager/HubManager.hpp>
 #include <OF/utils/CCM.h>
 
 #include <OF/drivers/output/buzzer.h>
 
-#include <ankerl/unordered_dense.h>
+#include <zephyr/logging/log.h>
+//#include <ankerl/unordered_dense.h>
+#include <zephyr/init.h>
+
+#define DT_DRV_COMPAT one_framework_notify_hub
 
 namespace OF
 {
-    OF_CCM_ATTR NotifyHub hub;
-
-    namespace
+    template <typename Key, typename Value, size_t Capacity>
+    class SimpleMap
     {
-        struct NotifyHubRegistrar
+    public:
+        struct Entry
         {
-            NotifyHubRegistrar()
+            Key first;
+            Value second;
+        };
+
+        using iterator = Entry*;
+        using const_iterator = const Entry*;
+
+        iterator begin() { return m_data; }
+        iterator end() { return m_data + m_size; }
+        const_iterator begin() const { return m_data; }
+        const_iterator end() const { return m_data + m_size; }
+
+        Value& operator[](const Key& key)
+        {
+            auto it = find(key);
+            if (it != end())
             {
-                registerHub<NotifyHub>(&hub);
+                return it->second;
             }
-        } __used notifyHubRegistrar;
-    }
+            if (m_size < Capacity)
+            {
+                m_data[m_size].first = key;
+                m_data[m_size].second = Value{}; // Default construct
+                return m_data[m_size++].second;
+            }
+            
+            // Fallback for overflow: return a dummy value
+            static Value dummy;
+            return dummy;
+        }
+
+        iterator find(const Key& key)
+        {
+            for (size_t i = 0; i < m_size; ++i)
+            {
+                if (m_data[i].first == key)
+                {
+                    return m_data + i;
+                }
+            }
+            return end();
+        }
+
+        iterator erase(iterator it)
+        {
+            if (it < begin() || it >= end())
+            {
+                return end();
+            }
+            // Move last element to here
+            if (it != &m_data[m_size - 1])
+            {
+                *it = m_data[m_size - 1];
+            }
+            m_size--;
+            return it;
+        }
+
+    private:
+        Entry m_data[Capacity];
+        size_t m_size{0};
+    };
+
+    OF_CCM_ATTR NotifyHub hub;
 
     LOG_MODULE_REGISTER(NotifyHub, CONFIG_NOTIFY_HUB_LOG_LEVEL);
 
-    OF_CCM_ATTR ankerl::unordered_dense::map<FixedString<MAX_KEY_LEN>, BuzzerStatus> g_buzzer_noti;
-    OF_CCM_ATTR ankerl::unordered_dense::map<FixedString<MAX_KEY_LEN>, LEDStatus> g_led_noti;
+    OF_CCM_ATTR SimpleMap<FixedString<MAX_KEY_LEN>, BuzzerStatus, 16> g_buzzer_noti;
+    OF_CCM_ATTR SimpleMap<FixedString<MAX_KEY_LEN>, LEDStatus, 16> g_led_noti;
 
     OF_CCM_ATTR k_msgq g_buzzer_msgq;
     OF_CCM_ATTR k_msgq g_led_msgq;
@@ -35,15 +96,22 @@ namespace OF
     K_THREAD_STACK_DEFINE(g_buzzer_stack, 1024);
     K_THREAD_STACK_DEFINE(g_led_stack, 1024);
 
-
-    void NotifyHub::configure(const NotifyHubConfig& config)
-    {
-        m_buzzer = config.pwm_buzzer_dev;
-        m_led_pixel = config.led_pixel_dev;
-    }
-
     void NotifyHub::setup()
     {
+#if DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT)
+        m_buzzer = DEVICE_DT_GET(DT_INST_PHANDLE(0, pwm_buzzer_device));
+        m_led_pixel = DEVICE_DT_GET(DT_INST_PHANDLE(0, led_pixel_device));
+
+        if (!m_buzzer || !device_is_ready(m_buzzer))
+        {
+            LOG_ERR("Buzzer device not ready");
+        }
+
+        if (!m_led_pixel || !device_is_ready(m_led_pixel))
+        {
+            LOG_ERR("LED Pixel device not ready");
+        }
+
         m_buzzer_tid = k_thread_create(&m_buzzer_thread, g_buzzer_stack, K_THREAD_STACK_SIZEOF(g_buzzer_stack),
                                        m_buzzer_thread_entry,
                                        const_cast<device*>(m_buzzer), nullptr, nullptr,
@@ -55,6 +123,9 @@ namespace OF
 
         k_msgq_init(&g_buzzer_msgq, g_buzzer_msgq_buffer, sizeof(BuzzerCommand), 16);
         k_msgq_init(&g_led_msgq, g_led_msgq_buffer, sizeof(LEDCommand), 16);
+#else
+        LOG_WRN("NotifyHub not enabled in Device Tree");
+#endif
     }
 
     void NotifyHub::setBuzzerStatus(const FixedString<MAX_KEY_LEN>& key, const BuzzerStatus& status)
@@ -250,3 +321,11 @@ namespace OF
         }
     }
 }
+
+static int notify_hub_init()
+{
+    OF::hub.setup();
+    return 0;
+}
+
+SYS_INIT(notify_hub_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
