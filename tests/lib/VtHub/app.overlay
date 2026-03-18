@@ -1,0 +1,7 @@
+/ {
+    vthub {
+        compatible = "one-framework,vt-hub";
+        input-device = <&usart3>;
+    };
+};
+

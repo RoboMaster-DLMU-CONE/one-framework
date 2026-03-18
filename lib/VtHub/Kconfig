@@ -1,0 +1,14 @@
+menuconfig VT_HUB
+    bool "Enable VtHub"
+    default y
+    select RPL
+    help
+      Enable RoboMaster 2026 Video Transmission Link Hub
+
+if VT_HUB
+
+module = VT_HUB
+module-str = VtHub
+source "subsys/logging/Kconfig.template.log_config"
+
+endif

@@ -1,0 +1,9 @@
+description: VT Hub for One Framework (RoboMaster 2026 Video Transmission Link)
+
+compatible: "one-framework,vt-hub"
+
+properties:
+  input-device:
+    type: phandle
+    required: true
+    description: UART device connected to the VT receiver
