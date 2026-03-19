@@ -18,6 +18,13 @@ namespace OF
         std::span<const ems::Note> notes;
         uint8_t volume;
         bool once = false;
+
+        bool operator==(const BuzzerStatus& other) const
+        {
+            if (volume != other.volume || once != other.once) return false;
+            if (notes.size() != other.notes.size()) return false;
+            return notes.data() == other.notes.data(); // compare pointer (same span source)
+        }
     };
 
     enum class LEDMode : uint8_t
@@ -35,6 +42,17 @@ namespace OF
         uint8_t toggle_times;
         uint16_t toggle_interval_ms;
         bool once = false;
+
+        bool operator==(const LEDStatus& other) const
+        {
+            return color.r == other.color.r &&
+                   color.g == other.color.g &&
+                   color.b == other.color.b &&
+                   mode == other.mode &&
+                   toggle_times == other.toggle_times &&
+                   toggle_interval_ms == other.toggle_interval_ms &&
+                   once == other.once;
+        }
     };
 
     enum class CommandType: uint8_t { SET, REMOVE };
