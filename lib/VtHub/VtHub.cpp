@@ -19,11 +19,16 @@
 #include <zephyr/init.h>
 #include <zephyr/device.h>
 
+#include <OF/utils/Remap.hpp>
+
 LOG_MODULE_REGISTER(VtHub, CONFIG_VT_HUB_LOG_LEVEL);
 
 namespace OF {
 
-using namespace RPL::Packets;
+    float vt_stick_percent(uint64_t stick)
+    {
+        return remap<364.0f,1684.0f,-1.0f, 1.0f>(stick);
+    }
 
 struct VtHubDataInternal {
     const device* uart_dev;
@@ -154,23 +159,3 @@ template tl::expected<VtmSetChannel, VtHubError> VtHub::get();
 template tl::expected<VtmQueryChannel, VtHubError> VtHub::get();
 
 } // namespace OF
-
-// Stub for missing std symbol when exceptions are disabled
-namespace std {
-    void __throw_bad_array_new_length() {
-        LOG_ERR("std::bad_array_new_length thrown");
-        k_oops();
-    }
-    void __throw_length_error(const char* msg) {
-        LOG_ERR("std::length_error thrown: %s", msg);
-        k_oops();
-    }
-    void __throw_bad_alloc() {
-        LOG_ERR("std::bad_alloc thrown");
-        k_oops();
-    }
-    void __throw_out_of_range(const char* msg) {
-        LOG_ERR("std::out_of_range thrown: %s", msg);
-        k_oops();
-    }
-}

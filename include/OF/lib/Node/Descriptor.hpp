@@ -1,6 +1,6 @@
 #ifndef OF_LIB_NODE_DESCRIPTOR_HPP
 #define OF_LIB_NODE_DESCRIPTOR_HPP
-#include "zephyr/kernel/thread.h"
+#include <zephyr/kernel.h>
 
 namespace OF
 {

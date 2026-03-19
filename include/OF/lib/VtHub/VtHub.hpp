@@ -3,9 +3,11 @@
 
 #include <zephyr/kernel.h>
 #include <tl/expected.hpp>
-#include <cstdint>
 
 namespace OF {
+
+float vt_stick_percent(uint64_t stick);
+
 
 struct VtHubError {
     enum class Code {
