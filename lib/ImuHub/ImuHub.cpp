@@ -60,24 +60,32 @@ namespace OF
         OF_CCM_ATTR sensor_chan_spec accel_channels[] = {{SENSOR_CHAN_ACCEL_XYZ, 0},};
         OF_CCM_ATTR sensor_chan_spec gyro_channels[] = {{SENSOR_CHAN_GYRO_XYZ, 0},};
 
-        OF_CCM_ATTR sensor_read_config accel_read_cfg = {.sensor = nullptr, .is_streaming = false,
-                                                         .channels = accel_channels,
-                                                         .count = std::size(accel_channels),
-                                                         .max = std::size(accel_channels)};
-        OF_CCM_ATTR sensor_read_config gyro_read_cfg = {.sensor = nullptr, .is_streaming = false,
-                                                        .channels = gyro_channels,
-                                                        .count = std::size(gyro_channels),
-                                                        .max = std::size(gyro_channels)};
+        OF_CCM_ATTR sensor_read_config accel_read_cfg = {
+            .sensor = nullptr, .is_streaming = false,
+            .channels = accel_channels,
+            .count = std::size(accel_channels),
+            .max = std::size(accel_channels)
+        };
+        OF_CCM_ATTR sensor_read_config gyro_read_cfg = {
+            .sensor = nullptr, .is_streaming = false,
+            .channels = gyro_channels,
+            .count = std::size(gyro_channels),
+            .max = std::size(gyro_channels)
+        };
 
         RTIO_IODEV_DEFINE(imu_accel_iodev, &__sensor_iodev_api, &accel_read_cfg);
         RTIO_IODEV_DEFINE(imu_gyro_iodev, &__sensor_iodev_api, &gyro_read_cfg);
 
-        OF_CCM_ATTR AsyncSensorContext accel_ctx = {.iodev = &imu_accel_iodev, .channels = accel_channels,
-                                                    .channel_count = std::size(accel_channels),
-                                                    .channel_type = SENSOR_CHAN_ACCEL_XYZ};
-        OF_CCM_ATTR AsyncSensorContext gyro_ctx = {.iodev = &imu_gyro_iodev, .channels = gyro_channels,
-                                                   .channel_count = std::size(gyro_channels),
-                                                   .channel_type = SENSOR_CHAN_GYRO_XYZ};
+        OF_CCM_ATTR AsyncSensorContext accel_ctx = {
+            .iodev = &imu_accel_iodev, .channels = accel_channels,
+            .channel_count = std::size(accel_channels),
+            .channel_type = SENSOR_CHAN_ACCEL_XYZ
+        };
+        OF_CCM_ATTR AsyncSensorContext gyro_ctx = {
+            .iodev = &imu_gyro_iodev, .channels = gyro_channels,
+            .channel_count = std::size(gyro_channels),
+            .channel_type = SENSOR_CHAN_GYRO_XYZ
+        };
 
         constexpr AsyncSensorContext* const contexts[] = {&accel_ctx, &gyro_ctx};
 
@@ -86,8 +94,8 @@ namespace OF
         OF_CCM_ATTR bool imu_rtio_thread_started;
 
         constexpr int kRtioThreadPriority = (CONFIG_IMU_HUB_RTIO_THREAD_PRIORITY == 0)
-            ? K_LOWEST_APPLICATION_THREAD_PRIO
-            : CONFIG_IMU_HUB_RTIO_THREAD_PRIORITY;
+                                                ? K_LOWEST_APPLICATION_THREAD_PRIO
+                                                : CONFIG_IMU_HUB_RTIO_THREAD_PRIORITY;
         static_assert(
             kRtioThreadPriority >= K_HIGHEST_APPLICATION_THREAD_PRIO && kRtioThreadPriority <=
             K_LOWEST_APPLICATION_THREAD_PRIO, "Invalid IMU Hub RTIO thread priority");
@@ -266,12 +274,22 @@ namespace OF
         {
             return q31_to_float(value, data.shift);
         };
+        float x = to_float(data.readings[0].x);
+        float y = to_float(data.readings[0].y);
+        float z = to_float(data.readings[0].z);
 
-        const IMUData::Vector3 vec{
-            to_float(data.readings[0].x),
-            to_float(data.readings[0].y),
-            to_float(data.readings[0].z),
-        };
+        // Apply axis reversal based on configuration
+#ifdef CONFIG_IMU_HUB_REVERSE_AXIS_X
+        x = -x;
+#endif
+#ifdef CONFIG_IMU_HUB_REVERSE_AXIS_Y
+        y = -y;
+#endif
+#ifdef CONFIG_IMU_HUB_REVERSE_AXIS_Z
+        z = -z;
+#endif
+
+        const IMUData::Vector3 vec{x, y, z};
 
         // 1. 更新 Raw Data 到全局结构体 (即使在校准时，Accel数据也是需要的)
         if (channel == SENSOR_CHAN_ACCEL_XYZ)
@@ -390,12 +408,11 @@ namespace OF
 
         // 5. 发布数据
         g_imu_data.quat = {g_mahony.q[0], g_mahony.q[1], g_mahony.q[2], g_mahony.q[3]};
-        auto& [p, r, y] = g_imu_data.euler_angle;
-        g_mahony.getEulerAngle(p, r, y);
+        auto& [pitch, roll, yaw] = g_imu_data.euler_angle;
+        g_mahony.getEulerAngle(pitch, roll, yaw);
 
         g_imu_buf.write(g_imu_data);
     }
-
 } // namespace OF
 
 static int imu_hub_init()

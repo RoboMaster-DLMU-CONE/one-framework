@@ -98,9 +98,30 @@ config IMU_HUB_GYRO_DEADBAND
 
 endmenu
 
+menu "Axis Configuration"
+
+config IMU_HUB_REVERSE_AXIS_X
+    bool "Reverse X Axis"
+    default n
+    help
+      反转 IMU X 轴数据（加速度计和陀螺仪）
+
+config IMU_HUB_REVERSE_AXIS_Y
+    bool "Reverse Y Axis"
+    default n
+    help
+      反转 IMU Y 轴数据（加速度计和陀螺仪）
+
+config IMU_HUB_REVERSE_AXIS_Z
+    bool "Reverse Z Axis"
+    default n
+    help
+      反转 IMU Z 轴数据（加速度计和陀螺仪）
+
+endmenu
+
 module = IMU_HUB
 module-str = IMU_HUB
 source "subsys/logging/Kconfig.template.log_config"
-
 
 endif # IMU_HUB
