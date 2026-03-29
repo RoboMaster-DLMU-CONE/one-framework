@@ -11,6 +11,8 @@
 #include <zephyr/drivers/uart.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/reboot.h>
+#include <zephyr/usb/usb_device.h>
 #include <memory>
 
 // 空包类型，用于表示不需要发送或接收任何包的情况
@@ -116,10 +118,17 @@ namespace OF
 
             m_TxSize = res.value();
 
+            // 启动看门狗定时器，50ms 触发一次
+            k_timer_start(&m_TxWatchdog, K_MSEC(50), K_MSEC(50));
+
             for (size_t i = 0; i < m_TxSize; ++i)
             {
                 uart_poll_out(m_UartDev, m_TxBuffer[i]);
             }
+
+            // 发送成功，停止看门狗并清零计数
+            k_timer_stop(&m_TxWatchdog);
+            m_BusyCount = 0;
 
             k_sem_give(&m_TxDoneSem);
         }
@@ -149,6 +158,9 @@ namespace OF
             }
 
             k_sem_init(&m_TxDoneSem, 1, 1);
+
+            k_timer_init(&m_TxWatchdog, tx_watchdog_expiry, nullptr);
+            k_timer_user_data_set(&m_TxWatchdog, this);
 
             LOG_INF("CommBridge initialized, UART device: %s", m_UartDev->name);
         }
@@ -181,6 +193,21 @@ namespace OF
         uint8_t m_RxBuffer[RxBufferSize]{};
 
         bool m_RxEnabled{false};
+
+        k_timer m_TxWatchdog{};
+        uint32_t m_BusyCount{0};
+
+        static void tx_watchdog_expiry(k_timer* timer)
+        {
+            auto* bridge = static_cast<CommBridge*>(k_timer_user_data_get(timer));
+            bridge->m_BusyCount++;
+            
+            if (bridge->m_BusyCount >= 5)
+            {
+                // 如果连续 5 次（250ms）阻塞在 uart_poll_out，判定为 USB 卡死，触发软复位
+                sys_reboot(SYS_REBOOT_WARM);
+            }
+        }
 
         /**
          * @brief UART 中断回调函数

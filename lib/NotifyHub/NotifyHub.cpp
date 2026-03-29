@@ -42,7 +42,7 @@ namespace OF
                 m_data[m_size].second = Value{}; // Default construct
                 return m_data[m_size++].second;
             }
-            
+
             // Fallback for overflow: return a dummy value
             static Value dummy;
             return dummy;
@@ -115,11 +115,11 @@ namespace OF
         m_buzzer_tid = k_thread_create(&m_buzzer_thread, g_buzzer_stack, K_THREAD_STACK_SIZEOF(g_buzzer_stack),
                                        m_buzzer_thread_entry,
                                        const_cast<device*>(m_buzzer), nullptr, nullptr,
-                                       0, 0, K_NO_WAIT);
+                                       5, 0, K_NO_WAIT);
         m_led_tid = k_thread_create(&m_led_thread, g_led_stack, K_THREAD_STACK_SIZEOF(g_led_stack),
                                     m_led_thread_entry,
                                     const_cast<device*>(m_led_pixel), nullptr, nullptr,
-                                    0, 0, K_NO_WAIT);
+                                    5, 0, K_NO_WAIT);
 
         k_msgq_init(&g_buzzer_msgq, g_buzzer_msgq_buffer, sizeof(BuzzerCommand), 16);
         k_msgq_init(&g_led_msgq, g_led_msgq_buffer, sizeof(LEDCommand), 16);
@@ -282,7 +282,7 @@ namespace OF
                                 uint8_t bright = (elapsed_ms * 100) / toggle_interval_ms;
                                 if (bright > 100) bright = 100;
                                 led_pixel_set(led_dev, color, bright);
-                                k_sleep(K_USEC(100));
+                                k_sleep(K_MSEC(10));
 
                                 if (bright >= 100) break;
                             }
@@ -299,7 +299,7 @@ namespace OF
                                 int32_t bright = 100 - (elapsed_ms * 100) / toggle_interval_ms;
                                 if (bright < 0) bright = 0;
                                 led_pixel_set(led_dev, color, static_cast<uint8_t>(bright));
-                                k_sleep(K_USEC(10));
+                                k_sleep(K_MSEC(10));
                                 if (bright <= 0) break;
                             }
                         }

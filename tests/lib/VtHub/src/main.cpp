@@ -21,9 +21,9 @@ int main(void)
         {
             auto& rc = res.value();
             LOG_INF("VT03: LX=%u LY=%u RX=%u RY=%u W=%u SW=%u", 
-                    (unsigned)rc.left_stick_x, (unsigned)rc.left_stick_y, 
-                    (unsigned)rc.right_stick_x, (unsigned)rc.right_stick_y,
-                    (unsigned)rc.wheel, (unsigned)rc.switch_state);
+                    (unsigned)rc.left_stick_x(), (unsigned)rc.left_stick_y(), 
+                    (unsigned)rc.right_stick_x(), (unsigned)rc.right_stick_y(),
+                    (unsigned)rc.wheel(), (unsigned)rc.switch_state());
         }
     }
     return 0;
