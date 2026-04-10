@@ -201,11 +201,11 @@ namespace OF
         {
             auto* bridge = static_cast<CommBridge*>(k_timer_user_data_get(timer));
             bridge->m_BusyCount++;
-            
+
             if (bridge->m_BusyCount >= 5)
             {
                 // 如果连续 5 次（250ms）阻塞在 uart_poll_out，判定为 USB 卡死，触发软复位
-                sys_reboot(SYS_REBOOT_WARM);
+                // sys_reboot(SYS_REBOOT_WARM);
             }
         }
 
