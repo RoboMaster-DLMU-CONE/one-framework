@@ -7,22 +7,37 @@
 	compatible = "st";
 
 	chosen {
-		zephyr,console = &usart1;
-		zephyr,shell-uart = &usart1;
+		zephyr,console = &uart7;
+		zephyr,shell-uart = &uart7;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,dtcm = &dtcm;
 		zephyr,canbus = &fdcan1;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,nvs-storage-partition = &nvs_partition;
 	};
 
 	/* 别名定义，方便应用层调用 */
 	aliases {
 		led0 = &ws2812;      /* WS2812 RGB LED */
+    ws2812-leds = &ws2812;
 		accel0 = &bmi088_accel;
 		gyro0 = &bmi088_gyro;
 		buzzer-pwm = &pwm_buzzer;
 		watchdog0 = &iwdg1;
+		button0 = &button_pa15;
 	};
+
+  buttons {
+		compatible = "gpio-keys";
+
+		button_pa15: button_0 {
+			label = "User Button PA15";
+			gpios = <&gpioa 15 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
 
 };
 
@@ -32,26 +47,53 @@
 };
 
 &pll {
-	div-m = <2>;
-	mul-n = <40>;
+	div-m = <3>;
+	mul-n = <68>;
+	fracn = <6144>;
 	div-p = <1>;
 	div-q = <2>;
-	div-r = <1>;
+	div-r = <2>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+/*
+ * PLL2: HSE 24MHz /2 *25 = 300MHz VCO, /3 -> 100MHz on P/Q/R
+ */
+&pll2 {
+	div-m = <2>;
+	mul-n = <25>;
+	div-p = <3>;
+	div-q = <3>;
+	div-r = <3>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+/*
+ * PLL3: HSE 24MHz /3 *60 = 480MHz VCO, /2 -> 240MHz on P/Q/R
+ */
+&pll3 {
+	div-m = <3>;
+	mul-n = <60>;
+	div-p = <2>;
+	div-q = <2>;
+	div-r = <2>;
 	clocks = <&clk_hse>;
 	status = "okay";
 };
 
 &rcc {
 	clocks = <&pll>;
-	clock-frequency = <DT_FREQ_M(480)>;
-	/* Prescalers: d1cpre=1, hpre=1 → CPU=480MHz; PPRE1=2→APB1=240MHz; PPRE2=2→APB2=240MHz; PPRE3=2→APB3=240MHz; PPRE4=2→APB4=240MHz */
+	clock-frequency = <DT_FREQ_M(550)>;
 	d1cpre = <1>;
 	hpre = <2>;
-	d1ppre = <2>;
-	d2ppre1 = <2>;
-	d2ppre2 = <2>;
-	d3ppre = <2>;
+	d1ppre = <4>;
+	d2ppre1 = <4>;
+	d2ppre2 = <4>;
+	d3ppre = <4>;
 };
+
 
 &dma1 {
 	status = "okay";
@@ -73,7 +115,7 @@
 	dmas = <&dmamux1 41 0 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>,
 		   <&dmamux1 42 1 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)>;
 	dma-names = "rx", "tx";
-	status = "okay";
+	status = "disabled";
 };
 
 &usart2 {
@@ -84,7 +126,7 @@
 	dmas = <&dmamux1 43 2 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_MEDIUM)>,
 		   <&dmamux1 44 3 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_MEDIUM)>;
 	dma-names = "rx", "tx";
-	status = "okay";
+	status = "disabled";
 };
 
 /*
@@ -136,7 +178,7 @@
 	dmas = <&dmamux1 45 4 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_MEDIUM)>,
 		   <&dmamux1 46 5 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_MEDIUM)>;
 	dma-names = "rx", "tx";
-	status = "okay";
+	status = "disabled";
 };
 
 /*
@@ -152,7 +194,7 @@
 	dmas = <&dmamux1 65 6 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_LOW)>,
 		   <&dmamux1 66 7 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_LOW)>;
 	dma-names = "rx", "tx";
-	status = "okay";
+	status = "disabled";
 };
 
 /*
@@ -209,7 +251,7 @@
 	pinctrl-names = "default";
 	bitrate = <1000000>;
 	bitrate-data = <5000000>;
-	status = "okay";
+	status = "disabled";
 };
 
 &fdcan2 {
@@ -217,7 +259,7 @@
 	pinctrl-names = "default";
 	bitrate = <1000000>;
 	bitrate-data = <5000000>;
-	status = "okay";
+	status = "disabled";
 };
 
 &fdcan3 {
@@ -225,13 +267,13 @@
 	pinctrl-names = "default";
 	bitrate = <1000000>;
 	bitrate-data = <5000000>;
-	status = "okay";
+	status = "disabled";
 };
 
 &spi2 {
 	pinctrl-0 = <&spi2_sck_pb13 &spi2_miso_pc2 &spi2_mosi_pc1>;
 	pinctrl-names = "default";
-	status = "okay";
+	status = "disabled";
 
 	/* CS 引脚: Accel=PC0, Gyro=PC3 */
 	cs-gpios = <&gpioc 0 GPIO_ACTIVE_LOW>, <&gpioc 3 GPIO_ACTIVE_LOW>;
@@ -285,7 +327,7 @@
 };
 
 &timers12 {
-	status = "okay";
+	status = "disabled";
 	st,prescaler = <23>;
 
 	pwm12: pwm {
@@ -300,7 +342,7 @@
 	st,prescaler = <23>;
 
 	pwm3: pwm {
-		status = "okay";
+		status = "disabled";
 		pinctrl-0 = <&tim3_ch4_pb1>;
 		pinctrl-names = "default";
 	};
@@ -312,7 +354,7 @@
 		pwms = <&pwm3 1 PWM_USEC(100) PWM_POLARITY_NORMAL>;
 		temp-sensor = <&bmi088_accel>;
 		temp-channel = <12>; /* SENSOR_CHAN_DIE_TEMP */
-		status = "okay";
+		status = "disabled";
 	};
 };
 
@@ -325,32 +367,56 @@
 	};
 };
 
-/* QSPI Flash (W25Q64) - OCTOSPI1 Port 1
- * 引脚: CS=PE11, CLK=PB2, IO0=PD11, IO1=PB0, IO2=PA3, IO3=PA1
- */
 &octospi1 {
 	pinctrl-0 = <&octospim_p1_clk_pb2 &octospim_p1_ncs_pe11
-				 &octospim_p1_io0_pd11 &octospim_p1_io1_pb0
-				 &octospim_p1_io2_pa3 &octospim_p1_io3_pa1>;
+	             &octospim_p1_io0_pd11 &octospim_p1_io1_pb0
+	             &octospim_p1_io2_pa3 &octospim_p1_io3_pa1>;
 	pinctrl-names = "default";
+	clocks = <&rcc STM32_CLOCK(AHB3, 14)>,
+	         <&rcc STM32_SRC_PLL2_R OSPI_SEL(1)>;
 	status = "okay";
 
 	w25q64: w25q64jv@0 {
-		compatible = "winbond,w25q64jv", "jedec,spi-nor";
+		compatible = "st,stm32-ospi-nor";
 		reg = <0>;
-		spi-max-frequency = <80000000>;
-		size = <0x800000>; /* 8MB */
-		jedec-id = [ef 40 17];
+		size = <DT_SIZE_M(64)>; /* 64 Mbit / 8 MByte */
+		ospi-max-frequency = <DT_FREQ_M(40)>;
+		spi-bus-width = <OSPI_QUAD_MODE>; /* 4 data lines (QSPI) */
+		data-rate = <OSPI_STR_TRANSFER>;
+		writeoc = "PP_1_1_4";
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			nvs_partition: partition@0 {
+				label = "nvs";
+				reg = <0x00000000 0x00800000>; /* 8MB @ 0x90000000 */
+			};
+		};
 	};
 };
 
+
 /* USB OTG */
-&usbotg_hs {
+zephyr_udc0: &usbotg_hs {
 	/* H723 usually has HS core but often used with FS PHY on PA11/PA12 */
 	pinctrl-0 = <&usb_otg_hs_dm_pa11 &usb_otg_hs_dp_pa12>;
 	pinctrl-names = "default";
 	status = "okay";
+
+	cdc_acm_uart0: cdc_acm_uart0 {
+		compatible = "zephyr,cdc-acm-uart";
+		label = "CDC ACM";
+	};
 };
+
+/* HSI48 provides the required 48MHz USB kernel clock (USBSEL = HSI48). */
+&clk_hsi48 {
+	status = "okay";
+};
+
 
 &iwdg1 {
 	status = "okay";
@@ -363,3 +429,37 @@
 &pwr {
 	power-supply = "ldo";
 };
+
+&flash0 {
+	partitions {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(128)>;
+		};
+
+		slot0_partition: partition@20000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-0";
+			reg = <0x00020000 DT_SIZE_K(384)>;
+		};
+
+		slot1_partition: partition@80000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-1";
+			reg = <0x00080000 DT_SIZE_K(384)>;
+		};
+
+		scratch_partition: partition@e0000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-scratch";
+			reg = <0x000e0000 DT_SIZE_K(128)>;
+		};
+	};
+};
+
+
